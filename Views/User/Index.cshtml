@@ -1,0 +1,60 @@
+@{
+    ViewData["Title"] = "User Management";
+}
+
+@if (TempData["Success"] != null)
+{
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="ri-checkbox-circle-line me-1"></i>
+    @TempData["Success"]
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+}
+
+<!-- User Table Card -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">User List</h5>
+    <a asp-action="Create" class="btn btn-primary">
+      <i class="ri-user-add-line me-1"></i> Create User
+    </a>
+  </div>
+
+  <div class="table-responsive text-nowrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th><i class="ri-user-line me-2 text-primary"></i>Name</th>
+          <th><i class="ri-mail-line me-2 text-primary"></i>Email</th>
+          <th><i class="ri-phone-line me-2 text-primary"></i>Phone</th>
+          <th><i class="ri-briefcase-line me-2 text-primary"></i>Role</th>
+          <th><i class="ri-calendar-line me-2 text-primary"></i>Created At</th>
+          <th><i class="ri-settings-3-line me-2 text-primary"></i>Actions</th>
+        </tr>
+      </thead>
+	  <tbody class="table-border-bottom-0">
+		@foreach (var user in Model)
+		{
+		  <tr>
+			<td><strong>@user.FirstName @user.LastName</strong></td>
+			<td>@user.Email</td>
+			<td>@user.PhoneNumber</td>
+			<td><span class="badge bg-label-info">@user.Role</span></td>
+			<td>@user.CreatedAt.ToString("yyyy-MM-dd")</td>
+			<td>
+			  <div class="dropdown">
+				<button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
+				  <i class="ri-more-2-line"></i>
+				</button>
+				<div class="dropdown-menu">
+				  <a class="dropdown-item" asp-action="Edit" asp-route-id="@user.Id"><i class="ri-pencil-line me-1"></i> Edit</a>
+				  <a class="dropdown-item" asp-action="Delete" asp-route-id="@user.Id"><i class="ri-delete-bin-6-line me-1"></i> Delete</a>
+				</div>
+			  </div>
+			</td>
+		  </tr>
+		}
+	  </tbody>
+    </table>
+  </div>
+</div>
