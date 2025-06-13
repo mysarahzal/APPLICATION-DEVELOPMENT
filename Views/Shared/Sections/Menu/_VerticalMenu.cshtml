@@ -56,6 +56,17 @@
             <div>Academy</div><div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">Pro</div>
           </a>
         </li>
+				<li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
+					<a asp-controller="User" asp-action="Index" class="menu-link">
+						<div>User Management</div>
+					</a>
+				</li>
+				@* Missed Pickups Menu *@
+				<li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
+					<a asp-controller="MissedPickup" asp-action="Index" class="menu-link">
+						<div>Missed Pickup</div>
+					</a>
+				</li>
       </ul>
     </li>
 

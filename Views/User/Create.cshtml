@@ -1,0 +1,103 @@
+@model AspnetCoreMvcFull.Models.User
+
+@{
+	ViewData["Title"] = "Create User";
+}
+
+<h1>Create</h1>
+
+<h4>User</h4>
+<hr />
+
+<div class="card mb-6">
+	<div class="card-header d-flex align-items-center justify-content-between">
+		<h5 class="mb-0">Create New User</h5>
+	</div>
+	<div class="card-body">
+
+		@* Display success message if available *@
+
+		@* @if (TempData["Success"] != null) *@
+		@* { *@
+		@* 	<div class="alert alert-success">@TempData["Success"]</div> *@
+		@* 	<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button> *@
+		@* } *@
+
+		@if (TempData["Success"] != null)
+		{
+			<div class="alert alert-success alert-dismissible fade show" role="alert">
+				<i class="ri-checkbox-circle-line me-1"></i>
+				@TempData["Success"]
+				<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+			</div>
+		}
+
+		<form asp-action="Create" method="post">
+			<div class="row mb-4">
+				<label class="col-sm-2 col-form-label">First Name</label>
+				<div class="col-sm-10">
+					<input asp-for="FirstName" class="form-control" required />
+					<span asp-validation-for="FirstName" class="text-danger"></span>
+				</div>
+			</div>
+
+			<div class="row mb-4">
+				<label class="col-sm-2 col-form-label">Last Name</label>
+				<div class="col-sm-10">
+					<input asp-for="LastName" class="form-control" required />
+					<span asp-validation-for="LastName" class="text-danger"></span>
+				</div>
+			</div>
+
+			<div class="row mb-4">
+				<label class="col-sm-2 col-form-label">Email</label>
+				<div class="col-sm-10">
+					<input asp-for="Email" class="form-control" required />
+					<span asp-validation-for="Email" class="text-danger"></span>
+				</div>
+			</div>
+
+			<div class="row mb-4">
+				<label class="col-sm-2 col-form-label">Phone Number</label>
+				<div class="col-sm-10">
+					<input asp-for="PhoneNumber" class="form-control" />
+					<span asp-validation-for="PhoneNumber" class="text-danger"></span>
+				</div>
+			</div>
+
+			<div class="row mb-4">
+				<label class="col-sm-2 col-form-label">Role</label>
+				<div class="col-sm-10">
+					<select asp-for="Role" class="form-control" required>
+						<option value="Admin">Admin</option>
+						<option value="Driver">Driver</option>
+						<option value="Operator">Operator</option>
+					</select>
+					<span asp-validation-for="Role" class="text-danger"></span>
+				</div>
+			</div>
+
+			<div class="row mb-4">
+				<label class="col-sm-2 col-form-label">Password</label>
+				<div class="col-sm-10">
+					<input asp-for="Password" type="password" class="form-control" required />
+					<span asp-validation-for="Password" class="text-danger"></span>
+				</div>
+			</div>
+
+			<div class="row justify-content-end">
+				<div class="col-sm-10">
+					<button type="submit" class="btn btn-primary">Create User</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

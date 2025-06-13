@@ -1,0 +1,41 @@
+@model IEnumerable<AspnetCoreMvcFull.Models.MissedPickup>
+
+@{
+	ViewData["Title"] = "Missed Pickups";
+}
+
+<h1>Missed Pickups</h1>
+
+<p>
+	<a asp-action="Detect" class="btn btn-warning">Run Detection</a>
+</p>
+
+<table class="table table-bordered table-striped">
+	<thead>
+		<tr>
+			<th>Schedule ID</th>
+			<th>Detected At</th>
+			<th>Status</th>
+			<th>Reason</th>
+			<th>Resolution</th>
+			<th>Reported By</th>
+			<th>Action</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var item in Model)
+		{
+			<tr>
+				<td>@item.Schedule?.Id</td>
+				<td>@item.DetectedAt.ToString("g")</td>
+				<td>@item.Status</td>
+				<td>@item.Reason</td>
+				<td>@item.Resolution</td>
+				<td>@item.ReportedBy</td>
+				<td>
+					<a asp-action="Resolve" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Resolve</a>
+				</td>
+			</tr>
+		}
+	</tbody>
+</table>
