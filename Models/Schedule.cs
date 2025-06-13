@@ -18,8 +18,6 @@ namespace AspnetCoreMvcFull.Models
     public string? AdminNotes { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? updated_at { get; set; }
-    public DateTime? actual_start_time { get; set; }
-    public DateTime? actual_end_time { get; set; }
 
     // Navigation Properties
     public virtual User User { get; set; }
