@@ -1,0 +1,29 @@
+@model AspnetCoreMvcFull.Models.Schedule
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<form asp-action="Create" method="post">
+	<div class="form-group mb-3">
+		<label asp-for="CollectorId">Collector</label>
+		<select asp-for="CollectorId" class="form-control" asp-items="@(new SelectList(ViewBag.Collectors, "Id", "FullName"))">
+			<option value="">-- Select Collector --</option>
+		</select>
+		<span asp-validation-for="CollectorId" class="text-danger"></span>
+	</div>
+
+	<div class="form-group mb-3">
+		<label asp-for="RouteId">Route</label>
+		<select asp-for="RouteId" class="form-control" asp-items="@(new SelectList(ViewBag.Routes, "Id", "Name"))">
+			<option value="">-- Select Route --</option>
+		</select>
+		<span asp-validation-for="RouteId" class="text-danger"></span>
+	</div>
+
+	<div class="form-group mb-3">
+		<label asp-for="ScheduledStartTime">Scheduled Start Time</label>
+		<input asp-for="ScheduledStartTime" type="datetime-local" class="form-control" />
+		<span asp-validation-for="ScheduledStartTime" class="text-danger"></span>
+	</div>
+
+	<button type="submit" class="btn btn-primary">Save</button>
+</form>

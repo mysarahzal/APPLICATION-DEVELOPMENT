@@ -1,0 +1,24 @@
+@model AspnetCoreMvcFull.Models.Schedule
+
+<form asp-action="Edit" method="post">
+	<input type="hidden" asp-for="Id" />
+
+	<!-- Collector Dropdown -->
+	<select asp-for="CollectorId" class="form-control"
+			asp-items="@(new SelectList(ViewBag.Collectors, "Id", "FullName"))">
+		<option value="">-- Select Collector --</option>
+	</select>
+	<span asp-validation-for="CollectorId" class="text-danger"></span>
+
+	<!-- Route Dropdown -->
+	<select asp-for="RouteId" class="form-control"
+			asp-items="@(new SelectList(ViewBag.Routes, "Id", "Name"))">
+		<option value="">-- Select Route --</option>
+	</select>
+	<span asp-validation-for="RouteId" class="text-danger"></span>
+
+	<input asp-for="ScheduleStartTime" type="datetime-local" class="form-control" />
+	<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
+
+	<button type="submit" class="btn btn-primary">Update</button>
+</form>

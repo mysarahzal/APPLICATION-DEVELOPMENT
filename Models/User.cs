@@ -1,6 +1,4 @@
-using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AspnetCoreMvcFull.Models
 {
@@ -9,24 +7,26 @@ namespace AspnetCoreMvcFull.Models
     public int Id { get; set; }
 
     [Required, EmailAddress]
-    public string Email { get; set; }
+    public string Email { get; set; }  // No nullable
 
     [Required]
-    public string Password { get; set; }
+    public string Password { get; set; }  // No nullable
 
     [Required]
-    public string FirstName { get; set; }
+    public string FirstName { get; set; }  // No nullable
 
     [Required]
-    public string LastName { get; set; }
+    public string LastName { get; set; }  // No nullable
 
     [Required]
     public string Role { get; set; } // Admin, Driver, Operator
 
     [Phone]
-    public string PhoneNumber { get; set; }
+    public string PhoneNumber { get; set; }  // No nullable
 
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }  // No nullable
+
+    public virtual ICollection<CollectionRecord> CollectionRecords { get; set; }
   }
 }
 

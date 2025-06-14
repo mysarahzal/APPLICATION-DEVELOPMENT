@@ -12,6 +12,9 @@ namespace AspnetCoreMvcFull.Data
     public DbSet<Alert> Alerts { get; set; }
     public DbSet<Schedule> Schedules { get; set; }
     public DbSet<PickupReport> PickupReports { get; set; }
+    public DbSet<Road> Roads { get; set; }
+    public DbSet<CollectionPoint> CollectionPoints { get; set; }
+    public DbSet<Truck> Trucks { get; set; }
 
   }
 }

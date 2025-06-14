@@ -1,27 +1,31 @@
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace AspnetCoreMvcFull.Models
 {
   public class Schedule
   {
-    public int Id { get; set; }
-    public int TruckId { get; set; }
-    public int CollectorId { get; set; }
-    public int RouteId { get; set; }
-    public DateTime ScheduleStartTime { get; set; }
-    public DateTime ScheduleEndTime { get; set; }
-    public DateTime? actual_start_time { get; set; }
-    public DateTime? actual_end_time { get; set; }
-    public string Status { get; set; } // "Scheduled", "Completed", "Missed"
-    public string? AdminNotes { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime? updated_at { get; set; }
+    public int Id { get; set; }  // No nullable
+    public int TruckId { get; set; }  // No nullable
+    public int CollectorId { get; set; }  // No nullable
+    public Guid RouteId { get; set; }  // No nullable, ensure the type matches the primary key of Route
+    public DateTime ScheduleStartTime { get; set; }  // No nullable
+    public DateTime ScheduleEndTime { get; set; }  // No nullable
+    public DateTime ActualStartTime { get; set; }  // No nullable
+    public DateTime ActualEndTime { get; set; }  // No nullable
+    public string Status { get; set; }  // No nullable
+    public string AdminNotes { get; set; }  // No nullable
+    public DateTime CreatedAt { get; set; }  // No nullable
+    public DateTime UpdatedAt { get; set; }  // No nullable
 
     // Navigation Properties
-    public virtual User User { get; set; }
-    public virtual Road Route { get; set; }
-    public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }
+    public virtual User User { get; set; }  // No nullable
+    public virtual Road Route { get; set; }  // No nullable
+    public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }  // No nullable
   }
 }
+
+
+
+
+
+
+
+

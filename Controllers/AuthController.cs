@@ -14,9 +14,11 @@ public class AuthController : Controller
   {
     _context = context;
   }
+
   public IActionResult ForgotPasswordBasic() => View();
   public IActionResult LoginBasic() => View();
 
+  // If you want to use async here, make sure to call async methods correctly
   [HttpPost]
   [ValidateAntiForgeryToken]
   public async Task<IActionResult> LoginBasic(LoginViewModel model)
@@ -26,9 +28,8 @@ public class AuthController : Controller
       return View(model);
     }
 
-    // TODO: Replace with actual authentication logic (e.g., check database or use Identity)
-
-    var user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
+    // Correctly use async calls, e.g., asynchronously querying the database
+    var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email); // Add async here
 
     if (user == null || user.Password != model.Password) // Not secure! Use hashing in production
     {
@@ -45,7 +46,7 @@ public class AuthController : Controller
   public IActionResult Logout()
   {
     // Optional: Clear session or cookie
-    //HttpContext.Session.Clear();
+    // HttpContext.Session.Clear();
 
     // Optional: If using Identity
     // await _signInManager.SignOutAsync();
@@ -53,5 +54,4 @@ public class AuthController : Controller
     // Redirect to login page
     return RedirectToAction("LoginBasic");
   }
-
 }

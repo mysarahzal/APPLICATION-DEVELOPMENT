@@ -1,0 +1,49 @@
+@model IEnumerable<AspnetCoreMvcFull.ViewModels.SubmittedReportViewModel>
+
+@{
+    ViewData["Title"] = "Submitted Bin Reports";
+}
+
+<h2>Submitted Bin Reports</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Bin Plate ID</th>
+            <th>Status</th>
+            <th>Reported At</th>
+            <th>Issue Description</th>
+            <th>Image</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var report in Model)
+        {
+            <tr>
+                <td>@report.BinPlateId</td>
+                <td>@(report.IssueReported ? "Issue Reported" : "No Issue")</td>
+                <td>@report.PickupTimestamp.ToString("MM/dd/yyyy hh:mm tt")</td> <!-- Formatted Date -->
+                <td>@report.IssueDescription</td>
+
+                <!-- Check if ImageUrl exists and show image if available -->
+                <td>
+                    @if (!string.IsNullOrEmpty(report.ImageUrl))
+                    {
+                        <img src="@report.ImageUrl" alt="Bin Image" width="100" height="100" />
+                    }
+                    else
+                    {
+                        <img src="/uploads/default.png" alt="Default Image" width="100" height="100" />
+                    }
+                </td>
+
+                <td>
+                    <a href="@Url.Action("Details", "BinReport", new { id = report.CollectionRecordId })">View Details</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
