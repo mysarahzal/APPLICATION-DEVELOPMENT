@@ -414,6 +414,22 @@
             <div>Horizontal Form</div>
           </a>
         </li>
+                <!-- Submit Bin Report -->
+                <li class='menu-item@(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmitBinReport") ? " active" : "")'>
+                    <a asp-controller="BinReport" asp-action="SubmitBinReport" class="menu-link">
+                        <i class="menu-icon tf-icons ri-file-edit-line"></i>
+                        <div>Submit Bin Report</div>
+                    </a>
+                </li>
+
+                <!-- Submitted Reports -->
+                <li class='menu-item@(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmittedReports") ? " active" : "")'>
+                    <a asp-controller="BinReport" asp-action="SubmittedReports" class="menu-link">
+                        <i class="menu-icon tf-icons ri-list-check-line"></i>
+                        <div>Submitted Reports</div>
+                    </a>
+                </li>
+
       </ul>
     </li>
     <!-- Form Validation -->
