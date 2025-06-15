@@ -61,6 +61,14 @@
 						<div>User Management</div>
 					</a>
 				</li>
+
+				@* Schedule Menu *@
+				<li class='menu-item@(currentPage.StartsWith("/Schedule") ? " active" : "")'>
+					<a asp-controller="Schedule" asp-action="Index" class="menu-link">
+						<div>Schedule</div>
+					</a>
+				</li>
+
 				@* Missed Pickups Menu *@
 				<li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
 					<a asp-controller="MissedPickup" asp-action="Index" class="menu-link">
