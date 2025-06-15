@@ -1,0 +1,50 @@
+@model IEnumerable<AspnetCoreMvcFull.Models.Schedule>
+
+@{
+	ViewData["Title"] = "All Pickup Schedules";
+}
+
+<h2>All Job Schedules</h2>
+<p>
+	<a asp-action="Create" class="btn btn-primary">Create New Schedule</a>
+</p>
+
+<table class="table table-striped">
+	<thead>
+		<tr>
+			<th>Collector (Operator)</th>
+			<th>Road</th>
+			<th>Scheduled Time</th>
+			<th>Status</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var item in Model)
+		{
+			<tr>
+				@($"{item.Collector.FirstName} {item.Collector.LastName}")
+				<td>@item.Road?.Name</td>
+				<td>@item.ScheduleStartTime.ToString("g")</td>
+				<td>
+					@{
+						string badgeClass = item.Status switch
+						{
+							"Completed" => "badge bg-success",
+							"Missed" => "badge bg-danger",
+							"Pending" => "badge bg-warning",
+							_ => "badge bg-info"
+						};
+					}
+					<span class="@badgeClass">@item.Status</span>
+				</td>
+				<td>
+					<div class="btn-group" role="group">
+						<a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+						<a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+					</div>
+				</td>
+			</tr>
+		}
+	</tbody>
+</table>

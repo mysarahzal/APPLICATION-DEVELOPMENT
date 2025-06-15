@@ -5,7 +5,7 @@ namespace AspnetCoreMvcFull.Models
 {
   public class Truck
   {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
     public string LicensePlate { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]  // Precision and scale for CapacityTon

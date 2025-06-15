@@ -6,8 +6,8 @@ namespace AspnetCoreMvcFull.Models
 {
   public class BinReport
   {
-    public Guid Id { get; set; }
-    public Guid BinId { get; set; }  // Foreign Key to Bin
+    public int Id { get; set; }
+    public int BinId { get; set; }  // Foreign Key to Bin
     public DateTime ReportedAt { get; set; }
 
     public string Status { get; set; }  // Not nullable anymore

@@ -2,9 +2,9 @@ namespace AspnetCoreMvcFull.Models
 {
   public class CollectionPoint
   {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
     public int ScheduleId { get; set; }  // No nullable, matching the primary key type of Schedule
-    public Guid BinId { get; set; }     // No nullable
+    public int BinId { get; set; }     // No nullable
     public int OrderInSchedule { get; set; }  // No nullable
     public bool IsCollected { get; set; }    // No nullable
     public DateTime CollectedAt { get; set; }  // No nullable

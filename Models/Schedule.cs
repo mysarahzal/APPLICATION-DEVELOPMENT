@@ -5,7 +5,7 @@ namespace AspnetCoreMvcFull.Models
     public int Id { get; set; }  // No nullable
     public int TruckId { get; set; }  // No nullable
     public int CollectorId { get; set; }  // No nullable
-    public Guid RouteId { get; set; }  // No nullable, ensure the type matches the primary key of Route
+    public int RouteId { get; set; }  // No nullable, ensure the type matches the primary key of Route
     public DateTime ScheduleStartTime { get; set; }  // No nullable
     public DateTime ScheduleEndTime { get; set; }  // No nullable
     public DateTime ActualStartTime { get; set; }  // No nullable
@@ -16,8 +16,9 @@ namespace AspnetCoreMvcFull.Models
     public DateTime UpdatedAt { get; set; }  // No nullable
 
     // Navigation Properties
+    public virtual User Collector { get; set; }
     public virtual User User { get; set; }  // No nullable
-    public virtual Road Route { get; set; }  // No nullable
+    public virtual Road Road { get; set; }  // No nullable
     public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }  // No nullable
   }
 }

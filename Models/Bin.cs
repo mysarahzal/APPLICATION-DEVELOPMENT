@@ -5,7 +5,7 @@ namespace AspnetCoreMvcFull.Models
 {
   public class Bin
   {
-    public Guid Id { get; set; }
+    public int Id { get; set; }
     public string BinPlateId { get; set; }
     public string Location { get; set; }
 
