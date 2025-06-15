@@ -5,13 +5,13 @@ namespace AspnetCoreMvcFull.Models
 {
   public class CollectionRecord
   {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
 
     // Foreign Keys
-    public int BinId { get; set; }
-    public int CollectionPointId { get; set; }
+    public Guid BinId { get; set; }
+    public Guid CollectionPointId { get; set; }
     public int UserId { get; set; }
-    public int TruckId { get; set; }
+    public Guid TruckId { get; set; }
 
     public DateTime PickupTimestamp { get; set; }
 
