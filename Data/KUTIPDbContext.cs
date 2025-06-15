@@ -21,10 +21,7 @@ namespace AspnetCoreMvcFull.Data
     public DbSet<PickupReport> PickupReports { get; set; }
     //road.cs
     public DbSet<Schedule> Schedules { get; set; }
-    public DbSet<Truck> Trucks { get; set; }
-    public DbSet<User> Users { get; set; }
-    public DbSet<Road> Roads { get; set; }
-
+    //public DbSet<PickupReport> PickupReports { get; set; }
 
     // No custom configurations here, Entity Framework Core will use conventions
   }
