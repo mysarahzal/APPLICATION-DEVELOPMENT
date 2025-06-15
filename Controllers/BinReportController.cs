@@ -133,20 +133,20 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> SubmittedReports()
     {
       var reports = await (from cr in _context.CollectionRecords
-                           join bin in _context.Bins on cr.BinId equals bin.Id
+                             //join bin in _context.Bins on cr.BinId equals bin.Id
                            join user in _context.Users on cr.UserId equals user.Id
-                           join truck in _context.Trucks on cr.TruckId equals truck.Id
+                           //join truck in _context.Trucks on cr.TruckId equals truck.Id
                            join img in _context.Images on cr.Id equals img.CollectionRecordId into images
                            from image in images.DefaultIfEmpty() // To handle the case where there may not be an image
                            select new SubmittedReportViewModel
                            {
                              CollectionRecordId = cr.Id,
-                             BinPlateId = bin.BinPlateId,
+                             //BinPlateId = bin.BinPlateId,
                              PickupTimestamp = cr.PickupTimestamp,
                              GpsLatitude = cr.GpsLatitude,
                              GpsLongitude = cr.GpsLongitude,
                              CollectorEmail = user.Email,
-                             TruckLicensePlate = truck.LicensePlate,
+                             //TruckLicensePlate = truck.LicensePlate,
                              IssueReported = cr.IssueReported,
                              IssueDescription = cr.IssueDescription,
                              ImageUrl = (image != null && image.ImageUrl != null) ? image.ImageUrl : "/uploads/default.png" // Default image if no image found

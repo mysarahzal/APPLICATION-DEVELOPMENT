@@ -3,8 +3,8 @@ using AspnetCoreMvcFull.Models;
 using AspnetCoreMvcFull.Data;
 using Microsoft.EntityFrameworkCore;
 using System;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+//using Microsoft.AspNetCore.Authorization;
+//using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
 
 namespace AspnetCoreMvcFull.Controllers
@@ -57,8 +57,16 @@ namespace AspnetCoreMvcFull.Controllers
     //[Authorize(Roles = "Admin")]
     public IActionResult Create()
     {
-      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Operator").ToList();  // optional filter
-      ViewBag.Routes = _context.Roads.ToList();
+      // Filter Collectors (Users with role = "Driver" or "Operator")
+      ViewBag.Collectors = _context.Users
+          .Where(u => u.Role == "Driver" || u.Role == "Operator").ToList();  // optional filter
+
+      ViewBag.Routes = new List<Road>
+      {
+        new Road {Id = 1, Name = "Route A" },
+        new Road {Id = 2, Name = "Route B" },
+        new Road {Id = 3, Name = "Route C" },
+      };
 
       return View("~/Views/Schedule/Create.cshtml");
     }
