@@ -16,6 +16,7 @@ namespace AspnetCoreMvcFull.Models
 
     // Navigation Properties
     public ICollection<CollectionPoint> CollectionPoints { get; set; }
+    public virtual ICollection<CollectionRecord> CollectionRecords { get; set; }
   }
 }
 

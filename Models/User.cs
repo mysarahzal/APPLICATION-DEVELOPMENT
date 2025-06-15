@@ -25,6 +25,8 @@ namespace AspnetCoreMvcFull.Models
     public string PhoneNumber { get; set; }  // No nullable
 
     public DateTime CreatedAt { get; set; }  // No nullable
+
+    public virtual ICollection<CollectionRecord> CollectionRecords { get; set; }
   }
 }
 

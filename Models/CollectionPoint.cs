@@ -12,6 +12,7 @@ namespace AspnetCoreMvcFull.Models
     // Navigation Properties
     public virtual Schedule Schedule { get; set; }  // No nullable
     public virtual Bin Bin { get; set; }           // No nullable
+    public virtual ICollection<CollectionRecord> CollectionRecords { get; set; }
   }
 }
 
