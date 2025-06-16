@@ -7,8 +7,9 @@
 <form asp-action="Create" method="post">
 	<div class="form-group mb-3">
 		<label asp-for="CollectorId">Collector</label>
-		<select asp-for="CollectorId" class="form-control"
-			  asp-items="@(new SelectList(ViewBag.Collectors, "Id", "FullName"))">
+		<select asp-for="CollectorId"
+				class="form-control"
+				asp-items="@(ViewBag.Collectors != null ? new SelectList(ViewBag.Collectors, "Id", "FullName") : null)">
 			<option value="">-- Select Collector --</option>
 		</select>
 		<span asp-validation-for="CollectorId" class="text-danger"></span>
@@ -17,7 +18,7 @@
 	<div class="form-group mb-3">
 		<label asp-for="RouteId">Route</label>
 		<select asp-for="RouteId" class="form-control"
-			  asp-items="@(new SelectList(ViewBag.Routes, "Id", "Name"))">
+				asp-items="@(ViewBag.Routes != null ? new SelectList(ViewBag.Routes, "Id", "Name") : null)">
 			<option value="">-- Select Route --</option>
 		</select>
 		<span asp-validation-for="RouteId" class="text-danger"></span>

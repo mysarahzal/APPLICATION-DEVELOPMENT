@@ -41,12 +41,12 @@ namespace AspnetCoreMvcFull.Controllers
       //if (currentUser == null) return Unauthorized();
 
       // Simulate logged-in user ID (for testing only)
-      int userId = 1; // Replace with real logic later
+      var userId = 1; // Replace with real logic later
 
       var mySchedules = await _context.Schedules
-        .Include(s => s.Collector)
+        //.Include(s => s.Collector)
         .Include(s => s.Road)
-        //.Where(s => s.CollectorId == currentUser.Id)
+        //.Where(s => s.CollectorId == userId)
         .Where(s => s.CollectorId == userId)
         .ToListAsync();
 
@@ -59,14 +59,22 @@ namespace AspnetCoreMvcFull.Controllers
     {
       // Filter Collectors (Users with role = "Driver" or "Operator")
       ViewBag.Collectors = _context.Users
-          .Where(u => u.Role == "Driver" || u.Role == "Operator").ToList();  // optional filter
+          .Where(u => u.Role == "Driver" || u.Role == "Operator")
+          .ToList() ?? new List<User>();  // optional filter
 
-      ViewBag.Routes = new List<Road>
-      {
-        new Road {Id = 1, Name = "Route A" },
-        new Road {Id = 2, Name = "Route B" },
-        new Road {Id = 3, Name = "Route C" },
-      };
+      //var routes = _context.Roads.ToList();
+
+      //ViewBag.Collectors = collectors ?? new List<User>();
+      //ViewBag.Routes = routes ?? new List<Road>();
+      ViewBag.Routes = _context.Roads
+        .ToList() ?? new List<Road>();
+
+      //ViewBag.Routes = new List<Road>
+      //{
+      //  new Road {Id = 1, Name = "Route A" },
+      //  new Road {Id = 2, Name = "Route B" },
+      //  new Road {Id = 3, Name = "Route C" },
+      //};
 
       return View("~/Views/Schedule/Create.cshtml");
     }
@@ -84,7 +92,12 @@ namespace AspnetCoreMvcFull.Controllers
         return RedirectToAction(nameof(Index));
       }
 
-      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Operator").ToList();
+      // If failed, re-populate dropdowns
+      ViewBag.Collectors = _context.Users
+          .Where(u => u.Role == "Driver" || u.Role == "Operator")
+          .ToList();
+
+      //ViewBag.Collectors = _context.Users.Where(u => u.Role == "Operator").ToList();
       ViewBag.Routes = _context.Roads.ToList();
       return View("~/Views/Schedule/Create.cshtml", schedule);
     }

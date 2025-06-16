@@ -1,11 +1,19 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace AspnetCoreMvcFull.Models
 {
   public class Schedule
   {
     public int Id { get; set; }  // No nullable
     public int TruckId { get; set; }  // No nullable
+
+    [Required]
     public int CollectorId { get; set; }  // No nullable
+
+    [Required]
     public int RouteId { get; set; }  // No nullable, ensure the type matches the primary key of Route
+
+    [Required]
     public DateTime ScheduleStartTime { get; set; }  // No nullable
     public DateTime ScheduleEndTime { get; set; }  // No nullable
     public DateTime ActualStartTime { get; set; }  // No nullable
@@ -16,9 +24,9 @@ namespace AspnetCoreMvcFull.Models
     public DateTime UpdatedAt { get; set; }  // No nullable
 
     // Navigation Properties
-    public virtual User Collector { get; set; }
+    public virtual User Collector { get; set; } = new User();
     //public virtual User User { get; set; }  // No nullable
-    public virtual Road Road { get; set; }  // No nullable
+    public virtual Road Road { get; set; } = new Road(); // No nullable
     public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }  // No nullable
   }
 }
