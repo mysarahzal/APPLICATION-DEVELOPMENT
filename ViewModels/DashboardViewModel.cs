@@ -1,0 +1,20 @@
+using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
+namespace AspnetCoreMvcFull.ViewModels
+{
+  public class DashboardViewModel
+  {
+    public int FleetCount { get; set; }
+    public int CollectorCount { get; set; }
+    public int DriverCount { get; set; }
+    public int ClientCount { get; set; }
+
+    public int TotalPickups { get; set; }
+    public int MissedPickups { get; set; }
+
+    public double SuccessRate => TotalPickups + MissedPickups > 0
+        ? Math.Round(((double)TotalPickups / (TotalPickups + MissedPickups)) * 100, 1)
+        : 0;
+  }
+}
+

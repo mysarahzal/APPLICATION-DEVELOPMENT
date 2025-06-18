@@ -1,0 +1,449 @@
+@model AspnetCoreMvcFull.ViewModels.ManageClientsBinsViewModel
+
+@{
+    ViewData["Title"] = "Client and Bin Management";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">@ViewData["Title"]</h2>
+
+            <!-- Success/Error Messages -->
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Validation Summary -->
+            <div asp-validation-summary="All" class="alert alert-danger" role="alert" style="display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs mb-4" id="managementTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="clients-tab" data-bs-toggle="tab" data-bs-target="#clients" type="button" role="tab">
+                <i class="fas fa-users me-2"></i>Clients
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="bins-tab" data-bs-toggle="tab" data-bs-target="#bins" type="button" role="tab">
+                <i class="fas fa-trash me-2"></i>Bins
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="managementTabsContent">
+        <!-- CLIENTS TAB -->
+        <div class="tab-pane fade show active" id="clients" role="tabpanel">
+            <div class="row">
+                <!-- Create Client Form -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-plus-circle me-2"></i>Add New Client
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form asp-action="CreateClient" method="post" id="createClientForm">
+                                <div class="mb-3">
+                                    <label asp-for="Client.ClientName" class="form-label"></label>
+                                    <input asp-for="Client.ClientName" class="form-control" placeholder="Enter client name" />
+                                    <span asp-validation-for="Client.ClientName" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Client.Location" class="form-label"></label>
+                                    <input asp-for="Client.Location" class="form-control" placeholder="Enter location" />
+                                    <span asp-validation-for="Client.Location" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Client.NumOfBins" class="form-label"></label>
+                                    <input asp-for="Client.NumOfBins" class="form-control" type="number" min="0" placeholder="Enter number of bins" />
+                                    <span asp-validation-for="Client.NumOfBins" class="text-danger"></span>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-save me-2"></i>Create Client
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client List -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-list me-2"></i>Client List
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Clients != null && Model.Clients.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Client Name</th>
+                                                <th>Location</th>
+                                                <th>Assigned Bins</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var client in Model.Clients)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <strong>@client.ClientName</strong>
+                                                    </td>
+                                                    <td>@client.Location</td>
+                                                    <td>
+                                                        <span class="badge bg-info">@(client.Bins?.Count ?? 0) bins</span>
+                                                    </td>
+                                                    <td>
+                                                        <!-- Edit Button -->
+                                                        <button type="button" class="btn btn-primary me-2" onclick="editClient(@client.ClientID)">
+                                                            <i class="fas fa-edit me-1"></i>Edit
+                                                        </button>
+
+                                                        <!-- Delete Button -->
+                                                        <button type="button" class="btn btn-danger" onclick="deleteClient(@client.ClientID, '@client.ClientName')">
+                                                            <i class="fas fa-trash me-1"></i>Delete
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-5">
+                                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No clients found. Create your first client to get started.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BINS TAB -->
+        <div class="tab-pane fade" id="bins" role="tabpanel">
+            <div class="row">
+                <!-- Create Bin Form -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-plus-circle me-2"></i>Add New Bin
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form asp-action="CreateBin" method="post" id="createBinForm">
+                                <div class="mb-3">
+                                    <label asp-for="Bin.BinPlateId" class="form-label"></label>
+                                    <input asp-for="Bin.BinPlateId" class="form-control" placeholder="Enter bin plate ID" />
+                                    <span asp-validation-for="Bin.BinPlateId" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Bin.Location" class="form-label"></label>
+                                    <input asp-for="Bin.Location" class="form-control" placeholder="Enter location" />
+                                    <span asp-validation-for="Bin.Location" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Bin.FillLevel" class="form-label"></label>
+                                    <input asp-for="Bin.FillLevel" class="form-control" type="number" min="0" max="100" step="0.01" placeholder="Enter fill level %" />
+                                    <span asp-validation-for="Bin.FillLevel" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Bin.Zone" class="form-label"></label>
+                                    <input asp-for="Bin.Zone" class="form-control" placeholder="Enter zone" />
+                                    <span asp-validation-for="Bin.Zone" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Bin.ClientID" class="form-label"></label>
+                                    <select asp-for="Bin.ClientID" class="form-select" asp-items="@(new SelectList(Model.Clients, "ClientID", "ClientName"))">
+                                        <option value="">-- Select Client --</option>
+                                    </select>
+                                    <span asp-validation-for="Bin.ClientID" class="text-danger"></span>
+                                </div>
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-save me-2"></i>Create Bin
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bin List -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-list me-2"></i>Bin List
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @if (Model.Bins != null && Model.Bins.Any())
+                            {
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Plate ID</th>
+                                                <th>Location</th>
+                                                <th>Fill Level</th>
+                                                <th>Zone</th>
+                                                <th>Client</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var bin in Model.Bins)
+                                            {
+                                                <tr>
+                                                    <td><strong>@bin.BinPlateId</strong></td>
+                                                    <td>@bin.Location</td>
+                                                    <td>
+                                                        <div class="progress" style="height: 20px;">
+                                                            <div class="progress-bar @(bin.FillLevel >= 80 ? "bg-danger" : bin.FillLevel >= 60 ? "bg-warning" : "bg-success")"
+                                                                 role="progressbar" style="width: @(bin.FillLevel)%">
+                                                                @bin.FillLevel%
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>@bin.Zone</td>
+                                                    <td>@bin.Client?.ClientName</td>
+                                                    <td>
+                                                        <!-- Edit Button -->
+                                                        <button type="button" class="btn btn-primary me-2" onclick="editBin('@bin.Id')">
+                                                            <i class="fas fa-edit me-1"></i>Edit
+                                                        </button>
+
+                                                        <!-- Delete Button -->
+                                                        <button type="button" class="btn btn-danger" onclick="deleteBin('@bin.Id', '@bin.BinPlateId')">
+                                                            <i class="fas fa-trash me-1"></i>Delete
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center py-5">
+                                    <i class="fas fa-trash fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No bins found. Create your first bin to get started.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Client Modal -->
+<div class="modal fade" id="editClientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="EditClient" method="post" id="editClientForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editClientId" name="Client.ClientID" />
+                    <div class="mb-3">
+                        <label for="editClientName" class="form-label">Client Name</label>
+                        <input type="text" class="form-control" id="editClientName" name="Client.ClientName" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editClientLocation" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="editClientLocation" name="Client.Location" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editClientNumOfBins" class="form-label">Number of Bins</label>
+                        <input type="number" class="form-control" id="editClientNumOfBins" name="Client.NumOfBins" min="0" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Bin Modal -->
+<div class="modal fade" id="editBinModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="EditBin" method="post" id="editBinForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Bin</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editBinId" name="Bin.Id" />
+                    <div class="mb-3">
+                        <label for="editBinPlateId" class="form-label">Bin Plate ID</label>
+                        <input type="text" class="form-control" id="editBinPlateId" name="Bin.BinPlateId" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBinLocation" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="editBinLocation" name="Bin.Location" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBinFillLevel" class="form-label">Fill Level (%)</label>
+                        <input type="number" class="form-control" id="editBinFillLevel" name="Bin.FillLevel" min="0" max="100" step="0.01" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBinZone" class="form-label">Zone</label>
+                        <input type="text" class="form-control" id="editBinZone" name="Bin.Zone" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editBinClientID" class="form-label">Client</label>
+                        <select class="form-select" id="editBinClientID" name="Bin.ClientID" required>
+                            <option value="">-- Select Client --</option>
+                            @foreach (var client in Model.Clients)
+                            {
+                                <option value="@client.ClientID">@client.ClientName</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Bin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        // Client management functions
+        function editClient(clientId) {
+            fetch(`/ClientBin/GetClient/${clientId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('editClientId').value = data.clientID;
+                    document.getElementById('editClientName').value = data.clientName;
+                    document.getElementById('editClientLocation').value = data.location;
+                    document.getElementById('editClientNumOfBins').value = data.numOfBins;
+
+                    var modal = new bootstrap.Modal(document.getElementById('editClientModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading client data');
+                });
+        }
+
+        function deleteClient(clientId, clientName) {
+            if (confirm(`Are you sure you want to delete client "${clientName}"?`)) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/ClientBin/DeleteClientConfirmed';
+
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'id';
+                input.value = clientId;
+                form.appendChild(input);
+
+                var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                var tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Bin management functions
+        function editBin(binId) {
+            fetch(`/ClientBin/GetBin/${binId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('editBinId').value = data.id;
+                    document.getElementById('editBinPlateId').value = data.binPlateId;
+                    document.getElementById('editBinLocation').value = data.location;
+                    document.getElementById('editBinFillLevel').value = data.fillLevel;
+                    document.getElementById('editBinZone').value = data.zone;
+                    document.getElementById('editBinClientID').value = data.clientID;
+
+                    var modal = new bootstrap.Modal(document.getElementById('editBinModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading bin data');
+                });
+        }
+
+        function deleteBin(binId, binPlateId) {
+            if (confirm(`Are you sure you want to delete bin "${binPlateId}"?`)) {
+                var form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/ClientBin/DeleteBinConfirmed';
+
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'id';
+                input.value = binId;
+                form.appendChild(input);
+
+                var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                var tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = token;
+                form.appendChild(tokenInput);
+
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Auto-dismiss alerts after 5 seconds
+        setTimeout(function() {
+            var alerts = document.querySelectorAll('.alert-dismissible');
+            alerts.forEach(function(alert) {
+                var bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    </script>
+}

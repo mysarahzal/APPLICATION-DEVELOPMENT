@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace AspnetCoreMvcFull.Models
 {
@@ -11,9 +12,10 @@ namespace AspnetCoreMvcFull.Models
     public Guid Id { get; set; }
 
     // Foreign Keys
-    public int BinId { get; set; }
-    public Guid CollectionPointId { get; set; }
+    public Guid BinId { get; set; }  // Change BinId to Guid (from int to Guid)
+    public Guid CollectionPointId { get; set; }  // Ensure CollectionPointId is Guid
 
+    // Navigation Properties
     [DeleteBehavior(DeleteBehavior.Restrict)]
     [ForeignKey("CollectionPointId")]
     public virtual CollectionPoint CollectionPoint { get; set; }
@@ -46,6 +48,7 @@ namespace AspnetCoreMvcFull.Models
 
     public virtual ICollection<Image> Images { get; set; }
 
+    // Constructor
     public CollectionRecord()
     {
       Bin = new Bin();

@@ -133,7 +133,7 @@ namespace AspnetCoreMvcFull.Controllers
     public async Task<IActionResult> SubmittedReports()
     {
       var reports = await (from cr in _context.CollectionRecords
-                           //join bin in _context.Bins on cr.BinId equals bin.Id
+                             //join bin in _context.Bins on cr.BinId equals bin.Id
                            join user in _context.Users on cr.UserId equals user.Id
                            //join truck in _context.Trucks on cr.TruckId equals truck.Id
                            join img in _context.Images on cr.Id equals img.CollectionRecordId into images

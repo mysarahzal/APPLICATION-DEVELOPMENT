@@ -24,9 +24,9 @@ namespace AspnetCoreMvcFull.Models
     public DateTime UpdatedAt { get; set; }  // No nullable
 
     // Navigation Properties
-    public virtual User Collector { get; set; } = new User();
+    public virtual User Collector { get; set; }
     //public virtual User User { get; set; }  // No nullable
-    public virtual Road Road { get; set; } = new Road(); // No nullable
+    public virtual Road Road { get; set; }  // No nullable
     public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }  // No nullable
   }
 }
