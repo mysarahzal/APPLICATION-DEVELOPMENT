@@ -1,34 +1,135 @@
 @model AspnetCoreMvcFull.Models.Schedule
 
-<h2>Create New Schedule</h2>
+@* @{ *@
+@* 	ViewData["Title"] = "Create Schedule"; *@
+@* 	Layout = "~/Views/Shared/_Layout.cshtml"; *@
+@* } *@
 
-<div asp-validation-summary="All" class="text-danger"></div>
+<div class="container">
+	<div class="row justify-content-center">
+		<div class="col-lg-8">
+			<!-- Header -->
+			<div class="d-flex align-items-center mb-4">
+				<a asp-action="Index" class="btn btn-outline-secondary me-3">
+					<i class="fas fa-arrow-left"></i>
+				</a>
+				<div>
+					<h2 class="mb-1">Create New Schedule</h2>
+					<p class="text-muted mb-0">UC08: Admin Creates Pickup Schedule</p>
+				</div>
+			</div>
 
-<form asp-action="Create" method="post">
-	<div class="form-group mb-3">
-		<label asp-for="CollectorId">Collector</label>
-		<select asp-for="CollectorId"
-				class="form-control"
-				asp-items="@(ViewBag.Collectors != null ? new SelectList(ViewBag.Collectors, "Id", "FullName") : null)">
-			<option value="">-- Select Collector --</option>
-		</select>
-		<span asp-validation-for="CollectorId" class="text-danger"></span>
+			<!-- Form Card -->
+			<div class="card shadow-sm border-0">
+				<div class="card-body p-4">
+					@* <form asp-action="Create" method="post"> *@
+						<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+						<div class="row">
+							<!-- Collector Selection -->
+							<div class="col-md-6 mb-3">
+								<label asp-for="CollectorId" class="form-label">
+									<i class="fas fa-user me-2"></i>Collector
+								</label>
+								<select asp-for="CollectorId" class="form-select" asp-items="ViewBag.CollectorId">
+									<option value="">Select a collector</option>
+								</select>
+								<span asp-validation-for="CollectorId" class="text-danger"></span>
+							</div>
+
+							<!-- Route Selection -->
+							<div class="col-md-6 mb-3">
+								<label asp-for="RouteId" class="form-label">
+									<i class="fas fa-map-marker-alt me-2"></i>Route
+								</label>
+								<select asp-for="RouteId" class="form-select" asp-items="ViewBag.RouteId">
+									<option value="">Select a route</option>
+								</select>
+								<span asp-validation-for="RouteId" class="text-danger"></span>
+							</div>
+						</div>
+
+						@* <div class="row"> *@
+						@* 	<!-- Scheduled Date --> *@
+						@* 	<div class="col-md-6 mb-3"> *@
+						@* 		<label asp-for="ScheduledDate" class="form-label"> *@
+						@* 			<i class="fas fa-calendar me-2"></i>Scheduled Date *@
+						@* 		</label> *@
+						@* 		<input asp-for="ScheduledDate" class="form-control" type="date" /> *@
+						@* 		<span asp-validation-for="ScheduledDate" class="text-danger"></span> *@
+						@* 	</div> *@
+
+							<!-- Scheduled Time -->
+							<div class="col-md-6 mb-3">
+							<label asp-for="ScheduleStartTime" class="form-label">
+									<i class="fas fa-clock me-2"></i>Scheduled Time
+								</label>
+							<input asp-for="ScheduleStartTime" class="form-control" type="time" />
+							<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
+							</div>
+						</div>
+
+						@* <div class="row"> *@
+						@* 	<!-- Priority --> *@
+						@* 	<div class="col-md-6 mb-3"> *@
+						@* 		<label asp-for="Priority" class="form-label"> *@
+						@* 			<i class="fas fa-exclamation-triangle me-2"></i>Priority *@
+						@* 		</label> *@
+						@* 		<select asp-for="Priority" class="form-select" asp-items="ViewBag.Priority"> *@
+						@* 		</select> *@
+						@* 		<span asp-validation-for="Priority" class="text-danger"></span> *@
+						@* 	</div> *@
+
+							<!-- Status -->
+							<div class="col-md-6 mb-3">
+								<label asp-for="Status" class="form-label">
+									<i class="fas fa-info-circle me-2"></i>Status
+								</label>
+								<select asp-for="Status" class="form-select" asp-items="ViewBag.Status">
+								</select>
+								<span asp-validation-for="Status" class="text-danger"></span>
+							</div>
+						</div>
+
+						@* <!-- Notes --> *@
+						@* <div class="mb-4"> *@
+						@* 	<label asp-for="Notes" class="form-label"> *@
+						@* 		<i class="fas fa-sticky-note me-2"></i>Notes (Optional) *@
+						@* 	</label> *@
+						@* 	<textarea asp-for="Notes" class="form-control" rows="3" *@
+						@* 			  placeholder="Add any special instructions or notes..."></textarea> *@
+						@* 	<span asp-validation-for="Notes" class="text-danger"></span> *@
+						@* </div> *@
+
+						<!-- Action Buttons -->
+						<div class="d-flex gap-2">
+							<button type="submit" class="btn btn-primary">
+								<i class="fas fa-save me-2"></i>Create Schedule
+							</button>
+							<a asp-action="Index" class="btn btn-outline-secondary">
+								<i class="fas fa-times me-2"></i>Cancel
+							</a>
+						</div>
+					@* </form> *@
+				</div>
+			</div>
+		</div>
 	</div>
+</div>
 
-	<div class="form-group mb-3">
-		<label asp-for="RouteId">Route</label>
-		<select asp-for="RouteId" class="form-control"
-				asp-items="@(ViewBag.Routes != null ? new SelectList(ViewBag.Routes, "Id", "Name") : null)">
-			<option value="">-- Select Route --</option>
-		</select>
-		<span asp-validation-for="RouteId" class="text-danger"></span>
-	</div>
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
 
-	<div class="form-group mb-3">
-		<label asp-for="ScheduleStartTime">Schedule Start Time</label>
-		<input asp-for="ScheduleStartTime" type="datetime-local" class="form-control" />
-		<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
-	</div>
-
-	<button type="submit" class="btn btn-primary">Save</button>
-</form>
+	<script>
+		// Set minimum date to today
+		document.addEventListener('DOMContentLoaded', function() {
+			const dateInput = document.querySelector('input[type="date"]');
+			if (dateInput) {
+				const today = new Date().toISOString().split('T')[0];
+				dateInput.setAttribute('min', today);
+			}
+		});
+	</script>
+}

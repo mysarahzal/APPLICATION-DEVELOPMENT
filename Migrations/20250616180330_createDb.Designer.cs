@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-    [Migration("20250615160107_createDb")]
+    [Migration("20250616180330_createDb")]
     partial class createDb
     {
         /// <inheritdoc />
