@@ -1,11 +1,19 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace AspnetCoreMvcFull.Models
 {
   public class Schedule
   {
     public int Id { get; set; }  // No nullable
     public int TruckId { get; set; }  // No nullable
+
+    [Required]
     public int CollectorId { get; set; }  // No nullable
+
+    [Required]
     public int RouteId { get; set; }  // No nullable, ensure the type matches the primary key of Route
+
+    [Required]
     public DateTime ScheduleStartTime { get; set; }  // No nullable
     public DateTime ScheduleEndTime { get; set; }  // No nullable
     public DateTime ActualStartTime { get; set; }  // No nullable

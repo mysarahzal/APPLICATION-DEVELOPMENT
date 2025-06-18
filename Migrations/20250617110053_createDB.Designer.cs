@@ -4,6 +4,7 @@ using AspnetCoreMvcFull.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-    partial class KUTIPDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250617110053_createDB")]
+    partial class createDB
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,18 +72,15 @@ namespace AspnetCoreMvcFull.Migrations
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("BinPlateId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ClientID")
-                        .HasColumnType("int");
 
                     b.Property<decimal>("FillLevel")
                         .HasColumnType("decimal(18,2)");
@@ -94,8 +94,6 @@ namespace AspnetCoreMvcFull.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ClientID");
 
                     b.ToTable("Bins");
                 });
@@ -132,7 +130,7 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BinId");
+                    b.HasIndex("BinId1");
 
                     b.ToTable("BinReports");
                 });
@@ -163,7 +161,7 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BinId");
+                    b.HasIndex("BinId1");
 
                     b.HasIndex("ScheduleId");
 
@@ -176,8 +174,8 @@ namespace AspnetCoreMvcFull.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("BinId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("BinId")
+                        .HasColumnType("int");
 
                     b.Property<string>("BinPlateIdCaptured")
                         .IsRequired()
@@ -470,43 +468,11 @@ namespace AspnetCoreMvcFull.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Client", b =>
-                {
-                    b.Property<int>("ClientID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClientID"));
-
-                    b.Property<string>("ClientName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("ClientID");
-
-                    b.ToTable("Clients");
-                });
-
-            modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>
-                {
-                    b.HasOne("Client", "Client")
-                        .WithMany("Bins")
-                        .HasForeignKey("ClientID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Client");
-                });
-
             modelBuilder.Entity("AspnetCoreMvcFull.Models.BinReport", b =>
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
                         .WithMany()
-                        .HasForeignKey("BinId")
+                        .HasForeignKey("BinId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -517,7 +483,7 @@ namespace AspnetCoreMvcFull.Migrations
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
                         .WithMany("CollectionPoints")
-                        .HasForeignKey("BinId")
+                        .HasForeignKey("BinId1")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -636,11 +602,6 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.User", b =>
                 {
                     b.Navigation("CollectionRecords");
-                });
-
-            modelBuilder.Entity("Client", b =>
-                {
-                    b.Navigation("Bins");
                 });
 #pragma warning restore 612, 618
         }
