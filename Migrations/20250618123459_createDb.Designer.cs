@@ -12,7 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
+<<<<<<<< HEAD:Migrations/20250616180330_createDb.Designer.cs
     [Migration("20250616180330_createDb")]
+========
+    [Migration("20250618123459_createDb")]
+>>>>>>>> 4da1f4bee854ef9ab089044b7c234d6196906794:Migrations/20250618123459_createDb.Designer.cs
     partial class createDb
     {
         /// <inheritdoc />
@@ -72,28 +76,34 @@ namespace AspnetCoreMvcFull.Migrations
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("BinPlateId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("ClientID")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("FillLevel")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<string>("Location")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Zone")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ClientID");
 
                     b.ToTable("Bins");
                 });
@@ -106,9 +116,6 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<Guid>("BinId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("BinId1")
-                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -130,9 +137,35 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BinId1");
+                    b.HasIndex("BinId");
 
                     b.ToTable("BinReports");
+                });
+
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Client", b =>
+                {
+                    b.Property<int>("ClientID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClientID"));
+
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("NumOfBins")
+                        .HasColumnType("int");
+
+                    b.HasKey("ClientID");
+
+                    b.ToTable("Clients");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionPoint", b =>
@@ -143,9 +176,6 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<Guid>("BinId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("BinId1")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("CollectedAt")
                         .HasColumnType("datetime2");
@@ -161,7 +191,7 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BinId1");
+                    b.HasIndex("BinId");
 
                     b.HasIndex("ScheduleId");
 
@@ -174,8 +204,8 @@ namespace AspnetCoreMvcFull.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("BinId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("BinId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("BinPlateIdCaptured")
                         .IsRequired()
@@ -468,11 +498,22 @@ namespace AspnetCoreMvcFull.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>
+                {
+                    b.HasOne("AspnetCoreMvcFull.Models.Client", "Client")
+                        .WithMany("Bins")
+                        .HasForeignKey("ClientID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+                });
+
             modelBuilder.Entity("AspnetCoreMvcFull.Models.BinReport", b =>
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
                         .WithMany()
-                        .HasForeignKey("BinId1")
+                        .HasForeignKey("BinId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -483,7 +524,7 @@ namespace AspnetCoreMvcFull.Migrations
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
                         .WithMany("CollectionPoints")
-                        .HasForeignKey("BinId1")
+                        .HasForeignKey("BinId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -577,6 +618,11 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Navigation("CollectionPoints");
 
                     b.Navigation("CollectionRecords");
+                });
+
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Client", b =>
+                {
+                    b.Navigation("Bins");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionPoint", b =>
