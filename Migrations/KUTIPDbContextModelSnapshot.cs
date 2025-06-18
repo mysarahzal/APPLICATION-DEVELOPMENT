@@ -73,25 +73,26 @@ namespace AspnetCoreMvcFull.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
                     b.Property<string>("BinPlateId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("ClientID")
                         .HasColumnType("int");
 
                     b.Property<decimal>("FillLevel")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<string>("Location")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Zone")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("Id");
 
@@ -108,9 +109,6 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<Guid>("BinId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("BinId1")
-                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -137,6 +135,32 @@ namespace AspnetCoreMvcFull.Migrations
                     b.ToTable("BinReports");
                 });
 
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Client", b =>
+                {
+                    b.Property<int>("ClientID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClientID"));
+
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("NumOfBins")
+                        .HasColumnType("int");
+
+                    b.HasKey("ClientID");
+
+                    b.ToTable("Clients");
+                });
+
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionPoint", b =>
                 {
                     b.Property<Guid>("Id")
@@ -145,9 +169,6 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<Guid>("BinId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("BinId1")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("CollectedAt")
                         .HasColumnType("datetime2");
@@ -470,30 +491,9 @@ namespace AspnetCoreMvcFull.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("Client", b =>
-                {
-                    b.Property<int>("ClientID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClientID"));
-
-                    b.Property<string>("ClientName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("ClientID");
-
-                    b.ToTable("Clients");
-                });
-
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>
                 {
-                    b.HasOne("Client", "Client")
+                    b.HasOne("AspnetCoreMvcFull.Models.Client", "Client")
                         .WithMany("Bins")
                         .HasForeignKey("ClientID")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -613,6 +613,11 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Navigation("CollectionRecords");
                 });
 
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Client", b =>
+                {
+                    b.Navigation("Bins");
+                });
+
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionPoint", b =>
                 {
                     b.Navigation("CollectionRecords");
@@ -636,11 +641,6 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.User", b =>
                 {
                     b.Navigation("CollectionRecords");
-                });
-
-            modelBuilder.Entity("Client", b =>
-                {
-                    b.Navigation("Bins");
                 });
 #pragma warning restore 612, 618
         }

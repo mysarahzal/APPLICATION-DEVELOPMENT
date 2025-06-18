@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AspnetCoreMvcFull.Migrations
 {
     /// <inheritdoc />
-    public partial class createDB : Migration
+    public partial class createDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -33,19 +33,18 @@ namespace AspnetCoreMvcFull.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Bins",
+                name: "Clients",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    ClientID = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    BinPlateId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Location = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FillLevel = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Zone = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    ClientName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Location = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    NumOfBins = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Bins", x => x.Id);
+                    table.PrimaryKey("PK_Clients", x => x.ClientID);
                 });
 
             migrationBuilder.CreateTable(
@@ -116,26 +115,24 @@ namespace AspnetCoreMvcFull.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "BinReports",
+                name: "Bins",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReportedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IsIssueReported = table.Column<bool>(type: "bit", nullable: false),
-                    IssueDescription = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    BinId1 = table.Column<int>(type: "int", nullable: false)
+                    BinPlateId = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Location = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    FillLevel = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    Zone = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    ClientID = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_BinReports", x => x.Id);
+                    table.PrimaryKey("PK_Bins", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_BinReports_Bins_BinId1",
-                        column: x => x.BinId1,
-                        principalTable: "Bins",
-                        principalColumn: "Id",
+                        name: "FK_Bins_Clients_ClientID",
+                        column: x => x.ClientID,
+                        principalTable: "Clients",
+                        principalColumn: "ClientID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -176,6 +173,29 @@ namespace AspnetCoreMvcFull.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "BinReports",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ReportedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsIssueReported = table.Column<bool>(type: "bit", nullable: false),
+                    IssueDescription = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BinReports", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BinReports_Bins_BinId",
+                        column: x => x.BinId,
+                        principalTable: "Bins",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CollectionPoints",
                 columns: table => new
                 {
@@ -184,15 +204,14 @@ namespace AspnetCoreMvcFull.Migrations
                     BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OrderInSchedule = table.Column<int>(type: "int", nullable: false),
                     IsCollected = table.Column<bool>(type: "bit", nullable: false),
-                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    BinId1 = table.Column<int>(type: "int", nullable: false)
+                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_CollectionPoints", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_CollectionPoints_Bins_BinId1",
-                        column: x => x.BinId1,
+                        name: "FK_CollectionPoints_Bins_BinId",
+                        column: x => x.BinId,
                         principalTable: "Bins",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -234,7 +253,7 @@ namespace AspnetCoreMvcFull.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BinId = table.Column<int>(type: "int", nullable: false),
+                    BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CollectionPointId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
                     TruckId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -297,14 +316,19 @@ namespace AspnetCoreMvcFull.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_BinReports_BinId1",
+                name: "IX_BinReports_BinId",
                 table: "BinReports",
-                column: "BinId1");
+                column: "BinId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CollectionPoints_BinId1",
+                name: "IX_Bins_ClientID",
+                table: "Bins",
+                column: "ClientID");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CollectionPoints_BinId",
                 table: "CollectionPoints",
-                column: "BinId1");
+                column: "BinId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CollectionPoints_ScheduleId",
@@ -384,6 +408,9 @@ namespace AspnetCoreMvcFull.Migrations
 
             migrationBuilder.DropTable(
                 name: "Schedules");
+
+            migrationBuilder.DropTable(
+                name: "Clients");
 
             migrationBuilder.DropTable(
                 name: "Roads");
