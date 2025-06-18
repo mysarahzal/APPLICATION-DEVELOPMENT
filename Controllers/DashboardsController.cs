@@ -18,7 +18,7 @@ public class DashboardsController : Controller
 
   public IActionResult Index()
   {
-    var vm = new Dashboards
+    var vm = new DashboardViewModel
     {
       CollectorCount = _context.Users.Count(u => u.Role.ToLower() == "collector"),
       DriverCount = _context.Users.Count(u => u.Role.ToLower() == "driver"),

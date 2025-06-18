@@ -1,11 +1,8 @@
-using System;
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace AspnetCoreMvcFull.Models
+namespace AspnetCoreMvcFull.ViewModels
 {
-
-  public class Dashboards
+  public class DashboardViewModel
   {
     public int FleetCount { get; set; }
     public int CollectorCount { get; set; }
@@ -14,8 +11,10 @@ namespace AspnetCoreMvcFull.Models
 
     public int TotalPickups { get; set; }
     public int MissedPickups { get; set; }
+
     public double SuccessRate => TotalPickups + MissedPickups > 0
         ? Math.Round(((double)TotalPickups / (TotalPickups + MissedPickups)) * 100, 1)
         : 0;
   }
 }
+
