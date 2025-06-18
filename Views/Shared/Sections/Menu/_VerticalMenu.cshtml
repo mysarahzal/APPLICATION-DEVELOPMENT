@@ -21,86 +21,54 @@
 
     <div class="menu-inner-shadow"></div>
 
-    @* ! Full version menu-items *@
-    <ul class="menu-inner py-1">
-        <!-- Dashboards -->
-        <li class='menu-item@(currentPage.EndsWith("/") || currentPage.StartsWith("/Dashboards") ? " active open" : "")'>
-            <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons ri-home-smile-line"></i>
-                <div>Dashboards</div>
-                <div class="badge bg-danger rounded-pill ms-auto">5</div>
-            </a>
-            <ul class="menu-sub">
-                <li class='menu-item@(currentPage == "/Dashboards/CRM" ? " active" : "")'>
-                    <a href="https://demos.themeselection.com/materio-aspnet-core-mvc-admin-template/html/vertical-menu-template/dashboards-crm.html" target="_blank" class="menu-link">
-                        <div>CRM</div><div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">Pro</div>
-                    </a>
-                </li>
-                <li class='menu-item@(currentPage == "/" ? " active" : "")'>
-                    <a asp-controller="Dashboards" asp-action="Index" class="menu-link">
-                        <div>Analytics</div>
-                    </a>
-                </li>
-                <li class='menu-item@(currentPage == "/Ecommerce/Dashboard" ? " active" : "")'>
-                    <a href="https://demos.themeselection.com/materio-aspnet-core-mvc-admin-template/html/vertical-menu-template/app-ecommerce-dashboard.html" target="_blank" class="menu-link">
-                        <div>eCommerce</div><div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">Pro</div>
-                    </a>
-                </li>
-                <li class='menu-item@(currentPage == "/Logistics/Dashboard" ? " active" : "")'>
-                    <a href="https://demos.themeselection.com/materio-aspnet-core-mvc-admin-template/html/vertical-menu-template/app-logistics-dashboard.html" target="_blank" class="menu-link">
-                        <div>Logistics</div><div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">Pro</div>
-                    </a>
-                </li>
-                <li class='menu-item@(currentPage == "/Academy/Dashboard" ? " active" : "")'>
-                    <a href="https://demos.themeselection.com/materio-aspnet-core-mvc-admin-template/html/vertical-menu-template/app-academy-dashboard.html" target="_blank" class="menu-link">
-                        <div>Academy</div><div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">Pro</div>
-                    </a>
-                </li>
-                <li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
-                    <a asp-controller="User" asp-action="Index" class="menu-link">
-                        <div>User Management</div>
-                    </a>
-                </li>
-
-                @* Schedule Menu *@
-                <li class='menu-item@(currentPage.StartsWith("/Schedule") ? " active" : "")'>
-                    <a asp-controller="Schedule" asp-action="Index" class="menu-link">
-                        @* <i class="menu-icon tf-icons ri-table-2"></i> *@
-                        <div>Schedule</div>
-                    </a>
-                </li>
-
-                @* Missed Pickups Menu *@
-                <li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
-                    <a asp-controller="MissedPickup" asp-action="Index" class="menu-link">
-                        <div>Missed Pickup</div>
-                    </a>
-                </li>
-                <!-- Submit Bin Report -->
-                <li class='menu-item@(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmitBinReport") ? " active" : "")'>
-                    <a asp-controller="BinReport" asp-action="SubmitBinReport" class="menu-link">
-                        <i class="menu-icon tf-icons ri-file-edit-line"></i>
-                        <div>Submit Bin Report</div>
-                    </a>
-                </li>
-
-                <!-- Submitted Reports -->
-                <li class='menu-item@(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmittedReports") ? " active" : "")'>
-                    <a asp-controller="BinReport" asp-action="SubmittedReports" class="menu-link">
-                        <i class="menu-icon tf-icons ri-list-check-line"></i>
-                        <div>Submitted Reports</div>
-                    </a>
-                </li>
-
-                <!-- Manage Client Bins (New button) -->
-                <li class='menu-item@(currentPage.StartsWith("/ClientBin") ? " active" : "")'>
-                    <a asp-controller="ClientBin" asp-action="Index" class="menu-link">
-                        <i class="menu-icon tf-icons ri-database-line"></i>
-                        <div>Manage Client Bins</div>
-                    </a>
-                </li>
-            </ul>
+  @* ! Full version menu-items *@
+  <ul class="menu-inner py-1">
+    <!-- Dashboards -->
+    <li class='menu-item@(currentPage.EndsWith("/") || currentPage.StartsWith("/Dashboards") ? " active open" : "")'>
+      <a href="javascript:void(0);" class="menu-link menu-toggle">
+        <i class="menu-icon tf-icons ri-home-smile-line"></i>
+        <div>Dashboards</div>
+        <div class="badge bg-danger rounded-pill ms-auto">5</div>
+      </a>
+      <ul class="menu-sub">
+        <li class='menu-item@(currentPage == "/Dashboards/CRM" ? " active" : "")'>
+          <a href="https://demos.themeselection.com/materio-aspnet-core-mvc-admin-template/html/vertical-menu-template/dashboards-crm.html" target="_blank" class="menu-link">
+            <div>CRM</div><div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">Pro</div>
+          </a>
         </li>
+        <li class='menu-item@(currentPage == "/" ? " active" : "")'>
+          <a asp-controller="Dashboards" asp-action="Index" class="menu-link">
+            <div>Analytics</div>
+          </a>
+        </li>
+        <li class='menu-item@(currentPage == "/Ecommerce/Dashboard" ? " active" : "")'>
+          <a href="https://demos.themeselection.com/materio-aspnet-core-mvc-admin-template/html/vertical-menu-template/app-ecommerce-dashboard.html" target="_blank" class="menu-link">
+            <div>eCommerce</div><div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">Pro</div>
+          </a>
+        </li>
+        <li class='menu-item@(currentPage == "/Logistics/Dashboard" ? " active" : "")'>
+          <a href="https://demos.themeselection.com/materio-aspnet-core-mvc-admin-template/html/vertical-menu-template/app-logistics-dashboard.html" target="_blank" class="menu-link">
+            <div>Logistics</div><div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">Pro</div>
+          </a>
+        </li>
+        <li class='menu-item@(currentPage == "/Academy/Dashboard" ? " active" : "")'>
+          <a href="https://demos.themeselection.com/materio-aspnet-core-mvc-admin-template/html/vertical-menu-template/app-academy-dashboard.html" target="_blank" class="menu-link">
+            <div>Academy</div><div class="badge bg-label-primary fs-tiny rounded-pill ms-auto">Pro</div>
+          </a>
+        </li>
+				<li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
+					<a asp-controller="User" asp-action="Index" class="menu-link">
+						<div>User Management</div>
+					</a>
+				</li>
+				@* Missed Pickups Menu *@
+				<li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
+					<a asp-controller="MissedPickup" asp-action="Index" class="menu-link">
+						<div>Missed Pickup</div>
+					</a>
+				</li>
+      </ul>
+    </li>
 
         <!-- Layouts -->
         <li class='menu-item@(currentPage.StartsWith("/LayoutExamples") ? " active open" : "")'>

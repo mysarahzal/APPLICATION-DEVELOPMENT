@@ -41,12 +41,12 @@ namespace AspnetCoreMvcFull.Controllers
       //if (currentUser == null) return Unauthorized();
 
       // Simulate logged-in user ID (for testing only)
-      int userId = 1; // Replace with real logic later
+      var userId = 1; // Replace with real logic later
 
       var mySchedules = await _context.Schedules
-        .Include(s => s.Collector)
+        //.Include(s => s.Collector)
         .Include(s => s.Road)
-        //.Where(s => s.CollectorId == currentUser.Id)
+        //.Where(s => s.CollectorId == userId)
         .Where(s => s.CollectorId == userId)
         .ToListAsync();
 
@@ -84,7 +84,12 @@ namespace AspnetCoreMvcFull.Controllers
         return RedirectToAction(nameof(Index));
       }
 
-      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Operator").ToList();
+      // If failed, re-populate dropdowns
+      ViewBag.Collectors = _context.Users
+          .Where(u => u.Role == "Driver" || u.Role == "Operator")
+          .ToList();
+
+      //ViewBag.Collectors = _context.Users.Where(u => u.Role == "Operator").ToList();
       ViewBag.Routes = _context.Roads.ToList();
       return View("~/Views/Schedule/Create.cshtml", schedule);
     }
