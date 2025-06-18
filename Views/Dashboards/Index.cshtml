@@ -6,6 +6,7 @@
 @section VendorStyles {
 	<link rel="stylesheet" href="~/vendor/libs/apex-charts/apex-charts.css" />
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 }
 
 @section VendorScripts {
@@ -13,6 +14,7 @@
 	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+	<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
 }
 
 @section PageScripts {
@@ -211,220 +213,68 @@
 	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
 		<!-- Map Section -->
-		<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-			<div class="flex justify-between items-center mb-4">
-				<h3 class="text-lg font-semibold text-gray-800">Live Tracking in Johor</h3>
-				<div class="flex items-center space-x-4">
-					<div class="flex items-center">
-						<span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-						<span class="text-sm text-gray-600">Collected</span>
-					</div>
-					<div class="flex items-center">
-						<span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-						<span class="text-sm text-gray-600">Missed</span>
-					</div>
-					<div class="flex items-center">
-						<span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-						<span class="text-sm text-gray-600">Trucks</span>
-					</div>
-					<div class="flex items-center">
-						<span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
-						<span class="text-sm text-gray-600">Routes</span>
+		<!-- Charts Section -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+			<!-- Beautiful Live Map Section -->
+			<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+				<div class="d-flex justify-content-between align-items-center mb-3">
+					<h4 class="fw-bold mb-0">Live Tracking in Johor</h4>
+					<div class="d-flex gap-4 align-items-center">
+						<div class="d-flex align-items-center gap-2">
+							<img src="~/img/elements/greenbin.png" width="22" height="22" />
+							<span class="text-muted small">Collected Bin</span>
+						</div>
+						<div class="d-flex align-items-center gap-2">
+							<img src="~/img/elements/redbin.png" width="22" height="22" />
+							<span class="text-muted small">Missed Bin</span>
+						</div>
 					</div>
 				</div>
+				<div id="map" class="w-100 rounded shadow" style="height: 450px;"></div>
 			</div>
-			<div id="map" class="w-100" style="height: 400px;"></div>
-
-		</div>
 	</div>
+</div>
 </div>
 
   <!-- Data Tables -->
-  <div class="col-12">
-    <div class="card overflow-hidden">
-      <div class="table-responsive">
-        <table class="table table-sm">
-          <thead>
-            <tr>
-              <th class="text-truncate">User</th>
-              <th class="text-truncate">Email</th>
-              <th class="text-truncate">Role</th>
-              <th class="text-truncate">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-4">
-                    <img src="~/img/avatars/1.png" alt="Avatar" class="rounded-circle">
-                  </div>
-                  <div>
-                    <h6 class="mb-0 text-truncate">Jordan Stevenson</h6>
-                    <small class="text-truncate">&#64;amiccoo</small>
-                  </div>
-                </div>
-              </td>
-              <td class="text-truncate">susanna.Lind57&#64;gmail.com</td>
-              <td class="text-truncate">
-                <div class="d-flex align-items-center">
-                  <i class="ri-vip-crown-line ri-22px text-primary me-2"></i>
-                  <span>Admin</span>
-                </div>
-              </td>
-              <td><span class="badge bg-label-warning rounded-pill">Pending</span></td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-4">
-                    <img src="~/img/avatars/3.png" alt="Avatar" class="rounded-circle">
-                  </div>
-                  <div>
-                    <h6 class="mb-0 text-truncate">Benedetto Rossiter</h6>
-                    <small class="text-truncate">&#64;brossiter15</small>
-                  </div>
-                </div>
-              </td>
-              <td class="text-truncate">estelle.Bailey10&#64;gmail.com</td>
-              <td class="text-truncate">
-                <div class="d-flex align-items-center">
-                  <i class="ri-edit-box-line text-warning ri-22px me-2"></i>
-                  <span>Editor</span>
-                </div>
-              </td>
-              <td><span class="badge bg-label-success rounded-pill">Active</span></td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-4">
-                    <img src="~/img/avatars/2.png" alt="Avatar" class="rounded-circle">
-                  </div>
-                  <div>
-                    <h6 class="mb-0 text-truncate">Bentlee Emblin</h6>
-                    <small class="text-truncate">&#64;bemblinf</small>
-                  </div>
-                </div>
-              </td>
-              <td class="text-truncate">milo86&#64;hotmail.com</td>
-              <td class="text-truncate">
-                <div class="d-flex align-items-center">
-                  <i class="ri-computer-line text-danger ri-22px me-2"></i>
-                  <span>Author</span>
-                </div>
-              </td>
-              <td><span class="badge bg-label-success rounded-pill">Active</span></td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-4">
-                    <img src="~/img/avatars/5.png" alt="Avatar" class="rounded-circle">
-                  </div>
-                  <div>
-                    <h6 class="mb-0 text-truncate">Bertha Biner</h6>
-                    <small class="text-truncate">&#64;bbinerh</small>
-                  </div>
-                </div>
-              </td>
-              <td class="text-truncate">lonnie35&#64;hotmail.com</td>
-              <td class="text-truncate">
-                <div class="d-flex align-items-center">
-                  <i class="ri-edit-box-line text-warning ri-22px me-2"></i>
-                  <span>Editor</span>
-                </div>
-              </td>
-              <td><span class="badge bg-label-warning rounded-pill">Pending</span></td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-4">
-                    <img src="~/img/avatars/4.png" alt="Avatar" class="rounded-circle">
-                  </div>
-                  <div>
-                    <h6 class="mb-0 text-truncate">Beverlie Krabbe</h6>
-                    <small class="text-truncate">&#64;bkrabbe1d</small>
-                  </div>
-                </div>
-              </td>
-              <td class="text-truncate">ahmad_Collins&#64;yahoo.com</td>
-              <td class="text-truncate">
-                <div class="d-flex align-items-center">
-                  <i class="ri-pie-chart-2-line ri-22px text-info me-2"></i>
-                  <span>Maintainer</span>
-                </div>
-              </td>
-              <td><span class="badge bg-label-success rounded-pill">Active</span></td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-4">
-                    <img src="~/img/avatars/7.png" alt="Avatar" class="rounded-circle">
-                  </div>
-                  <div>
-                    <h6 class="mb-0 text-truncate">Bradan Rosebotham</h6>
-                    <small class="text-truncate">&#64;brosebothamz</small>
-                  </div>
-                </div>
-              </td>
-              <td class="text-truncate">tillman.Gleason68&#64;hotmail.com</td>
-              <td class="text-truncate">
-                <div class="d-flex align-items-center">
-                  <i class="ri-edit-box-line text-warning ri-22px me-2"></i>
-                  <span>Editor</span>
-                </div>
-              </td>
-              <td><span class="badge bg-label-warning rounded-pill">Pending</span></td>
-            </tr>
-            <tr>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-4">
-                    <img src="~/img/avatars/6.png" alt="Avatar" class="rounded-circle">
-                  </div>
-                  <div>
-                    <h6 class="mb-0 text-truncate">Bree Kilday</h6>
-                    <small class="text-truncate">&#64;bkildayr</small>
-                  </div>
-                </div>
-              </td>
-              <td class="text-truncate">otho21&#64;gmail.com</td>
-              <td class="text-truncate">
-                <div class="d-flex align-items-center">
-                  <i class="ri-user-3-line ri-22px text-success me-2"></i>
-                  <span>Subscriber</span>
-                </div>
-              </td>
-              <td><span class="badge bg-label-success rounded-pill">Active</span></td>
-            </tr>
-            <tr class="border-transparent">
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="avatar avatar-sm me-4">
-                    <img src="~/img/avatars/1.png" alt="Avatar" class="rounded-circle">
-                  </div>
-                  <div>
-                    <h6 class="mb-0 text-truncate">Breena Gallemore</h6>
-                    <small class="text-truncate">&#64;bgallemore6</small>
-                  </div>
-                </div>
-              </td>
-              <td class="text-truncate">florencio.Little&#64;hotmail.com</td>
-              <td class="text-truncate">
-                <div class="d-flex align-items-center">
-                  <i class="ri-user-3-line ri-22px text-success me-2"></i>
-                  <span>Subscriber</span>
-                </div>
-              </td>
-              <td><span class="badge bg-label-secondary rounded-pill">Inactive</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-  <!--/ Data Tables -->
+<!-- Recent Activity Table -->
+<div class="col-12">
+	<div class="card overflow-hidden">
+		<div class="card-header">
+			<h5 class="mb-0">Recent Activity</h5>
+		</div>
+		<div class="table-responsive">
+			<table class="table table-hover">
+				<thead class="bg-light">
+					<tr>
+						<th>Collector</th>
+						<th>Bin ID</th>
+						<th>Action</th>
+						<th>Timestamp</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td>Ravi</td>
+						<td>BIN-JB-003</td>
+						<td><span class="badge bg-label-success">✅ Collected</span></td>
+						<td>18 Jun 2025, 10:30 AM</td>
+					</tr>
+					<tr>
+						<td>Nina</td>
+						<td>BIN-JB-005</td>
+						<td><span class="badge bg-label-danger">❌ Missed</span></td>
+						<td>18 Jun 2025, 09:00 AM</td>
+					</tr>
+					<tr>
+						<td>Ahmad</td>
+						<td>BIN-JB-001</td>
+						<td><span class="badge bg-label-warning">🛠️ Issue Reported</span></td>
+						<td>17 Jun 2025, 4:45 PM</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
 </div>
+  <!--/ Data Tables -->

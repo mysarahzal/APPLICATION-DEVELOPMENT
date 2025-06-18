@@ -12,12 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-<<<<<<<< HEAD:Migrations/20250616180330_createDb.Designer.cs
-    [Migration("20250616180330_createDb")]
-========
-    [Migration("20250618123459_createDb")]
->>>>>>>> 4da1f4bee854ef9ab089044b7c234d6196906794:Migrations/20250618123459_createDb.Designer.cs
-    partial class createDb
+    [Migration("20250618183828_createDB_fixed")]
+    partial class createDB_fixed
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
