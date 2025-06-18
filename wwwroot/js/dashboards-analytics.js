@@ -138,163 +138,101 @@
 
   // dashboards-analytics.js
 
+  // Bin Map - Thevan Improved
   document.addEventListener("DOMContentLoaded", function () {
-    // Check if the map element exists before initializing
-    if (document.querySelector('#map')) {
-      var map = L.map('map').setView([1.55, 103.7], 11); // Centered roughly on Johor Bahru
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-      }).addTo(map);
+    if (!document.querySelector('#map')) return;
 
-      // --- BIN DATA (Initial static examples - will be replaced with real data) ---
-      const binsData = [
-        {
-          id: 1,
-          bin_plate_id: 'BIN-JB-001',
-          location_latitude: 1.565, // Example: Housing area 1
-          location_longitude: 103.705,
-          address: 'No. 10, Jalan Harmoni 1, Taman Harmoni, 81300 Skudai, Johor',
-          type: 'residential',
-          last_collected_at: '2025-06-03T10:00:00Z',
-          status: 'collected', // collected, missed, pending
-          client_id_image: 'https://via.placeholder.com/150/00FF00/FFFFFF?text=Collected+Image' // Green placeholder
-        },
-        {
-          id: 2,
-          bin_plate_id: 'BIN-JB-002',
-          location_latitude: 1.54, // Example: Commercial area
-          location_longitude: 103.73,
-          address: 'Lot 2, Jalan Industri 5, Kawasan Perindustrian, 81100 Johor Bahru, Johor',
-          type: 'commercial',
-          last_collected_at: '2025-05-28T14:30:00Z',
-          status: 'missed', // This one is older than 1 week, should be grey
-          client_id_image: 'https://via.placeholder.com/150/FF0000/FFFFFF?text=Missed+Image' // Red placeholder
-        },
-        {
-          id: 3,
-          bin_plate_id: 'BIN-JB-003',
-          location_latitude: 1.57, // Example: Another housing area
-          location_longitude: 103.71,
-          address: 'Apt. 3, Block C, Taman Perumahan Jaya, 81200 Johor Bahru, Johor',
-          type: 'residential',
-          last_collected_at: '2025-06-05T09:00:00Z',
-          status: 'collected',
-          client_id_image: 'https://via.placeholder.com/150/0000FF/FFFFFF?text=Another+Collected' // Blue placeholder
-        },
-        {
-          id: 4,
-          bin_plate_id: 'BIN-JB-004',
-          location_latitude: 1.53,
-          location_longitude: 103.72,
-          address: 'No. 1, Jalan Bahagia, 80350 Johor Bahru, Johor',
-          type: 'residential',
-          last_collected_at: '2025-06-01T08:00:00Z', // More than 1 week
-          status: 'collected', // This status will be overridden by the grey logic
-          client_id_image: 'https://via.placeholder.com/150/FFFF00/000000?text=Old+Collected' // Yellow placeholder
-        }
-      ];
+    const map = L.map('map').setView([1.56, 103.72], 13);
 
-      // --- Helper function to determine bin color based on status and last collected date ---
-      function getBinColor(bin) {
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const lastCollectedDate = new Date(bin.last_collected_at);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
 
-        if (bin.status === 'collected' && lastCollectedDate >= oneWeekAgo) {
-          return 'green'; // Successfully collected within 1 week
-        } else if (bin.status === 'missed') {
-          return 'red'; // Explicitly missed
-        } else if (lastCollectedDate < oneWeekAgo) {
-          return 'grey'; // Not collected for 1 week or more
-        }
-        return 'blue'; // Default or other status
+    // 🔰 Custom icons
+    const binIcons = {
+      green: L.icon({ iconUrl: '/img/elements/greenbin.png', iconSize: [30, 30], iconAnchor: [15, 30] }),
+      red: L.icon({ iconUrl: '/img/elements/redbin.png', iconSize: [30, 30], iconAnchor: [15, 30] }),
+      grey: L.icon({ iconUrl: '/img/elements/normalbin.png', iconSize: [30, 30], iconAnchor: [15, 30] })
+    };
+
+    const truckIcon = L.icon({
+      iconUrl: '/img/elements/3d-truck.png',
+      iconSize: [48, 48],
+      iconAnchor: [24, 48],
+      popupAnchor: [0, -48]
+    });
+
+    //  Bin Data with realistic statuses
+    const binsData = [
+      { plate: 'BIN001', lat: 1.565, lng: 103.705, status: 'collected', address: 'Taman Harmoni', collected_at: '2025-06-18T08:00:00Z' },
+      { plate: 'BIN002', lat: 1.543, lng: 103.735, status: 'missed', address: 'Perindustrian', collected_at: null },
+      { plate: 'BIN003', lat: 1.575, lng: 103.715, status: 'pending', address: 'Taman Perumahan Jaya', collected_at: null },
+      { plate: 'BIN004', lat: 1.552, lng: 103.69, status: 'collected', address: 'Jalan Bahagia', collected_at: '2025-06-18T07:30:00Z' },
+      { plate: 'BIN005', lat: 1.558, lng: 103.726, status: 'pending', address: 'Larkin Sentral', collected_at: null },
+      { plate: 'BIN006', lat: 1.547, lng: 103.74, status: 'missed', address: 'Taman Tampoi', collected_at: null }
+    ];
+
+    //  Add bins and build route
+    const routeWaypoints = [];
+    binsData.forEach(bin => {
+      let icon;
+      if (bin.status === 'collected') {
+        icon = binIcons.green;
+      } else if (bin.status === 'missed') {
+        icon = binIcons.red;
+      } else {
+        icon = binIcons.grey;
       }
 
-      // --- Custom Bin Icons ---
-      function createBinIcon(color) {
-        let iconUrl;
-        switch (color) {
-          case 'green':
-            iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png';
-            break;
-          case 'red':
-            iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png';
-            break;
-          case 'grey':
-            iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png';
-            break;
-          case 'blue': // Default, could be for 'pending' or 'trucks' if you repurpose
-          default:
-            iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
-            break;
+      L.marker([bin.lat, bin.lng], { icon })
+        .addTo(map)
+        .bindPopup(`
+        <b>${bin.plate}</b><br>
+        ${bin.address}<br>
+        Status: <strong style="color:${bin.status === 'missed' ? 'red' : bin.status === 'collected' ? 'green' : 'gray'}">${bin.status}</strong>
+      `);
+
+      routeWaypoints.push(L.latLng(bin.lat, bin.lng));
+    });
+
+    // 🚚 Truck Marker
+    const truckMarker = L.marker(routeWaypoints[0], { icon: truckIcon }).addTo(map).bindPopup("🚛 Truck starting route");
+
+    // 🔃 Route animation using Leaflet Routing Machine
+    L.Routing.control({
+      waypoints: routeWaypoints,
+      lineOptions: {
+        styles: [{ color: '#6f42c1', weight: 5, opacity: 0.8 }]
+      },
+      addWaypoints: false,
+      draggableWaypoints: false,
+      routeWhileDragging: false,
+      fitSelectedRoutes: true,
+      show: false, // ❌ Hide instruction box
+      createMarker: () => null, // ❌ Suppress default markers
+      router: new L.Routing.OSRMv1({
+        serviceUrl: 'https://router.project-osrm.org/route/v1'
+      })
+    })
+      .on('routesfound', function (e) {
+        const route = e.routes[0];
+        const coordinates = route.coordinates;
+        let index = 0;
+
+        function animateTruck() {
+          if (index < coordinates.length) {
+            const latlng = L.latLng(coordinates[index].lat, coordinates[index].lng);
+            truckMarker.setLatLng(latlng);
+            index++;
+            setTimeout(animateTruck, 800); // 🕐 Adjust speed (lower = faster)
+          } else {
+            truckMarker.bindPopup("✅ Truck reached final destination").openPopup();
+          }
         }
-        return L.icon({
-          iconUrl: iconUrl,
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        });
-      }
 
-      // --- Add Bins to Map ---
-      binsData.forEach(bin => {
-        const binColor = getBinColor(bin);
-        const binIcon = createBinIcon(binColor);
-
-        let popupContent = `
-                <div style="font-family: sans-serif; font-size: 14px;">
-                    <strong>Bin ID:</strong> ${bin.bin_plate_id}<br>
-                    <strong>Address:</strong> ${bin.address}<br>
-                    <strong>Type:</strong> ${bin.type}<br>
-                    <strong>Last Collected:</strong> ${new Date(bin.last_collected_at).toLocaleString()}<br>
-                    <strong>Status:</strong> <span style="color: ${binColor === 'green' ? 'green' : binColor === 'red' ? 'red' : 'grey'}; font-weight: bold;">${binColor === 'grey' ? 'Not Collected (>1 week)' : bin.status}</span><br>
-                    ${bin.client_id_image ? `<br><img src="${bin.client_id_image}" alt="Last Collected Image" style="max-width: 150px; height: auto; border-radius: 5px;">` : ''}
-                </div>
-            `;
-        L.marker([bin.location_latitude, bin.location_longitude], { icon: binIcon })
-          .addTo(map)
-          .bindPopup(popupContent);
-      });
-
-      // --- Truck Markers (simple 2D icons for now) ---
-      // For 3D moving trucks, you'd need a more advanced library or a different approach (see notes below).
-      const truckIcon = L.icon({
-        iconUrl: 'https://cdn-icons-png.flaticon.com/512/7438/7438616.png', // A generic truck icon
-        iconSize: [38, 38], // size of the icon
-        iconAnchor: [19, 38], // point of the icon which will correspond to marker's location
-        popupAnchor: [0, -38] // point from which the popup should open relative to the iconAnchor
-      });
-
-      const trucksData = [
-        { id: 101, name: 'Truck A (JSB7000)', lat: 1.552, lng: 103.68, status: 'moving', last_updated: '2025-06-06T01:00:00Z' },
-        { id: 102, name: 'Truck B (JSD1234)', lat: 1.57, lng: 103.69, status: 'idle', last_updated: '2025-06-06T01:10:00Z' },
-        { id: 103, name: 'Truck C (JST5678)', lat: 1.53, lng: 103.71, status: 'on_route', last_updated: '2025-06-06T01:15:00Z' },
-        { id: 104, name: 'Truck D (JSF9012)', lat: 1.56, lng: 103.725, status: 'loading', last_updated: '2025-06-06T01:20:00Z' }
-      ];
-
-      trucksData.forEach(truck => {
-        L.marker([truck.lat, truck.lng], { icon: truckIcon })
-          .addTo(map)
-          .bindPopup(`
-                    <strong>${truck.name}</strong><br>
-                    Status: ${truck.status}<br>
-                    Last Updated: ${new Date(truck.last_updated).toLocaleString()}
-                `);
-      });
-
-      // --- Placeholder for Routes (can be Polyline or Polygon) ---
-      // Example: A simple route line
-      const routeCoordinates = [
-        [1.54, 103.69],
-        [1.55, 103.70],
-        [1.56, 103.71],
-        [1.555, 103.72]
-      ];
-      L.polyline(routeCoordinates, { color: 'purple', weight: 4, opacity: 0.7 }).addTo(map)
-        .bindPopup("Example Route 1");
-    }
+        animateTruck(); // 🎬 Start animation
+      })
+      .addTo(map);
   });
 
   //DownloadPDF
