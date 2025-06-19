@@ -29,47 +29,62 @@ namespace AspnetCoreMvcFull.Controllers
       return View(schedules);
     }
 
+
     // GET: Schedule/Create
     public IActionResult Create()
     {
-      // Get all users with Collector or Driver role
-      ViewBag.Collectors = _context.Users
-          .Where(u => u.Role == "Collector" || u.Role == "Driver")
-          .ToList();
+      // Use consistent route data source (hardcoded in this case)
+      var model = new Schedule { Status = "Scheduled" };
+      PopulateViewBags(model);
+      return View(model);
+    }
 
-      // Predefined routes - these could come from a database or be hardcoded
+    // POST: Schedule/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(Schedule schedule)
+    {
+      try
+      {
+        if (ModelState.IsValid)
+        {
+          _context.Add(schedule);
+          await _context.SaveChangesAsync();
+          return RedirectToAction(nameof(Index));
+        }
+
+        // If we get here, validation failed
+        PopulateViewBags(schedule);
+        return View(schedule);
+      }
+      catch (Exception ex)
+      {
+        ModelState.AddModelError("", "An error occurred while saving: " + ex.Message);
+        PopulateViewBags(schedule);
+        return View(schedule);
+      }
+    }
+
+    private void PopulateViewBags(Schedule model)
+    {
+      // Consistent route data source (hardcoded)
       ViewBag.Routes = new List<Road>
     {
         new Road { Id = 1, Name = "Route A - Jalan Perkasa" },
         new Road { Id = 2, Name = "Route B - Jalan Pahlawan" },
         new Road { Id = 3, Name = "Route C - Jalan Bentara" },
         new Road { Id = 4, Name = "Route D - Jalan HuluBalang" },
-        new Road { Id = 5, Name = "Route E - Family Mart Caltex " }
+        new Road { Id = 5, Name = "Route E - Family Mart Caltex" }
     };
 
-      return View(new Schedule { Status = "Scheduled" });
-    }
+      // Get collectors from database
+      ViewBag.Collectors = _context.Users
+          .Where(u => u.Role == "Collector" || u.Role == "Driver")
+          .ToList();
 
-    // POST: Schedule/Create
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("CollectorId,RoadId,ScheduleStartTime,ScheduleEndTime,Status")] Schedule schedule)
-    {
-      if (ModelState.IsValid)
-      {
-        schedule.Id = 0; // Ensure ID is set to 0 for new record
-        _context.Add(schedule);
-        await _context.SaveChangesAsync();
-        return RedirectToAction(nameof(Index));
-      }
-
-      ViewBag.Collectors = await _context.Users
-          .Where(u => u.Role == "Collector")
-          .ToListAsync();
-
-      ViewBag.Routes = await _context.Roads.ToListAsync();
-
-      return View(schedule);
+      // Preselect values in case of validation failure
+      ViewBag.SelectedCollectorId = model.CollectorId;
+      ViewBag.SelectedRoadId = model.RouteId;
     }
 
     // GET: Schedule/Edit/5
