@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using AspnetCoreMvcFull.Data;
 using AspnetCoreMvcFull.Models;
 
-namespace YourProjectName.Controllers
+namespace AspnetCoreMvcFull.Controllers
 {
   public class ScheduleController : Controller
   {
@@ -32,11 +32,20 @@ namespace YourProjectName.Controllers
     // GET: Schedule/Create
     public IActionResult Create()
     {
+      // Get all users with Collector or Driver role
       ViewBag.Collectors = _context.Users
-          .Where(u => u.Role == "Collector")
+          .Where(u => u.Role == "Collector" || u.Role == "Driver")
           .ToList();
 
-      ViewBag.Routes = _context.Roads.ToList();
+      // Predefined routes - these could come from a database or be hardcoded
+      ViewBag.Routes = new List<Road>
+    {
+        new Road { Id = 1, Name = "Route A - Jalan Perkasa" },
+        new Road { Id = 2, Name = "Route B - Jalan Pahlawan" },
+        new Road { Id = 3, Name = "Route C - Jalan Bentara" },
+        new Road { Id = 4, Name = "Route D - Jalan HuluBalang" },
+        new Road { Id = 5, Name = "Route E - Family Mart Caltex " }
+    };
 
       return View(new Schedule { Status = "Scheduled" });
     }

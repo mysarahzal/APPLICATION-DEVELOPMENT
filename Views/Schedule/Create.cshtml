@@ -14,12 +14,15 @@
 				<div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
 				<div class="form-group">
-					<label asp-for="CollectorId" class="control-label">Collector *</label>
+					<label asp-for="CollectorId" class="control-label">Collector/Driver *</label>
 					<select asp-for="CollectorId" class="form-control" required>
-						<option value="">-- Select Collector --</option>
-						@foreach (var collector in ViewBag.Collectors)
+						<option value="">-- Select Collector/Driver --</option>
+						@foreach (var user in ViewBag.Collectors)
 						{
-							<option value="@collector.Id">@collector.Name (@collector.Role)</option>
+							if (user.Role == "Collector" || user.Role == "Driver")
+							{
+								<option value="@user.Id">@user.FirstName (@user.Role)</option>
+							}
 						}
 					</select>
 					<span asp-validation-for="CollectorId" class="text-danger"></span>
