@@ -396,6 +396,9 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<DateTime>("ScheduleStartTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("ScheduledDay")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
