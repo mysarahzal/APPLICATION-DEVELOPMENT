@@ -1,28 +1,24 @@
-using Microsoft.AspNetCore.Mvc;
-using AspnetCoreMvcFull.Models;
-using AspnetCoreMvcFull.Data;
-using Microsoft.EntityFrameworkCore;
 using System;
-//using Microsoft.AspNetCore.Authorization;
-//using Microsoft.AspNetCore.Identity;
+using System.Linq;
 using System.Threading.Tasks;
+using AspnetCoreMvcFull.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using AspnetCoreMvcFull.Data;
+using AspnetCoreMvcFull.Models;
 
 namespace AspnetCoreMvcFull.Controllers
 {
   public class ScheduleController : Controller
   {
     private readonly KUTIPDbContext _context;
-    //private readonly UserManager<User> _userManager;
 
     public ScheduleController(KUTIPDbContext context)
-      //UserManager<User> userManager)
     {
       _context = context;
-      //_userManager = userManager;
     }
 
-    // UC10 – Admin Views All Job Schedules
-    //[Authorize(Roles = "Admin")]
+    // GET: Schedule
     public async Task<IActionResult> Index()
     {
       var schedules = await _context.Schedules
@@ -30,144 +26,144 @@ namespace AspnetCoreMvcFull.Controllers
           .Include(s => s.Road)
           .ToListAsync();
 
-      return View("~/Views/Schedule/Index.cshtml", schedules);
+      return View(schedules);
     }
 
-    // UC09 – Operator Views Their Own Schedule
-    //[Authorize(Roles = "Operator")]
-    public async Task<IActionResult> MySchedule()
-    {
-      //var currentUser = await _userManager.GetUserAsync(User);
-      //if (currentUser == null) return Unauthorized();
-
-      // Simulate logged-in user ID (for testing only)
-      var userId = 1; // Replace with real logic later
-
-      var mySchedules = await _context.Schedules
-        //.Include(s => s.Collector)
-        .Include(s => s.Road)
-        //.Where(s => s.CollectorId == userId)
-        .Where(s => s.CollectorId == userId)
-        .ToListAsync();
-
-      return View("~/Views/Schedule/MySchedule.cshtml", MySchedule);
-    }
-
-    // UC08 – Admin Creates a New Schedule
-    //[Authorize(Roles = "Admin")]
+    // GET: Schedule/Create
     public IActionResult Create()
     {
-      // Filter Collectors (Users with role = "Driver" or "Operator")
+      // Get all users with Collector or Driver role
       ViewBag.Collectors = _context.Users
-          .Where(u => u.Role == "Driver" || u.Role == "Operator").ToList();  // optional filter
+          .Where(u => u.Role == "Collector" || u.Role == "Driver")
+          .ToList();
 
+      // Predefined routes - these could come from a database or be hardcoded
       ViewBag.Routes = new List<Road>
-      {
-        new Road {Id = 1, Name = "Route A" },
-        new Road {Id = 2, Name = "Route B" },
-        new Road {Id = 3, Name = "Route C" },
-      };
+    {
+        new Road { Id = 1, Name = "Route A - Jalan Perkasa" },
+        new Road { Id = 2, Name = "Route B - Jalan Pahlawan" },
+        new Road { Id = 3, Name = "Route C - Jalan Bentara" },
+        new Road { Id = 4, Name = "Route D - Jalan HuluBalang" },
+        new Road { Id = 5, Name = "Route E - Family Mart Caltex " }
+    };
 
-      return View("~/Views/Schedule/Create.cshtml");
+      return View(new Schedule { Status = "Scheduled" });
     }
 
+    // POST: Schedule/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    //[Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create(Schedule schedule)
+    public async Task<IActionResult> Create([Bind("CollectorId,RoadId,ScheduleStartTime,ScheduleEndTime,Status")] Schedule schedule)
     {
       if (ModelState.IsValid)
       {
-        schedule.Status = "Scheduled";
-        _context.Schedules.Add(schedule);
+        schedule.Id = 0; // Ensure ID is set to 0 for new record
+        _context.Add(schedule);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
       }
 
-      // If failed, re-populate dropdowns
-      ViewBag.Collectors = _context.Users
-          .Where(u => u.Role == "Driver" || u.Role == "Operator")
-          .ToList();
+      ViewBag.Collectors = await _context.Users
+          .Where(u => u.Role == "Collector")
+          .ToListAsync();
 
-      //ViewBag.Collectors = _context.Users.Where(u => u.Role == "Operator").ToList();
-      ViewBag.Routes = _context.Roads.ToList();
-      return View("~/Views/Schedule/Create.cshtml", schedule);
+      ViewBag.Routes = await _context.Roads.ToListAsync();
+
+      return View(schedule);
     }
 
-    // UC08 – Admin Edits Schedule
-    //[Authorize(Roles = "Admin")]
+    // GET: Schedule/Edit/5
     public async Task<IActionResult> Edit(int? id)
     {
-      if (id == null) return NotFound();
+      if (id == null)
+      {
+        return NotFound();
+      }
 
       var schedule = await _context.Schedules.FindAsync(id);
-                //.Include(s => s.Collector)
-                //.Include(s => s.Road)
-                //.FirstOrDefaultAsync(m => m.Id == id);
+      if (schedule == null)
+      {
+        return NotFound();
+      }
 
-      if (schedule == null) return NotFound();
+      ViewBag.Collectors = await _context.Users
+          .Where(u => u.Role == "Collector")
+          .ToListAsync();
 
-      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Operator").ToList();
-      ViewBag.Routes = _context.Roads.ToList();
+      ViewBag.Routes = await _context.Roads.ToListAsync();
 
-      return View("~/Views/Schedule/Edit.cshtml", schedule);
+      return View(schedule);
     }
 
+    // POST: Schedule/Edit/5
     [HttpPost]
-    //[Authorize(Roles = "Admin")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, Schedule updatedSchedule)
+    public async Task<IActionResult> Edit(int id, [Bind("Id,CollectorId,RoadId,ScheduleStartTime,ScheduleEndTime,Status")] Schedule schedule)
     {
-      if (id != updatedSchedule.Id)
+      if (id != schedule.Id)
+      {
         return NotFound();
+      }
 
       if (ModelState.IsValid)
       {
         try
         {
-          _context.Update(updatedSchedule);
+          _context.Update(schedule);
           await _context.SaveChangesAsync();
-          return RedirectToAction(nameof(Index));
         }
-        catch
+        catch (DbUpdateConcurrencyException)
         {
+          if (!ScheduleExists(schedule.Id))
+          {
+            return NotFound();
+          }
+          else
+          {
             throw;
+          }
         }
+        return RedirectToAction(nameof(Index));
       }
 
-      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Operator").ToList();
-      ViewBag.Routes = _context.Roads.ToList();
-      return View("~/Views/Schedule/Edit.cshtml", updatedSchedule);
+      ViewBag.Collectors = await _context.Users
+          .Where(u => u.Role == "Collector")
+          .ToListAsync();
+
+      ViewBag.Routes = await _context.Roads.ToListAsync();
+
+      return View(schedule);
     }
 
-    // UC08 – Admin Deletes a Schedule
-    //[Authorize(Roles = "Admin")]
+    // GET: Schedule/Delete/5
     public async Task<IActionResult> Delete(int? id)
     {
-      if (id == null) return NotFound();
+      if (id == null)
+      {
+        return NotFound();
+      }
 
       var schedule = await _context.Schedules
           .Include(s => s.Collector)
           .Include(s => s.Road)
           .FirstOrDefaultAsync(m => m.Id == id);
 
-      if (schedule == null) return NotFound();
+      if (schedule == null)
+      {
+        return NotFound();
+      }
 
-      return View("~/Views/Schedule/Delete.cshtml", schedule);
+      return View(schedule);
     }
 
+    // POST: Schedule/Delete/5
     [HttpPost, ActionName("Delete")]
-    //[Authorize(Roles = "Admin")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
       var schedule = await _context.Schedules.FindAsync(id);
-      if (schedule != null)
-      {
-        _context.Schedules.Remove(schedule);
-        await _context.SaveChangesAsync();
-      }
-
+      _context.Schedules.Remove(schedule);
+      await _context.SaveChangesAsync();
       return RedirectToAction(nameof(Index));
     }
 
@@ -177,4 +173,3 @@ namespace AspnetCoreMvcFull.Controllers
     }
   }
 }
-

@@ -1,24 +1,71 @@
 @model AspnetCoreMvcFull.Models.Schedule
 
-<form asp-action="Edit" method="post">
-	<input type="hidden" asp-for="Id" />
+@{
+	ViewData["Title"] = "Edit Schedule";
+}
 
-	<!-- Collector Dropdown -->
-	<select asp-for="CollectorId" class="form-control"
-			asp-items="@(new SelectList(ViewBag.Collectors, "Id", "FullName"))">
-		<option value="">-- Select Collector --</option>
-	</select>
-	<span asp-validation-for="CollectorId" class="text-danger"></span>
+<div class="container-fluid">
+	<div class="card shadow mb-4">
+		<div class="card-header py-3">
+			<h6 class="m-0 font-weight-bold text-primary">@ViewData["Title"]</h6>
+		</div>
+		<div class="card-body">
+			<form asp-action="Edit">
+				<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+				<input type="hidden" asp-for="Id" />
 
-	<!-- Route Dropdown -->
-	<select asp-for="RouteId" class="form-control"
-			asp-items="@(new SelectList(ViewBag.Routes, "Id", "Name"))">
-		<option value="">-- Select Route --</option>
-	</select>
-	<span asp-validation-for="RouteId" class="text-danger"></span>
+				<div class="form-group">
+					<label asp-for="CollectorId" class="control-label">Collector *</label>
+					<select asp-for="CollectorId" class="form-control" required>
+						<option value="">-- Select Collector --</option>
+						@foreach (var collector in ViewBag.Collectors)
+						{
+							<option value="@collector.Id">@collector.Name (@collector.Role)</option>
+						}
+					</select>
+					<span asp-validation-for="CollectorId" class="text-danger"></span>
+				</div>
 
-	<input asp-for="ScheduleStartTime" type="datetime-local" class="form-control" />
-	<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
+				<div class="form-group">
+					<label asp-for="RouteId" class="control-label">Route *</label>
+					<select asp-for="RouteId" class="form-control" required>
+						<option value="">-- Select Route --</option>
+						@foreach (var route in ViewBag.Routes)
+						{
+							<option value="@route.Id">@route.Name</option>
+						}
+					</select>
+					<span asp-validation-for="RouteId" class="text-danger"></span>
+				</div>
 
-	<button type="submit" class="btn btn-primary">Update</button>
-</form>
+				<div class="form-group">
+					<label asp-for="ScheduleStartTime" class="control-label">Start Time *</label>
+					<input asp-for="ScheduleStartTime" class="form-control" required />
+					<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
+				</div>
+
+				<div class="form-group">
+					<label asp-for="ScheduleEndTime" class="control-label">End Time *</label>
+					<input asp-for="ScheduleEndTime" class="form-control" required />
+					<span asp-validation-for="ScheduleEndTime" class="text-danger"></span>
+				</div>
+
+				<div class="form-group">
+					<label asp-for="Status" class="control-label">Status</label>
+					<select asp-for="Status" class="form-control">
+						<option value="Scheduled">Scheduled</option>
+						<option value="In Progress">In Progress</option>
+						<option value="Completed">Completed</option>
+						<option value="Cancelled">Cancelled</option>
+					</select>
+					<span asp-validation-for="Status" class="text-danger"></span>
+				</div>
+
+				<div class="form-group">
+					<button type="submit" class="btn btn-primary">Update Schedule</button>
+					<a asp-action="Index" class="btn btn-secondary">Cancel</a>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>

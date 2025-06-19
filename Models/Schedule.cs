@@ -16,6 +16,7 @@ namespace AspnetCoreMvcFull.Models
     [Required]
     public DateTime ScheduleStartTime { get; set; }  // No nullable
     public DateTime ScheduleEndTime { get; set; }  // No nullable
+    //public DateTime ScheduledDay { get; set; }
     public DateTime ActualStartTime { get; set; }  // No nullable
     public DateTime ActualEndTime { get; set; }  // No nullable
     public string Status { get; set; }  // No nullable
