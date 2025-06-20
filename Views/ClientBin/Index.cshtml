@@ -393,8 +393,8 @@
         }
 
         // Bin management functions
-        function editBin(binId) {
-            fetch(`/ClientBin/GetBin/${binId}`)
+		function editBin(binId) {
+			fetch(`/ClientBin/GetBin?id=${binId}`)
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('editBinId').value = data.id;

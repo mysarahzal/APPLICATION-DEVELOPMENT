@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ViewModels\NewFolder\**" />
+    <Content Remove="ViewModels\NewFolder\**" />
+    <EmbeddedResource Remove="ViewModels\NewFolder\**" />
+    <None Remove="ViewModels\NewFolder\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.6">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -20,7 +27,6 @@
 
   <ItemGroup>
     <Folder Include="Migrations\" />
-    <Folder Include="ViewModels\NewFolder\" />
   </ItemGroup>
 
 </Project>
