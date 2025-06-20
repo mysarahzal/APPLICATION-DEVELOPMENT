@@ -1,0 +1,23 @@
+@{
+	ViewData["Title"] = "Bin Detection";
+}
+
+<div class="text-center mt-4">
+	<h4 class="mb-3">Bin Detection with Number Plate</h4>
+
+	<!-- Detect Bin Button (initially shown) -->
+	<button id="startCameraBtn" class="btn btn-primary mb-3">🚀 Detect Bin</button>
+
+	<!-- Hidden camera and capture UI -->
+	<div id="cameraContainer" style="display:none;">
+		<video id="videoElement" width="480" height="360" autoplay playsinline class="rounded border"></video>
+		<br />
+		<button id="captureBtn" class="btn btn-success mt-3">📸 Capture & Detect</button>
+		<div id="plateResult" class="mt-3 fw-bold text-primary"></div>
+		<button id="retakeBtn" class="btn btn-secondary mt-2" style="display:none;">🔁 Retake</button>
+	</div>
+</div>
+
+@section Scripts {
+	<script src="~/js/detectbin.js"></script>
+}
