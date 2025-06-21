@@ -302,11 +302,41 @@ namespace AspnetCoreMvcFull.Controllers
     [HttpGet]
     public async Task<IActionResult> GetBin(Guid id)
     {
-      var bin = await _dbContext.Bins.Include(b => b.Client).FirstOrDefaultAsync(b => b.Id == id);
-      if (bin == null)
-        return NotFound();
+      try
+      {
+        // Log the incoming ID
+        Console.WriteLine($"Fetching bin with ID: {id}");
 
-      return Json(bin);
+        var bin = await _dbContext.Bins
+            .Include(b => b.Client)
+            .FirstOrDefaultAsync(b => b.Id == id);
+
+        if (bin == null)
+        {
+          Console.WriteLine("Bin not found.");
+          return NotFound();
+        }
+
+        // Optional: Remove circular references or problematic fields
+        return Json(new
+        {
+          bin.Id,
+          bin.BinPlateId,
+          bin.Location,
+          bin.FillLevel,
+          bin.Zone,
+          bin.ClientID,
+          ClientName = bin.Client?.ClientName
+        });
+      }
+      catch (Exception ex)
+      {
+        // Log full exception
+        Console.WriteLine($"Error fetching bin: {ex.Message}");
+        Console.WriteLine(ex.StackTrace);
+
+        return StatusCode(500, new { error = "Internal server error", message = ex.Message });
+      }
     }
   }
 }
