@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AspnetCoreMvcFull.Migrations
 {
     /// <inheritdoc />
-    public partial class createDB_fixed : Migration
+    public partial class createDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -147,8 +147,8 @@ namespace AspnetCoreMvcFull.Migrations
                     RouteId = table.Column<int>(type: "int", nullable: false),
                     ScheduleStartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ScheduleEndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ActualStartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ActualEndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ActualStartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActualEndTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AdminNotes = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),

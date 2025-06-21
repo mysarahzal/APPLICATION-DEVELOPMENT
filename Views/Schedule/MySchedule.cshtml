@@ -1,47 +1,25 @@
 @model IEnumerable<AspnetCoreMvcFull.Models.Schedule>
 
-@{
-	ViewData["Title"] = "My Schedule";
-}
+<h2>Your Schedule</h2>
 
-<h2>My Assigned Pickups</h2>
-
-@if (!Model.Any())
-{
-	<div class="alert alert-info">No pickups assigned to you.</div>
-}
-else
-{
-	<table class="table table-hover">
-		<thead>
+<table class="table">
+	<thead>
+		<tr>
+			<th>Truck ID</th>
+			<th>Route</th>
+			<th>Scheduled Start</th>
+			<th>Status</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var item in Model)
+		{
 			<tr>
-				<th>Road</th>
-				<th>Scheduled Time</th>
-				<th>Status</th>
+				<td>@item.TruckId</td>
+				@* <td>@item.Road?.Name</td> *@
+				<td>@item.ScheduleStartTime.ToString("g")</td>
+				<td>@item.Status</td>
 			</tr>
-		</thead>
-		<tbody>
-			@foreach (var item in Model)
-			{
-				<tr>
-					<td>@item.Road?.Name</td>
-					<td>@item.ScheduleStartTime.ToString("g")</td>
-					<td>
-						@{
-							string badgeClass = item.Status switch
-							{
-								"Completed" => "badge bg-success",
-								"Missed" => "badge bg-danger",
-								"Pending" => "badge bg-warning",
-								_ => "badge bg-info"
-							};
-						}
-						<span class="@badgeClass">@item.Status</span>
-					</td>
-				</tr>
-			}
-		</tbody>
-	</table>
-}
-
-<a asp-action="Index" class="btn btn-secondary">Back to All Schedules</a>
+		}
+	</tbody>
+</table>

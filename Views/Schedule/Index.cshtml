@@ -1,108 +1,40 @@
 @model IEnumerable<AspnetCoreMvcFull.Models.Schedule>
 
-@{
-	ViewData["Title"] = "Schedules";
-}
+<h2>All Job Schedules</h2>
 
-<div class="container-fluid">
-	<div class="d-flex justify-content-between align-items-center mb-4">
-		<h1 class="h3 mb-0 text-gray-800">Schedules</h1>
-		<a asp-action="Create" class="btn btn-primary">
-			<i class="fas fa-plus"></i> Create Schedule
-		</a>
-	</div>
-
-	@if (Model.Any())
-	{
-		<div class="row">
-			@foreach (var schedule in Model)
-			{
-				<div class="col-xl-4 col-lg-6 mb-4">
-					<div class="card shadow h-100">
-						<div class="card-header py-3 d-flex justify-content-between align-items-center">
-							<div class="d-flex align-items-center">
-								<div class="mr-3">
-									<div class="icon-circle bg-primary">
-										<i class="fas fa-calendar-alt text-white"></i>
-									</div>
-								</div>
-								<div>
-									<h6 class="m-0 font-weight-bold text-primary">Schedule #@schedule.Id</h6>
-									<span class="badge @GetStatusBadgeClass(schedule.Status)">@schedule.Status</span>
-								</div>
-							</div>
-							<div>
-								<a asp-action="Edit" asp-route-id="@schedule.Id" class="btn btn-sm btn-circle btn-outline-secondary mr-1">
-									<i class="fas fa-edit"></i>
-								</a>
-								<a asp-action="Delete" asp-route-id="@schedule.Id" class="btn btn-sm btn-circle btn-outline-danger">
-									<i class="fas fa-trash"></i>
-								</a>
-							</div>
-						</div>
-						<div class="card-body">
-							<div class="mb-3">
-								<div class="text-xs font-weight-bold text-primary mb-1">
-									<i class="fas fa-user mr-1"></i> Collector
-								</div>
-								<div>@schedule.Collector?.Id</div>
-							</div>
-
-							<div class="mb-3">
-								<div class="text-xs font-weight-bold text-primary mb-1">
-									<i class="fas fa-map-marker-alt mr-1"></i> Route
-								</div>
-								<div>@schedule.Road?.Name</div>
-							</div>
-
-							<div class="mb-3">
-								<div class="text-xs font-weight-bold text-primary mb-1">
-									<i class="fas fa-clock mr-1"></i> Time
-								</div>
-								<div>Start: @schedule.ScheduleStartTime.ToString("MMM dd, yyyy hh:mm tt")</div>
-								<div>End: @schedule.ScheduleEndTime.ToString("MMM dd, yyyy hh:mm tt")</div>
-							</div>
-						</div>
-						<div class="card-footer">
-							<a asp-action="Details" asp-route-id="@schedule.Id" class="btn btn-block btn-outline-primary">
-								View Details
-							</a>
-						</div>
-					</div>
-				</div>
-			}
-		</div>
-	}
-	else
-	{
-		<div class="text-center py-5">
-			<div class="mb-4">
-				<i class="fas fa-calendar-alt fa-4x text-gray-400"></i>
-			</div>
-			<h4 class="text-gray-800 mb-3">No schedules found</h4>
-			<p class="text-gray-600 mb-4">Create your first schedule to get started.</p>
-			<a asp-action="Create" class="btn btn-primary">
-				<i class="fas fa-plus"></i> Create Schedule
-			</a>
-		</div>
-	}
-</div>
-
-@functions {
-	public string GetStatusBadgeClass(string status)
-	{
-		switch (status)
+<table class="table">
+	<thead>
+		<tr>
+			<th>Collector</th>
+			<th>Truck ID</th>
+			<th>Route</th>
+			<th>Scheduled Start</th>
+			<th>Status</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		@foreach (var item in Model)
 		{
-			case "Scheduled":
-				return "badge-primary";
-			case "In Progress":
-				return "badge-warning";
-			case "Completed":
-				return "badge-success";
-			case "Cancelled":
-				return "badge-danger";
-			default:
-				return "badge-secondary";
+			<tr>
+				<td>@item.Collector?.FirstName @item.Collector?.LastName</td>
+				<td>@item.TruckId</td>
+				<td>@item.Road?.Name</td>
+				<td>@item.ScheduleStartTime.ToString("g")</td>
+				<td>@item.Status</td>
+				<td>
+					<a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+					<a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+					<a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+				</td>
+			</tr>
 		}
-	}
+	</tbody>
+</table>
+
+<a asp-action="Create" class="btn btn-primary">Add New Schedule</a>
+
+@if (TempData["SuccessMessage"] != null)
+{
+	<div class="alert alert-success">@TempData["SuccessMessage"]</div>
 }
