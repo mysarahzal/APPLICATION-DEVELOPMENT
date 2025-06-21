@@ -12,13 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-<<<<<<<< HEAD:Migrations/20250619022123_createDb.Designer.cs
-    [Migration("20250619022123_createDb")]
+    [Migration("20250621070105_createDb")]
     partial class createDb
-========
-    [Migration("20250620162137_createDB_fixed")]
-    partial class createDB_fixed
->>>>>>>> 171afceb1278b70b9e4a4d184b6fcd609e73577e:Migrations/20250620162137_createDB_fixed.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -376,10 +371,10 @@ namespace AspnetCoreMvcFull.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("ActualEndTime")
+                    b.Property<DateTime?>("ActualEndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("ActualStartTime")
+                    b.Property<DateTime?>("ActualStartTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("AdminNotes")

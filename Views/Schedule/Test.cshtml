@@ -1,0 +1,15 @@
+@{
+	ViewData["Title"] = "Test Form";
+}
+
+<h2>Minimal Test Form</h2>
+
+@if (ViewBag.Message != null)
+{
+	<div class="alert alert-success">@ViewBag.Message</div>
+}
+
+<form method="post" action="/Schedule/Test">
+	<input type="text" name="name" placeholder="Enter your name" />
+	<button type="submit">Submit</button>
+</form>
