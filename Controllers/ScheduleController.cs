@@ -202,5 +202,19 @@ namespace AspnetCoreMvcFull.Controllers
       await _context.SaveChangesAsync();
       return RedirectToAction(nameof(Index));
     }
+
+    //[HttpGet]
+    //public IActionResult Test()
+    //{
+    //  return View();
+    //}
+
+    //[HttpPost]
+    ////[ValidateAntiForgeryToken]
+    //public IActionResult TestForm(string name)
+    //{
+    //  ViewBag.Message = $"Submitted: {name}";
+    //  return RedirectToAction("Test");
+    //}
   }
 }
