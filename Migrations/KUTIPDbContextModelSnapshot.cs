@@ -368,10 +368,10 @@ namespace AspnetCoreMvcFull.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("ActualEndTime")
+                    b.Property<DateTime>("ActualEndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("ActualStartTime")
+                    b.Property<DateTime>("ActualStartTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("AdminNotes")
