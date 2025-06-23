@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-    [Migration("20250621070105_createDb")]
+    [Migration("20250624031607_createDb")]
     partial class createDb
     {
         /// <inheritdoc />
@@ -371,10 +371,10 @@ namespace AspnetCoreMvcFull.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("ActualEndTime")
+                    b.Property<DateTime>("ActualEndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("ActualStartTime")
+                    b.Property<DateTime>("ActualStartTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("AdminNotes")
@@ -424,17 +424,10 @@ namespace AspnetCoreMvcFull.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("CapacityTon")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("LicensePlate")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Make")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

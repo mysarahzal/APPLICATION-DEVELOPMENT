@@ -1,7 +1,7 @@
 @model AspnetCoreMvcFull.Models.Schedule
+
 @{
-	var collectors = ViewBag.Collectors as List<AspnetCoreMvcFull.Models.User>;
-	var routes = ViewBag.Routes as List<AspnetCoreMvcFull.Models.Road>;
+	ViewData["Title"] = "Edit Schedule";
 }
 
 <h2>Edit Schedule</h2>
@@ -9,59 +9,70 @@
 <form asp-action="Edit" method="post">
 	<input type="hidden" asp-for="Id" />
 
-	<div class="form-group">
-		<label asp-for="TruckId"></label>
-		<input asp-for="TruckId" class="form-control" />
-		<span asp-validation-for="TruckId" class="text-danger"></span>
-	</div>
-
-	<div class="form-group">
-		<label asp-for="CollectorId"></label>
-		<select asp-for="CollectorId" class="form-control">
-			@foreach (var collector in collectors)
-			{
-				<option value="@collector.Id" selected="@(collector.Id == Model.CollectorId)">
-					@collector.FirstName @collector.LastName
-				</option>
-			}
+	<!-- Collector Dropdown -->
+	<div class="form-group mb-3">
+		<label asp-for="CollectorId">Collector / Driver *</label>
+		@{
+			var collectors = ViewBag.Collectors as List<User>;
+		}
+		<select asp-for="CollectorId"
+				class="form-control"
+				asp-items="@(new SelectList(collectors ?? new List<User>(), "Id", "FullName"))">
+			<option value="">-- Select Collector --</option>
 		</select>
+		<span asp-validation-for="CollectorId" class="text-danger"></span>
 	</div>
 
-	<div class="form-group">
-		<label asp-for="RouteId"></label>
-		<select asp-for="RouteId" class="form-control">
-			@foreach (var route in routes)
-			{
-				<option value="@route.Id" selected="@(route.Id == Model.RouteId)">
-					@route.Name
-				</option>
-			}
+	<!-- Route Dropdown -->
+	<div class="form-group mb-3">
+		<label asp-for="RouteId">Route *</label>
+		@{
+			var routes = ViewBag.Routes as List<Road>;
+		}
+		<select asp-for="RouteId"
+				class="form-control"
+				asp-items="@(new SelectList(routes ?? new List<Road>(), "Id", "Name"))">
+			<option value="">-- Select Route --</option>
 		</select>
+		<span asp-validation-for="RouteId" class="text-danger"></span>
 	</div>
 
-	<div class="form-group">
-		<label asp-for="ScheduleStartTime"></label>
+	<!-- Start Time -->
+	<div class="form-group mb-3">
+		<label asp-for="ScheduleStartTime">Start Time *</label>
 		<input asp-for="ScheduleStartTime" type="datetime-local" class="form-control" />
 		<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
 	</div>
 
-	<div class="form-group">
-		<label asp-for="ScheduleEndTime"></label>
+	<!-- End Time -->
+	<div class="form-group mb-3">
+		<label asp-for="ScheduleEndTime">End Time</label>
 		<input asp-for="ScheduleEndTime" type="datetime-local" class="form-control" />
 		<span asp-validation-for="ScheduleEndTime" class="text-danger"></span>
 	</div>
 
-	<div class="form-group">
-		<label asp-for="Status"></label>
-		<input asp-for="Status" class="form-control" />
+	<!-- Status -->
+	<div class="form-group mb-3">
+		<label asp-for="Status">Status</label>
+		<select asp-for="Status" class="form-control">
+			<option value="Scheduled">Scheduled</option>
+			<option value="In Progress">In Progress</option>
+			<option value="Completed">Completed</option>
+			<option value="Cancelled">Cancelled</option>
+		</select>
 		<span asp-validation-for="Status" class="text-danger"></span>
 	</div>
 
-	<div class="form-group">
-		<label asp-for="AdminNotes"></label>
+	<!-- Admin Notes -->
+	<div class="form-group mb-3">
+		<label asp-for="AdminNotes">Admin Notes</label>
 		<textarea asp-for="AdminNotes" class="form-control"></textarea>
 		<span asp-validation-for="AdminNotes" class="text-danger"></span>
 	</div>
 
-	<button type="submit" class="btn btn-success mt-3">Update</button>
+	<!-- Submit Button -->
+	<div class="form-group mt-3">
+		<button type="submit" class="btn btn-primary">Update</button>
+		<a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+	</div>
 </form>

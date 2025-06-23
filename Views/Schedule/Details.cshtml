@@ -8,16 +8,16 @@
 		<dd class="col-sm-10">@Model.TruckId</dd>
 
 		<dt class="col-sm-2">Collector</dt>
-		<dd class="col-sm-10">@Model.Collector?.FirstName @Model.Collector?.LastName</dd>
+		@* <dd class="col-sm-10">@Model.Collector?.FirstName @Model.Collector?.LastName</dd> *@
 
 		<dt class="col-sm-2">Route</dt>
-		<dd class="col-sm-10">@Model.Road?.Name</dd>
+		@* <dd class="col-sm-10">@Model.Road?.Name</dd> *@
 
 		<dt class="col-sm-2">Scheduled Start</dt>
 		<dd class="col-sm-10">@Model.ScheduleStartTime.ToString("g")</dd>
 
 		<dt class="col-sm-2">Scheduled End</dt>
-		<dd class="col-sm-10">@Model.ScheduleEndTime.ToString("g")</dd>
+		@* <dd class="col-sm-10">@Model.ScheduleEndTime.ToString("g")</dd> *@
 
 		<dt class="col-sm-2">Actual Start</dt>
 		@* <dd class="col-sm-10">@Model.ActualStartTime.ToString("g")</dd> *@

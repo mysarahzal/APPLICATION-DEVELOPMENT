@@ -5,6 +5,7 @@ namespace AspnetCoreMvcFull.Models
   public class Schedule
   {
     public int Id { get; set; }  // No nullable
+    public int ScheduleId { get; set; }
     public int TruckId { get; set; }  // No nullable
 
     [Required]
@@ -17,8 +18,8 @@ namespace AspnetCoreMvcFull.Models
     public DateTime ScheduleStartTime { get; set; }  // No nullable
     public DateTime ScheduleEndTime { get; set; }  // No nullable
     //public DateTime ScheduledDay { get; set; }
-    public DateTime? ActualStartTime { get; set; }  // No nullable
-    public DateTime? ActualEndTime { get; set; }  // No nullable
+    public DateTime ActualStartTime { get; set; }  // No nullable
+    public DateTime ActualEndTime { get; set; }  // No nullable
     public string Status { get; set; }  // No nullable
     public string AdminNotes { get; set; }  // No nullable
     public DateTime CreatedAt { get; set; }  // No nullable

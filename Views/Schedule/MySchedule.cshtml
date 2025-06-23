@@ -1,24 +1,56 @@
+@* @model IEnumerable<AspnetCoreMvcFull.Models.Schedule> *@
+
+@* <h2>Your Schedule</h2> *@
+
+@* <table class="table"> *@
+@* 	<thead> *@
+@* 		<tr> *@
+@* 			<th>Truck ID</th> *@
+@* 			<th>Route</th> *@
+@* 			<th>Scheduled Start</th> *@
+@* 			<th>Status</th> *@
+@* 		</tr> *@
+@* 	</thead> *@
+@* 	<tbody> *@
+@* 		@foreach (var item in Model) *@
+@* 		{ *@
+@* 			<tr> *@
+@* 				<td>@item.TruckId</td> *@
+@* 				@* <td>@item.Road?.Name</td> *@ 
+@* 				<td>@item.ScheduleStartTime.ToString("g")</td> *@
+@* 				<td>@item.Status</td> *@
+@* 			</tr> *@
+@* 		} *@
+@* 	</tbody> *@
+@* </table> *@
+
 @model IEnumerable<AspnetCoreMvcFull.Models.Schedule>
 
-<h2>Your Schedule</h2>
+@{
+	ViewData["Title"] = "My Schedule";
+}
+
+<h1>My Schedule</h1>
 
 <table class="table">
 	<thead>
 		<tr>
-			<th>Truck ID</th>
 			<th>Route</th>
-			<th>Scheduled Start</th>
+			<th>Start Time</th>
+			<th>End Time</th>
 			<th>Status</th>
+			<th>Notes</th>
 		</tr>
 	</thead>
 	<tbody>
 		@foreach (var item in Model)
 		{
 			<tr>
-				<td>@item.TruckId</td>
-				@* <td>@item.Road?.Name</td> *@
-				<td>@item.ScheduleStartTime.ToString("g")</td>
-				<td>@item.Status</td>
+				<td>@Html.DisplayFor(modelItem => item.Road.Name)</td>
+				<td>@Html.DisplayFor(modelItem => item.ScheduleStartTime)</td>
+				<td>@Html.DisplayFor(modelItem => item.ScheduleEndTime)</td>
+				<td>@Html.DisplayFor(modelItem => item.Status)</td>
+				<td>@Html.DisplayFor(modelItem => item.AdminNotes)</td>
 			</tr>
 		}
 	</tbody>

@@ -1,0 +1,225 @@
+@{
+	ViewData["Title"] = "Bin Detection";
+}
+
+<!-- Tesseract.js for OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+
+<div class="text-center mt-4">
+	<h4 class="mb-3">Bin Detection with Number Plate</h4>
+
+	<!-- Detect Bin Button (initially shown) -->
+	<button id="startCameraBtn" class="btn btn-primary mb-3">🚀 Detect Bin</button>
+
+	<!-- Hidden camera and capture UI -->
+	<div id="cameraContainer" style="display:none;">
+		<video id="videoElement" width="480" height="360" autoplay playsinline class="rounded border"></video>
+		<br />
+		<button id="captureBtn" class="btn btn-success mt-3">📸 Capture & Detect</button>
+		<div id="plateResult" class="mt-3 fw-bold text-primary"></div>
+		<button id="retakeBtn" class="btn btn-secondary mt-2" style="display:none;">🔁 Retake</button>
+	</div>
+</div>
+
+@section PageScripts {
+	<script>
+		let video, canvas, tesseractWorker
+		let isProcessing = false
+
+		document.addEventListener("DOMContentLoaded", () => {
+			initializeAI()
+
+			document.getElementById("startCameraBtn").addEventListener("click", startCamera)
+			document.getElementById("captureBtn").addEventListener("click", captureAndDetect)
+			document.getElementById("retakeBtn").addEventListener("click", retakePhoto)
+		})
+
+		async function initializeAI() {
+			try {
+				tesseractWorker = await Tesseract.createWorker("eng")
+				await tesseractWorker.setParameters({
+					tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+					tessedit_pageseg_mode: Tesseract.PSM.SINGLE_LINE,
+				})
+				console.log("✅ AI OCR initialized successfully")
+			} catch (error) {
+				console.error("❌ Error initializing AI:", error)
+			}
+		}
+
+		async function startCamera() {
+			try {
+				video = document.getElementById("videoElement")
+
+				const stream = await navigator.mediaDevices.getUserMedia({
+					video: {
+						facingMode: "environment",
+						width: { ideal: 1280 },
+						height: { ideal: 720 },
+					},
+				})
+
+				video.srcObject = stream
+
+				document.getElementById("startCameraBtn").style.display = "none"
+				document.getElementById("cameraContainer").style.display = "block"
+			} catch (error) {
+				alert("❌ Unable to access camera: " + error.message)
+			}
+		}
+
+		async function captureAndDetect() {
+			if (isProcessing) return
+
+			isProcessing = true
+			document.getElementById("captureBtn").disabled = true
+			document.getElementById("plateResult").innerHTML = "🤖 AI is analyzing the image..."
+
+			try {
+				if (!canvas) {
+					canvas = document.createElement("canvas")
+				}
+
+				canvas.width = video.videoWidth
+				canvas.height = video.videoHeight
+				const ctx = canvas.getContext("2d")
+				ctx.drawImage(video, 0, 0)
+
+				const detectedPlateId = await processImageWithAI(canvas)
+
+				if (!detectedPlateId) {
+					document.getElementById("plateResult").innerHTML = "❌ No valid bin plate detected. Please try again."
+					document.getElementById("retakeBtn").style.display = "inline-block"
+					return
+				}
+
+				const location = await getCurrentLocation()
+				const imageData = canvas.toDataURL("image/jpeg", 0.8)
+
+				const response = await fetch("/Scan/ProcessDetection", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						binPlateId: detectedPlateId,
+						imageData: imageData,
+						gpsLatitude: location.latitude,
+						gpsLongitude: location.longitude,
+					}),
+				})
+
+				const result = await response.json()
+
+				if (result.success) {
+					document.getElementById("plateResult").innerHTML = `
+						<div class="alert alert-success">
+							<h5>${result.message}</h5>
+							<hr>
+							<p><strong>📍 Location:</strong> ${result.binLocation}</p>
+							<p><strong>👤 Collector:</strong> ${result.collectorName}</p>
+							<p><strong>🚛 Truck:</strong> ${result.truckPlate}</p>
+							<p><strong>⏰ Time:</strong> ${result.collectionTime}</p>
+						</div>
+					`
+				} else {
+					document.getElementById("plateResult").innerHTML = `
+						<div class="alert alert-danger">
+							<strong>❌ Detection Failed:</strong><br>
+							${result.message}
+						</div>
+					`
+				}
+
+				document.getElementById("retakeBtn").style.display = "inline-block"
+			} catch (error) {
+				document.getElementById("plateResult").innerHTML = `
+					<div class="alert alert-danger">
+						<strong>❌ Error:</strong> ${error.message}
+					</div>
+				`
+				document.getElementById("retakeBtn").style.display = "inline-block"
+			} finally {
+				isProcessing = false
+				document.getElementById("captureBtn").disabled = false
+			}
+		}
+
+		async function processImageWithAI(canvas) {
+			try {
+				if (!tesseractWorker) {
+					throw new Error("OCR not initialized")
+				}
+
+				const {
+					data: { text },
+				} = await tesseractWorker.recognize(canvas)
+
+				console.log("OCR detected text:", text)
+
+				const platePattern = /[A-Z]{3}\d{4}/g
+				const matches = text.toUpperCase().match(platePattern)
+
+				if (matches && matches.length > 0) {
+					return matches[0]
+				}
+
+				const letterPattern = /[A-Z]{2,4}/g
+				const numberPattern = /\d{3,5}/g
+
+				const letters = text.toUpperCase().match(letterPattern)
+				const numbers = text.match(numberPattern)
+
+				if (letters && numbers) {
+					const letterPart = letters[0].substring(0, 3).padEnd(3, "X")
+					const numberPart = numbers[0].substring(0, 4).padStart(4, "0")
+
+					if (letterPart.length === 3 && numberPart.length === 4) {
+						return letterPart + numberPart
+					}
+				}
+
+				return null
+			} catch (error) {
+				console.error("AI processing error:", error)
+				throw error
+			}
+		}
+
+		async function getCurrentLocation() {
+			return new Promise((resolve) => {
+				if (navigator.geolocation) {
+					navigator.geolocation.getCurrentPosition(
+						(position) => {
+							resolve({
+								latitude: position.coords.latitude,
+								longitude: position.coords.longitude,
+							})
+						},
+						() => {
+							resolve({ latitude: 0.0, longitude: 0.0 })
+						},
+					)
+				} else {
+					resolve({ latitude: 0.0, longitude: 0.0 })
+				}
+			})
+		}
+
+		function retakePhoto() {
+			document.getElementById("plateResult").innerHTML = ""
+			document.getElementById("retakeBtn").style.display = "none"
+			document.getElementById("captureBtn").disabled = false
+		}
+
+		window.addEventListener("beforeunload", async () => {
+			if (tesseractWorker) {
+				await tesseractWorker.terminate()
+			}
+
+			if (video && video.srcObject) {
+				video.srcObject.getTracks().forEach((track) => track.stop())
+			}
+		})
+	</script>
+}
