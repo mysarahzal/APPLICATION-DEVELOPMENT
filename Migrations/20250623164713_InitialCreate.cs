@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AspnetCoreMvcFull.Migrations
 {
     /// <inheritdoc />
-    public partial class createDb : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -75,6 +75,22 @@ namespace AspnetCoreMvcFull.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Roads", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RoutePlan",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ExpectedDurationMinutes = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RoutePlan", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -147,8 +163,8 @@ namespace AspnetCoreMvcFull.Migrations
                     RouteId = table.Column<int>(type: "int", nullable: false),
                     ScheduleStartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ScheduleEndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ActualStartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ActualEndTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActualStartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ActualEndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AdminNotes = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -191,6 +207,32 @@ namespace AspnetCoreMvcFull.Migrations
                         name: "FK_BinReports_Bins_BinId",
                         column: x => x.BinId,
                         principalTable: "Bins",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RouteBins",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RouteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrderInRoute = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RouteBins", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RouteBins_Bins_BinId",
+                        column: x => x.BinId,
+                        principalTable: "Bins",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RouteBins_RoutePlan_RouteId",
+                        column: x => x.RouteId,
+                        principalTable: "RoutePlan",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -366,6 +408,16 @@ namespace AspnetCoreMvcFull.Migrations
                 column: "ScheduleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RouteBins_BinId",
+                table: "RouteBins",
+                column: "BinId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RouteBins_RouteId",
+                table: "RouteBins",
+                column: "RouteId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Schedules_CollectorId",
                 table: "Schedules",
                 column: "CollectorId");
@@ -395,7 +447,13 @@ namespace AspnetCoreMvcFull.Migrations
                 name: "PickupReports");
 
             migrationBuilder.DropTable(
+                name: "RouteBins");
+
+            migrationBuilder.DropTable(
                 name: "CollectionRecords");
+
+            migrationBuilder.DropTable(
+                name: "RoutePlan");
 
             migrationBuilder.DropTable(
                 name: "CollectionPoints");
