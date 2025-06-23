@@ -21,7 +21,7 @@
 	</div>
 </div>
 
-@section Scripts {
+@section PageScripts {
 	<script>
 		let video, canvas, tesseractWorker
 		let isProcessing = false
@@ -93,6 +93,7 @@
 					return
 				}
 
+				const location = await getCurrentLocation()
 				const imageData = canvas.toDataURL("image/jpeg", 0.8)
 
 				const response = await fetch("/Scan/ProcessDetection", {
@@ -102,7 +103,9 @@
 					},
 					body: JSON.stringify({
 						binPlateId: detectedPlateId,
-						imageData: imageData
+						imageData: imageData,
+						gpsLatitude: location.latitude,
+						gpsLongitude: location.longitude,
 					}),
 				})
 
@@ -113,13 +116,10 @@
 						<div class="alert alert-success">
 							<h5>${result.message}</h5>
 							<hr>
-							<p><strong>🔍 Detected:</strong> ${result.binPlateId}</p>
 							<p><strong>📍 Location:</strong> ${result.binLocation}</p>
-							<p><strong>🏢 Zone:</strong> ${result.binZone}</p>
-							<p><strong>📊 Fill Level:</strong> ${result.fillLevel}%</p>
-							<p><strong>👤 Client:</strong> ${result.clientName}</p>
+							<p><strong>👤 Collector:</strong> ${result.collectorName}</p>
+							<p><strong>🚛 Truck:</strong> ${result.truckPlate}</p>
 							<p><strong>⏰ Time:</strong> ${result.collectionTime}</p>
-							<p><strong>📝 Record ID:</strong> ${result.collectionRecordId}</p>
 						</div>
 					`
 				} else {
@@ -184,6 +184,26 @@
 				console.error("AI processing error:", error)
 				throw error
 			}
+		}
+
+		async function getCurrentLocation() {
+			return new Promise((resolve) => {
+				if (navigator.geolocation) {
+					navigator.geolocation.getCurrentPosition(
+						(position) => {
+							resolve({
+								latitude: position.coords.latitude,
+								longitude: position.coords.longitude,
+							})
+						},
+						() => {
+							resolve({ latitude: 0.0, longitude: 0.0 })
+						},
+					)
+				} else {
+					resolve({ latitude: 0.0, longitude: 0.0 })
+				}
+			})
 		}
 
 		function retakePhoto() {
