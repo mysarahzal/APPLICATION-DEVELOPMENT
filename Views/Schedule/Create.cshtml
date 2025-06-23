@@ -1,87 +1,81 @@
-@model AspnetCoreMvcFull.Models.Schedule
+@model AspnetCoreMvcFull.Models.ViewModels.ScheduleCreateViewModel
 
 @{
 	ViewData["Title"] = "Create Schedule";
 }
 
-<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="container mt-4">
+	<h2>Create Schedule</h2>
 
-<div class="container-fluid">
-	<div class="card shadow mb-4">
-		<div class="card-header py-3">
-			<h6 class="m-0 font-weight-bold text-primary">@ViewData["Title"]</h6>
+	<form asp-action="Create" method="post">
+		<input type="hidden" asp-for="Schedule.Id" />
+
+		<div class="form-group">
+			<label asp-for="Schedule.TruckId"></label>
+			<select asp-for="Schedule.TruckId" class="form-control">
+				<option value="">-- Select Truck --</option>
+				@foreach (var truck in Model.Trucks)
+				{
+					<option value="@truck.Id">@truck.Name</option>
+				}
+			</select>
+			<span asp-validation-for="Schedule.TruckId" class="text-danger"></span>
 		</div>
-		<div class="card-body">
-			<form asp-action="Create" method="post">
-				<div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-				<div class="form-group">
-					<label asp-for="CollectorId" class="control-label">Collector/Driver *</label>
-					<select asp-for="CollectorId" class="form-control" required>
-						<option value="">-- Select Collector/Driver --</option>
-						@foreach (var user in ViewBag.Collectors)
-						{
-							if (user.Role == "Collector" || user.Role == "Driver")
-							{
-								<option value="@user.Id">@user.FirstName (@user.Role)</option>
-							}
-						}
-					</select>
-					<span asp-validation-for="CollectorId" class="text-danger"></span>
-				</div>
-
-				<div class="form-group">
-					<label asp-for="RouteId" class="control-label">Route *</label>
-					<select asp-for="RouteId" class="form-control" required>
-						<option value="">-- Select Route --</option>
-						@foreach (var route in ViewBag.Routes)
-						{
-							<option value="@route.Id">@route.Name</option>
-						}
-					</select>
-					<span asp-validation-for="RouteId" class="text-danger"></span>
-				</div>
-
-				<div class="form-group">
-					<label asp-for="ScheduleStartTime" class="control-label">Start Time *</label>
-					<input asp-for="ScheduleStartTime" class="form-control" required />
-					<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
-				</div>
-
-				<div class="form-group">
-					<label asp-for="ScheduleEndTime" class="control-label">End Time *</label>
-					<input asp-for="ScheduleEndTime" class="form-control" required />
-					<span asp-validation-for="ScheduleEndTime" class="text-danger"></span>
-				</div>
-
-				<div class="form-group">
-					<label asp-for="Status" class="control-label">Status</label>
-					<select asp-for="Status" class="form-control">
-						<option value="Scheduled" selected>Scheduled</option>
-						<option value="In Progress">In Progress</option>
-						<option value="Completed">Completed</option>
-						<option value="Cancelled">Cancelled</option>
-					</select>
-					<span asp-validation-for="Status" class="text-danger"></span>
-				</div>
-
-				<div class="form-group">
-					<button type="submit" class="btn btn-primary">Create Schedule</button>
-					<a asp-action="Index" class="btn btn-secondary">Cancel</a>
-				</div>
-			</form>
+		<div class="form-group">
+			<label asp-for="Schedule.CollectorId"></label>
+			<select asp-for="Schedule.CollectorId" class="form-control">
+				<option value="">-- Select Collector or Driver --</option>
+				@foreach (var user in Model.Collectors)
+				{
+					<option value="@user.Id">@user.FirstName @user.LastName (@user.Role)</option>
+				}
+			</select>
+			<span asp-validation-for="Schedule.CollectorId" class="text-danger"></span>
 		</div>
-	</div>
+
+		<div class="form-group">
+			<label asp-for="Schedule.RouteId"></label>
+			<select asp-for="Schedule.RouteId" class="form-control">
+				<option value="">-- Select Route --</option>
+				@foreach (var route in Model.Routes)
+				{
+					<option value="@route.Id">@route.Name</option>
+				}
+			</select>
+			<span asp-validation-for="Schedule.RouteId" class="text-danger"></span>
+		</div>
+
+		<div class="form-group">
+			<label asp-for="Schedule.ScheduleStartTime"></label>
+			<input asp-for="Schedule.ScheduleStartTime" type="datetime-local" class="form-control" />
+			<span asp-validation-for="Schedule.ScheduleStartTime" class="text-danger"></span>
+		</div>
+
+		<div class="form-group">
+			<label asp-for="Schedule.ScheduleEndTime"></label>
+			<input asp-for="Schedule.ScheduleEndTime" type="datetime-local" class="form-control" />
+			<span asp-validation-for="Schedule.ScheduleEndTime" class="text-danger"></span>
+		</div>
+
+		<div class="form-group">
+			<label asp-for="Schedule.Status"></label>
+			<select asp-for="Schedule.Status" class="form-control">
+				<option value="">-- Select Status --</option>
+				@foreach (var status in Model.Statuses)
+				{
+					<option value="@status">@status</option>
+				}
+			</select>
+			<span asp-validation-for="Schedule.Status" class="text-danger"></span>
+		</div>
+
+		<div class="form-group">
+			<label asp-for="Schedule.AdminNotes"></label>
+			<textarea asp-for="Schedule.AdminNotes" class="form-control"></textarea>
+			<span asp-validation-for="Schedule.AdminNotes" class="text-danger"></span>
+		</div>
+
+		<button type="submit" class="btn btn-success mt-3">Create</button>
+	</form>
 </div>
-
-
-<div>
-	<a asp-action="Index">Back to List</a>
-</div>
-
-@section Scripts {
-	@{
-		await Html.RenderPartialAsync("_ValidationScriptsPartial");
-	}
-}
-
