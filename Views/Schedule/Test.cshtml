@@ -1,15 +1,13 @@
-@{
-	ViewData["Title"] = "Test Form";
-}
-
-<h2>Minimal Test Form</h2>
+<h2>Minimal Form</h2>
 
 @if (ViewBag.Message != null)
 {
 	<div class="alert alert-success">@ViewBag.Message</div>
 }
 
-<form method="post" action="/Schedule/Test">
-	<input type="text" name="name" placeholder="Enter your name" />
+<form method="post" asp-action="TestForm">
+	@* @Html.AntiForgeryToken() *@
+
+	<input type="text" name="name" />
 	<button type="submit">Submit</button>
 </form>

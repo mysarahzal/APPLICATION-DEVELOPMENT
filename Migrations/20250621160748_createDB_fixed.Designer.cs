@@ -4,6 +4,7 @@ using AspnetCoreMvcFull.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-    partial class KUTIPDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250621160748_createDB_fixed")]
+    partial class createDB_fixed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -368,10 +371,10 @@ namespace AspnetCoreMvcFull.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("ActualEndTime")
+                    b.Property<DateTime?>("ActualEndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("ActualStartTime")
+                    b.Property<DateTime?>("ActualStartTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("AdminNotes")
@@ -390,7 +393,7 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<int>("RouteId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("ScheduleEndTime")
+                    b.Property<DateTime>("ScheduleEndTime")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("ScheduleStartTime")
@@ -400,8 +403,8 @@ namespace AspnetCoreMvcFull.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("TruckId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("TruckId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -411,8 +414,6 @@ namespace AspnetCoreMvcFull.Migrations
                     b.HasIndex("CollectorId");
 
                     b.HasIndex("RoadId");
-
-                    b.HasIndex("TruckId");
 
                     b.ToTable("Schedules");
                 });
@@ -603,17 +604,9 @@ namespace AspnetCoreMvcFull.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AspnetCoreMvcFull.Models.Truck", "Truck")
-                        .WithMany()
-                        .HasForeignKey("TruckId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Collector");
 
                     b.Navigation("Road");
-
-                    b.Navigation("Truck");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>
