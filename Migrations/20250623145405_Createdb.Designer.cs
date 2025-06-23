@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-    [Migration("20250623084453_createDb")]
-    partial class createDb
+    [Migration("20250623145405_Createdb")]
+    partial class Createdb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -363,6 +363,30 @@ namespace AspnetCoreMvcFull.Migrations
                     b.ToTable("Roads");
                 });
 
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.RouteBins", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BinId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("OrderInRoute")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoadId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BinId");
+
+                    b.HasIndex("RoadId");
+
+                    b.ToTable("RouteBins");
+                });
+
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Schedule", b =>
                 {
                     b.Property<int>("Id")
@@ -588,6 +612,25 @@ namespace AspnetCoreMvcFull.Migrations
                         .IsRequired();
 
                     b.Navigation("Schedule");
+                });
+
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.RouteBins", b =>
+                {
+                    b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
+                        .WithMany()
+                        .HasForeignKey("BinId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AspnetCoreMvcFull.Models.Road", "Road")
+                        .WithMany()
+                        .HasForeignKey("RoadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bin");
+
+                    b.Navigation("Road");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Schedule", b =>
