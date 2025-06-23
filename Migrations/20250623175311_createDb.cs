@@ -142,6 +142,7 @@ namespace AspnetCoreMvcFull.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    ScheduleId = table.Column<int>(type: "int", nullable: false),
                     TruckId = table.Column<int>(type: "int", nullable: false),
                     CollectorId = table.Column<int>(type: "int", nullable: false),
                     RouteId = table.Column<int>(type: "int", nullable: false),

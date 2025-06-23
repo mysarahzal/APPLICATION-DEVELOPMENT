@@ -390,8 +390,11 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<int>("RouteId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("ScheduleEndTime")
+                    b.Property<DateTime>("ScheduleEndTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("ScheduleStartTime")
                         .HasColumnType("datetime2");
@@ -400,8 +403,8 @@ namespace AspnetCoreMvcFull.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("TruckId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("TruckId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -411,8 +414,6 @@ namespace AspnetCoreMvcFull.Migrations
                     b.HasIndex("CollectorId");
 
                     b.HasIndex("RoadId");
-
-                    b.HasIndex("TruckId");
 
                     b.ToTable("Schedules");
                 });
@@ -603,17 +604,9 @@ namespace AspnetCoreMvcFull.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AspnetCoreMvcFull.Models.Truck", "Truck")
-                        .WithMany()
-                        .HasForeignKey("TruckId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Collector");
 
                     b.Navigation("Road");
-
-                    b.Navigation("Truck");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>
