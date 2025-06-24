@@ -430,6 +430,9 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<int>("TruckId")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("TruckId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -438,6 +441,8 @@ namespace AspnetCoreMvcFull.Migrations
                     b.HasIndex("CollectorId");
 
                     b.HasIndex("RoadId");
+
+                    b.HasIndex("TruckId1");
 
                     b.ToTable("Schedules");
                 });
@@ -453,6 +458,9 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("DriverId")
+                        .HasColumnType("int");
 
                     b.Property<string>("LicensePlate")
                         .IsRequired()
@@ -474,6 +482,8 @@ namespace AspnetCoreMvcFull.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
 
                     b.ToTable("Trucks");
                 });
@@ -647,9 +657,24 @@ namespace AspnetCoreMvcFull.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AspnetCoreMvcFull.Models.Truck", null)
+                        .WithMany("Schedules")
+                        .HasForeignKey("TruckId1");
+
                     b.Navigation("Collector");
 
                     b.Navigation("Road");
+                });
+
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Truck", b =>
+                {
+                    b.HasOne("AspnetCoreMvcFull.Models.User", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>
@@ -682,6 +707,8 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Truck", b =>
                 {
                     b.Navigation("CollectionRecords");
+
+                    b.Navigation("Schedules");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.User", b =>

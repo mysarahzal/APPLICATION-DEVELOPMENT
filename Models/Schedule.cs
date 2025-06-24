@@ -29,7 +29,6 @@ namespace AspnetCoreMvcFull.Models
     public virtual User Collector { get; set; }
     //public virtual User User { get; set; }  // No nullable
     public virtual Road Road { get; set; }  // No nullable
-    public virtual Truck Truck { get; set; }
     public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }  // No nullable
   }
 }

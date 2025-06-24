@@ -19,6 +19,8 @@ namespace AspnetCoreMvcFull.Models
     public DateTime UpdatedAt { get; set; }
 
     // Navigation Property
+    public User Driver { get; set; }
+    public virtual ICollection<Schedule> Schedules { get; set; }
     public ICollection<CollectionRecord> CollectionRecords { get; set; }
   }
 }
