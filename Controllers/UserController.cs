@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using AspnetCoreMvcFull.Models;
 using AspnetCoreMvcFull.Data;
 using System;
+using AspnetCoreMvcFull.ViewModels;
 
 namespace AspnetCoreMvcFull.Controllers
 {
@@ -33,7 +34,7 @@ namespace AspnetCoreMvcFull.Controllers
       return RedirectToAction("Index");
     }
 
-    // GET: /User/Edit/5
+    // GET: /User/Edit/5 - REPLACE this method
     public IActionResult Edit(int id)
     {
       var user = _context.Users.Find(id);
@@ -41,15 +42,27 @@ namespace AspnetCoreMvcFull.Controllers
       {
         return NotFound();
       }
-      return View(user);
+
+      // Map User model to EditUserViewModel
+      var viewModel = new EditUserViewModel
+      {
+        Id = user.Id,
+        Email = user.Email,
+        FirstName = user.FirstName,
+        LastName = user.LastName,
+        Role = user.Role,
+        PhoneNumber = user.PhoneNumber
+      };
+
+      return View(viewModel);
     }
 
-    // POST: /User/Edit/5
+    // POST: /User/Edit/5 - REPLACE this method
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Edit(int id, User user)
+    public IActionResult Edit(int id, EditUserViewModel viewModel)
     {
-      if (id != user.Id)
+      if (id != viewModel.Id)
       {
         return BadRequest();
       }
@@ -58,6 +71,20 @@ namespace AspnetCoreMvcFull.Controllers
       {
         try
         {
+          // Get the existing user from database
+          var user = _context.Users.Find(id);
+          if (user == null)
+          {
+            return NotFound();
+          }
+
+          // Update only the editable fields (keep password and other fields unchanged)
+          user.Email = viewModel.Email;
+          user.FirstName = viewModel.FirstName;
+          user.LastName = viewModel.LastName;
+          user.Role = viewModel.Role;
+          user.PhoneNumber = viewModel.PhoneNumber;
+
           _context.Update(user);
           _context.SaveChanges();
           TempData["Success"] = "User updated successfully.";
@@ -66,10 +93,51 @@ namespace AspnetCoreMvcFull.Controllers
         catch (Exception ex)
         {
           ModelState.AddModelError("", "Unable to save changes. " + ex.Message);
+          TempData["Error"] = "Unable to save changes: " + ex.Message;
         }
       }
-      return View(user);
+
+      // If validation failed, return the view with errors
+      return View(viewModel);
     }
+
+    // GET: /User/Edit/5
+    //public IActionResult Edit(int id)
+    //{
+    //  var user = _context.Users.Find(id);
+    //  if (user == null)
+    //  {
+    //    return NotFound();
+    //  }
+    //  return View(user);
+    //}
+
+    // POST: /User/Edit/5
+    //[HttpPost]
+    //[ValidateAntiForgeryToken]
+    //public IActionResult Edit(int id, User user)
+    //{
+    //  if (id != user.Id)
+    //  {
+    //    return BadRequest();
+    //  }
+
+    //  if (ModelState.IsValid)
+    //  {
+    //    try
+    //    {
+    //      _context.Update(user);
+    //      _context.SaveChanges();
+    //      TempData["Success"] = "User updated successfully.";
+    //      return RedirectToAction("Index");
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //      ModelState.AddModelError("", "Unable to save changes. " + ex.Message);
+    //    }
+    //  }
+    //  return View(user);
+    //}
 
     // GET: /User/Delete/5
     public IActionResult Delete(int id)
