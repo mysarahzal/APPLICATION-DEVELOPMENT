@@ -360,31 +360,7 @@ namespace AspnetCoreMvcFull.Migrations
                     b.ToTable("Roads");
                 });
 
-            modelBuilder.Entity("AspnetCoreMvcFull.Models.RouteBins", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("BinId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("OrderInRoute")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RouteId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BinId");
-
-                    b.HasIndex("RouteId");
-
-                    b.ToTable("RouteBins");
-                });
-
-            modelBuilder.Entity("AspnetCoreMvcFull.Models.RoutePlan", b =>
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Route", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -410,7 +386,36 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RoutePlan");
+                    b.ToTable("Routes");
+                });
+
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.RouteBins", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BinId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("OrderInRoute")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoadId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("RouteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BinId");
+
+                    b.HasIndex("RoadId");
+
+                    b.HasIndex("RouteId");
+
+                    b.ToTable("RouteBins");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Schedule", b =>
@@ -446,6 +451,9 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<DateTime>("ScheduleEndTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ScheduleId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("ScheduleStartTime")
                         .HasColumnType("datetime2");
 
@@ -474,17 +482,10 @@ namespace AspnetCoreMvcFull.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<decimal>("CapacityTon")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("LicensePlate")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Make")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -648,15 +649,19 @@ namespace AspnetCoreMvcFull.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("AspnetCoreMvcFull.Models.RoutePlan", "RoutePlan")
-                        .WithMany("RouteBins")
-                        .HasForeignKey("RouteId")
+                    b.HasOne("AspnetCoreMvcFull.Models.Road", "Road")
+                        .WithMany()
+                        .HasForeignKey("RoadId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AspnetCoreMvcFull.Models.Route", null)
+                        .WithMany("RouteBins")
+                        .HasForeignKey("RouteId");
+
                     b.Navigation("Bin");
 
-                    b.Navigation("RoutePlan");
+                    b.Navigation("Road");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Schedule", b =>
@@ -700,7 +705,7 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Navigation("Images");
                 });
 
-            modelBuilder.Entity("AspnetCoreMvcFull.Models.RoutePlan", b =>
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Route", b =>
                 {
                     b.Navigation("RouteBins");
                 });

@@ -5,6 +5,7 @@ namespace AspnetCoreMvcFull.Models
   public class Schedule
   {
     public int Id { get; set; }  // No nullable
+    public int ScheduleId { get; set; }
     public int TruckId { get; set; }  // No nullable
 
     [Required]
