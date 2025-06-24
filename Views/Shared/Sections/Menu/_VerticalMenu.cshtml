@@ -67,6 +67,11 @@
                         <div>Manage Client Bins</div>
                     </a>
                 </li>
+				<li class='menu-item@(currentPage.StartsWith("/Truck") ? " active" : "")'>
+					<a asp-controller="Truck" asp-action="Index" class="menu-link">
+						<div>Trucks</div>
+					</a>
+				</li>
             @* </ul> *@
         @* </li> *@
     </ul>

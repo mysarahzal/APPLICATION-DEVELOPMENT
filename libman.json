@@ -4,21 +4,18 @@
   "libraries": [
     {
       "library": "jquery@3.6.0",
-      "destination": "wwwroot/lib/",
+      "destination": "wwwroot/lib/jquery/",
       "files": [
         "jquery.min.js"
       ]
     },
     {
       "library": "jquery-validate@1.21.0",
-      "destination": "wwwroot/lib/",
-      "files": [
-        "jquery.validate.min.js"
-      ]
+      "destination": "wwwroot/lib/jquery-validate/"
     },
     {
       "library": "jquery-validation-unobtrusive@4.0.0",
-      "destination": "wwwroot/lib/"
+      "destination": "wwwroot/lib/jquery-validation-unobtrusive/"
     }
   ]
 }
