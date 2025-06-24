@@ -37,14 +37,8 @@ namespace AspnetCoreMvcFull.Models
     // Navigation Properties (if you have these tables)
     public virtual ICollection<CollectionPoint> CollectionPoints { get; set; } = new List<CollectionPoint>();
     public virtual ICollection<CollectionRecord> CollectionRecords { get; set; } = new List<CollectionRecord>();
+
+    // ADD THIS: Missing navigation property for RouteBins
+    public virtual ICollection<RouteBins> RouteBins { get; set; } = new List<RouteBins>();
   }
 }
-
-
-
-
-
-
-
-
-

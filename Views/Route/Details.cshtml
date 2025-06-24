@@ -1,0 +1,129 @@
+@model AspnetCoreMvcFull.Models.RoutePlan
+
+@{
+    ViewData["Title"] = "Route Details";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">Route Details</h4>
+                    <div>
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <dl class="row">
+                                <dt class="col-sm-3">Name:</dt>
+                                <dd class="col-sm-9">
+                                    <strong>@Html.DisplayFor(model => model.Name)</strong>
+                                </dd>
+
+                                <dt class="col-sm-3">Description:</dt>
+                                <dd class="col-sm-9">
+                                    @if (!string.IsNullOrEmpty(Model.Description))
+                                    {
+                                        @Html.DisplayFor(model => model.Description)
+                                    }
+                                    else
+                                    {
+                                        <em class="text-muted">No description provided</em>
+                                    }
+                                </dd>
+
+                                <dt class="col-sm-3">Expected Duration:</dt>
+                                <dd class="col-sm-9">
+                                    <span class="badge bg-info">@Html.DisplayFor(model => model.ExpectedDurationMinutes) minutes</span>
+                                </dd>
+
+                                <dt class="col-sm-3">Total Bins:</dt>
+                                <dd class="col-sm-9">
+                                    <span class="badge bg-secondary">@Model.RouteBins.Count bins</span>
+                                </dd>
+
+                                <dt class="col-sm-3">Created:</dt>
+                                <dd class="col-sm-9">@Model.CreatedAt.ToString("MMMM dd, yyyy 'at' hh:mm tt")</dd>
+
+                                <dt class="col-sm-3">Last Updated:</dt>
+                                <dd class="col-sm-9">@Model.UpdatedAt.ToString("MMMM dd, yyyy 'at' hh:mm tt")</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">Route Statistics</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="text-center">
+                                        <div class="mb-3">
+                                            <h3 class="text-primary">@Model.RouteBins.Count</h3>
+                                            <small class="text-muted">Total Bins</small>
+                                        </div>
+                                        <div class="mb-3">
+                                            <h3 class="text-info">@Model.ExpectedDurationMinutes</h3>
+                                            <small class="text-muted">Minutes</small>
+                                        </div>
+                                        <div class="mb-3">
+                                            <h3 class="text-success">@(Math.Round((double)Model.ExpectedDurationMinutes / 60, 1))</h3>
+                                            <small class="text-muted">Hours</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.RouteBins.Any())
+                    {
+                        <hr />
+                        <h5>Route Bins</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Bin Plate ID</th>
+                                        <th>Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var routeBin in Model.RouteBins.OrderBy(rb => rb.OrderInRoute))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-primary">@routeBin.OrderInRoute</span>
+                                            </td>
+                                            <td>
+                                                <strong>@routeBin.Bin?.BinPlateId</strong>
+                                            </td>
+                                            <td>
+                                                @routeBin.Bin?.Location
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <hr />
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No bins assigned to this route yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

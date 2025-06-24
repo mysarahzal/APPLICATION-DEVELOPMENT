@@ -9,7 +9,10 @@ namespace AspnetCoreMvcFull.Models
     [Key]
     public Guid Id { get; set; }  // Primary Key
 
-    [ForeignKey("Bin")]
+    [Required]
+    public Guid RouteId { get; set; }  // FIXED: Changed from int to Guid
+
+    [Required]
     public Guid BinId { get; set; }  // Foreign Key to Bins
 
     [Required]
@@ -17,7 +20,10 @@ namespace AspnetCoreMvcFull.Models
     public int OrderInRoute { get; set; }  // Order of the bin in the route
 
     // Navigation properties
-    public virtual Route Route { get; set; }  // Navigation to Road
+    [ForeignKey("RouteId")]
+    public virtual RoutePlan RoutePlan { get; set; }  // FIXED: Changed from Route to RoutePlan
+
+    [ForeignKey("BinId")]
     public virtual Bin Bin { get; set; }  // Navigation to Bins
   }
 }

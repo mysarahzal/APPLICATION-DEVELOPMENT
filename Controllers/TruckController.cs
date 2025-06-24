@@ -37,16 +37,16 @@ namespace AspnetCoreMvcFull.Controllers
       ModelState.Remove("CollectionRecords");
       ModelState.Remove("CreatedAt");
       ModelState.Remove("UpdatedAt");
+      ModelState.Remove("Id"); // Remove Id validation since it's auto-generated
 
       if (ModelState.IsValid)
       {
         try
         {
-          truck.Id = Guid.NewGuid();
-          truck.Status = "Available"; // Set this manually
+          // Don't set truck.Id - let the database auto-generate it
+          truck.Status = "Available";
           truck.CreatedAt = DateTime.Now;
           truck.UpdatedAt = DateTime.Now;
-          // CollectionRecords will be null initially (which is fine)
 
           _context.Add(truck);
           await _context.SaveChangesAsync();
@@ -63,8 +63,27 @@ namespace AspnetCoreMvcFull.Controllers
       return View(truck);
     }
 
+    // GET: Truck/Details/5
+    public async Task<IActionResult> Details(int? id)  // Changed from Guid? to int?
+    {
+      if (id == null)
+      {
+        return NotFound();
+      }
+
+      var truck = await _context.Trucks
+          .FirstOrDefaultAsync(m => m.Id == id);
+
+      if (truck == null)
+      {
+        return NotFound();
+      }
+
+      return View(truck);
+    }
+
     // GET: Truck/Edit/5
-    public async Task<IActionResult> Edit(Guid? id)
+    public async Task<IActionResult> Edit(int? id)  // Changed from Guid? to int?
     {
       if (id == null)
       {
@@ -82,7 +101,7 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: Truck/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Guid id, [Bind("Id,LicensePlate,Model,Status,CreatedAt")] Truck truck)
+    public async Task<IActionResult> Edit(int id, [Bind("Id,LicensePlate,Model,Status,CreatedAt")] Truck truck)  // Changed from Guid to int
     {
       if (id != truck.Id)
       {
@@ -124,7 +143,7 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // GET: Truck/Delete/5
-    public async Task<IActionResult> Delete(Guid? id)
+    public async Task<IActionResult> Delete(int? id)  // Changed from Guid? to int?
     {
       if (id == null)
       {
@@ -145,7 +164,7 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: Truck/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(Guid id)
+    public async Task<IActionResult> DeleteConfirmed(int id)  // Changed from Guid to int
     {
       var truck = await _context.Trucks.FindAsync(id);
       if (truck != null)
@@ -158,7 +177,7 @@ namespace AspnetCoreMvcFull.Controllers
       return RedirectToAction(nameof(Index));
     }
 
-    private bool TruckExists(Guid id)
+    private bool TruckExists(int id)  // Changed from Guid to int
     {
       return _context.Trucks.Any(e => e.Id == id);
     }
