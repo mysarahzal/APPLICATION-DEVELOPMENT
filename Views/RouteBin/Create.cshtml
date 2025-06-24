@@ -1,0 +1,60 @@
+@model AspnetCoreMvcFull.Models.RouteBins
+
+@{
+    ViewData["Title"] = "Create Route-Bin Assignment";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">Create New Route-Bin Assignment</h4>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="RouteId" class="form-label">Route</label>
+                            <select asp-for="RouteId" class="form-select" asp-items="ViewBag.RouteId">
+                                <option value="">-- Select Route --</option>
+                            </select>
+                            <span asp-validation-for="RouteId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="BinId" class="form-label">Bin</label>
+                            <select asp-for="BinId" class="form-select" asp-items="ViewBag.BinId">
+                                <option value="">-- Select Bin --</option>
+                            </select>
+                            <span asp-validation-for="BinId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="OrderInRoute" class="form-label">Order in Route</label>
+                            <input asp-for="OrderInRoute" class="form-control" type="number" min="1" placeholder="Leave empty for auto-assignment" />
+                            <div class="form-text">Leave empty to automatically assign the next available order number.</div>
+                            <span asp-validation-for="OrderInRoute" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Assignment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

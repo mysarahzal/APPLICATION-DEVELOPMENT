@@ -1,0 +1,74 @@
+@model AspnetCoreMvcFull.Models.RouteBins
+
+@{
+    ViewData["Title"] = "Delete Route-Bin Assignment";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="card-title mb-0">Delete Route-Bin Assignment</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Warning!</strong> Are you sure you want to delete this route-bin assignment? This action cannot be undone.
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Route Information</h6>
+                            <dl class="row">
+                                <dt class="col-sm-4">Name:</dt>
+                                <dd class="col-sm-8">@Html.DisplayFor(model => model.RoutePlan.Name)</dd>
+
+                                <dt class="col-sm-4">Duration:</dt>
+                                <dd class="col-sm-8">@Html.DisplayFor(model => model.RoutePlan.ExpectedDurationMinutes) minutes</dd>
+
+                                <dt class="col-sm-4">Order:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge bg-primary">@Html.DisplayFor(model => model.OrderInRoute)</span>
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Bin Information</h6>
+                            <dl class="row">
+                                <dt class="col-sm-4">Plate ID:</dt>
+                                <dd class="col-sm-8">@Html.DisplayFor(model => model.Bin.BinPlateId)</dd>
+
+                                <dt class="col-sm-4">Location:</dt>
+                                <dd class="col-sm-8">@Html.DisplayFor(model => model.Bin.Location)</dd>
+
+                                <dt class="col-sm-4">Zone:</dt>
+                                <dd class="col-sm-8">@Html.DisplayFor(model => model.Bin.Zone)</dd>
+
+                                <dt class="col-sm-4">Client:</dt>
+                                <dd class="col-sm-8">@Html.DisplayFor(model => model.Bin.Client.ClientName)</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>Note:</strong> Removing this assignment will automatically reorder the remaining bins in the route.
+                    </div>
+
+                    <form asp-action="Delete">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Delete Assignment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

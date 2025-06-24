@@ -1,0 +1,244 @@
+@model AspnetCoreMvcFull.Models.RoutePlan
+
+@{
+    ViewData["Title"] = "Manage Route Bins";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title mb-0">Manage Bins for Route: @Model.Name</h4>
+                        <small class="text-muted">Expected Duration: @Model.ExpectedDurationMinutes minutes</small>
+                    </div>
+                    <div>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Routes
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @Html.AntiForgeryToken()
+                    
+                    @if (Model.RouteBins.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="routeBinsTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Bin Plate ID</th>
+                                        <th>Location</th>
+                                        <th>Zone</th>
+                                        <th>Fill Level</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sortable-bins">
+                                    @foreach (var routeBin in Model.RouteBins.OrderBy(rb => rb.OrderInRoute))
+                                    {
+                                        <tr data-id="@routeBin.Id" data-order="@routeBin.OrderInRoute">
+                                            <td>
+                                                <span class="badge bg-primary order-badge">@routeBin.OrderInRoute</span>
+                                                <i class="fas fa-grip-vertical ms-2 text-muted drag-handle" style="cursor: move;"></i>
+                                            </td>
+                                            <td>
+                                                <strong>@routeBin.Bin.BinPlateId</strong>
+                                            </td>
+                                            <td>@routeBin.Bin.Location</td>
+                                            <td>
+                                                <span class="badge bg-info">@routeBin.Bin.Zone</span>
+                                            </td>
+                                            <td>
+                                                <div class="progress" style="width: 60px;">
+                                                    <div class="progress-bar" role="progressbar" style="width: @routeBin.Bin.FillLevel%">
+                                                        @routeBin.Bin.FillLevel%
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="removeBinFromRoute('@routeBin.Id')" title="Remove from Route">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <button class="btn btn-success" onclick="saveOrder()">
+                                <i class="fas fa-save"></i> Save Order
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No bins assigned to this route</h5>
+                            <p class="text-muted">Add bins to this route to start building your collection path.</p>
+                        </div>
+                    }
+                    
+                    <!-- Add Bin Section -->
+                    <hr />
+                    <h5>Add Bin to Route</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <select id="availableBins" class="form-select">
+                                <option value="">-- Select a bin to add --</option>
+                                @if (ViewBag.AvailableBins != null)
+                                {
+                                    @foreach (var bin in (List<AspnetCoreMvcFull.Models.Bin>)ViewBag.AvailableBins)
+                                    {
+                                        <option value="@bin.Id">@bin.BinPlateId - @bin.Location (@bin.Zone)</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary" onclick="addBinToRoute()">
+                                <i class="fas fa-plus"></i> Add Bin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sortableElement = document.getElementById('sortable-bins');
+            if (sortableElement) {
+                const sortable = Sortable.create(sortableElement, {
+                    handle: '.drag-handle',
+                    animation: 150,
+                    onEnd: function(evt) {
+                        updateOrderBadges();
+                    }
+                });
+            }
+        });
+
+        function updateOrderBadges() {
+            const rows = document.querySelectorAll('#sortable-bins tr');
+            rows.forEach((row, index) => {
+                const orderBadge = row.querySelector('.order-badge');
+                orderBadge.textContent = index + 1;
+                row.setAttribute('data-order', index + 1);
+            });
+        }
+
+        function saveOrder() {
+            const rows = document.querySelectorAll('#sortable-bins tr');
+            const updates = [];
+            
+            rows.forEach((row, index) => {
+                const id = row.getAttribute('data-id');
+                updates.push({
+                    Id: id,
+                    OrderInRoute: index + 1
+                });
+            });
+
+            fetch('/Route/UpdateBinOrder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: JSON.stringify({ routeId: '@Model.Id', updates: updates })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Order saved successfully!', 'success');
+                } else {
+                    showAlert('Error saving order: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error: ' + error.message, 'danger');
+            });
+        }
+
+        function addBinToRoute() {
+            const select = document.getElementById('availableBins');
+            const binId = select.value;
+            
+            if (!binId) {
+                showAlert('Please select a bin to add', 'warning');
+                return;
+            }
+
+            fetch('/Route/AddBinToRoute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                },
+                body: JSON.stringify({ routeId: '@Model.Id', binId: binId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    showAlert('Error adding bin: ' + data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert('Error: ' + error.message, 'danger');
+            });
+        }
+
+        function removeBinFromRoute(routeBinId) {
+            if (confirm('Are you sure you want to remove this bin from the route?')) {
+                fetch('/Route/RemoveBinFromRoute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    },
+                    body: JSON.stringify({ routeBinId: routeBinId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        showAlert('Error removing bin: ' + data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error: ' + error.message, 'danger');
+                });
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.querySelector('.card-body').insertBefore(alertDiv, document.querySelector('.card-body').firstChild);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+}
+
+

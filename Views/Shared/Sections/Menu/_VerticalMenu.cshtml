@@ -24,52 +24,65 @@
     @* ! Full version menu-items *@
     <ul class="menu-inner py-1">
 
-                <li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
-                    <a asp-controller="User" asp-action="Index" class="menu-link">
-                        <div>User Management</div>
-                    </a>
-                </li>
+        <li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
+            <a asp-controller="User" asp-action="Index" class="menu-link">
+                <div>User Management</div>
+            </a>
+        </li>
 
-                @* Schedule Menu *@
-                <li class='menu-item@(currentPage.StartsWith("/Schedule") ? " active" : "")'>
-                    <a asp-controller="Schedule" asp-action="Index" class="menu-link">
-                        @* <i class="menu-icon tf-icons ri-table-2"></i> *@
-                        <div>Schedule</div>
-                    </a>
-                </li>
+        @* Route Management Menu *@
+        <li class='menu-item@(currentPage.StartsWith("/Route") ? " active" : "")'>
+            <a asp-controller="Route" asp-action="Index" class="menu-link">
+                <div>Route Management</div>
+            </a>
+        </li>
 
-                @* Missed Pickups Menu *@
-                <li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
-                    <a asp-controller="MissedPickup" asp-action="Index" class="menu-link">
-                        <div>Missed Pickup</div>
-                    </a>
-                </li>
-                <!-- Submit Bin Report -->
-                <li class='menu-item@(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmitBinReport") ? " active" : "")'>
-                    <a asp-controller="BinReport" asp-action="SubmitBinReport" class="menu-link">
-                        @* <i class="menu-icon tf-icons ri-file-edit-line"></i> *@
-                        <div>Submit Bin Report</div>
-                    </a>
-                </li>
+        @* RouteBin Management Menu *@
+        <li class='menu-item@(currentPage.StartsWith("/RouteBin") ? " active" : "")'>
+            <a asp-controller="RouteBin" asp-action="Index" class="menu-link">
+                <div>RouteBin Management</div>
+            </a>
+        </li>
 
-                <!-- Submitted Reports -->
-                <li class='menu-item@(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmittedReports") ? " active" : "")'>
-                    <a asp-controller="BinReport" asp-action="SubmittedReports" class="menu-link">
-                        @* <i class="menu-icon tf-icons ri-list-check-line"></i> *@
-                        <div>Submitted Reports</div>
-                    </a>
-                </li>
+        @* Schedule Menu *@
+        <li class='menu-item@(currentPage.StartsWith("/Schedule") ? " active" : "")'>
+            <a asp-controller="Schedule" asp-action="Index" class="menu-link">
+                @* <i class="menu-icon tf-icons ri-table-2"></i> *@
+                <div>Schedule</div>
+            </a>
+        </li>
 
-                <!-- Manage Client Bins (New button) -->
-                <li class='menu-item@(currentPage.StartsWith("/ClientBin") ? " active" : "")'>
-                    <a asp-controller="ClientBin" asp-action="Index" class="menu-link">
-                        @* <i class="menu-icon tf-icons ri-database-line"></i> *@
-                        <div>Manage Client Bins</div>
-                    </a>
-                </li>
-            @* </ul> *@
+        @* Missed Pickups Menu *@
+        <li class='menu-item@(currentPage.StartsWith("/UserManagement") ? " active" : "")'>
+            <a asp-controller="MissedPickup" asp-action="Index" class="menu-link">
+                <div>Missed Pickup</div>
+            </a>
+        </li>
+        <!-- Submit Bin Report -->
+        <li class='menu-item@(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmitBinReport") ? " active" : "")'>
+            <a asp-controller="BinReport" asp-action="SubmitBinReport" class="menu-link">
+                @* <i class="menu-icon tf-icons ri-file-edit-line"></i> *@
+                <div>Submit Bin Report</div>
+            </a>
+        </li>
+
+        <!-- Submitted Reports -->
+        <li class='menu-item@(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmittedReports") ? " active" : "")'>
+            <a asp-controller="BinReport" asp-action="SubmittedReports" class="menu-link">
+                @* <i class="menu-icon tf-icons ri-list-check-line"></i> *@
+                <div>Submitted Reports</div>
+            </a>
+        </li>
+
+        <!-- Manage Client Bins (New button) -->
+        <li class='menu-item@(currentPage.StartsWith("/ClientBin") ? " active" : "")'>
+            <a asp-controller="ClientBin" asp-action="Index" class="menu-link">
+                @* <i class="menu-icon tf-icons ri-database-line"></i> *@
+                <div>Manage Client Bins</div>
+            </a>
+        </li>
+        @* </ul> *@
         @* </li> *@
     </ul>
-
 </aside>
 <!-- / Menu -->
