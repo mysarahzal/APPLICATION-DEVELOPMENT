@@ -360,6 +360,64 @@ namespace AspnetCoreMvcFull.Migrations
                     b.ToTable("Roads");
                 });
 
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Route", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ExpectedDurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Routes");
+                });
+
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.RouteBins", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BinId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("OrderInRoute")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RoadId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("RouteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BinId");
+
+                    b.HasIndex("RoadId");
+
+                    b.HasIndex("RouteId");
+
+                    b.ToTable("RouteBins");
+                });
+
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Schedule", b =>
                 {
                     b.Property<int>("Id")
@@ -590,6 +648,29 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Navigation("Schedule");
                 });
 
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.RouteBins", b =>
+                {
+                    b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
+                        .WithMany()
+                        .HasForeignKey("BinId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AspnetCoreMvcFull.Models.Road", "Road")
+                        .WithMany()
+                        .HasForeignKey("RoadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AspnetCoreMvcFull.Models.Route", null)
+                        .WithMany("RouteBins")
+                        .HasForeignKey("RouteId");
+
+                    b.Navigation("Bin");
+
+                    b.Navigation("Road");
+                });
+
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Schedule", b =>
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.User", "Collector")
@@ -629,6 +710,11 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionRecord", b =>
                 {
                     b.Navigation("Images");
+                });
+
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Route", b =>
+                {
+                    b.Navigation("RouteBins");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Schedule", b =>

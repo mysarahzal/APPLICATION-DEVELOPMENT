@@ -13,6 +13,10 @@ namespace AspnetCoreMvcFull.Data
     public DbSet<Client> Clients { get; set; }
     public DbSet<Bin> Bins { get; set; }
 
+    public DbSet<RouteBins> RouteBins { get; set; }
+
+    public DbSet<AspnetCoreMvcFull.Models.Route> Routes { get; set; }  // Fully qualified namespace
+
     // Other models
     public DbSet<Alert> Alerts { get; set; }
     public DbSet<CollectionPoint> CollectionPoints { get; set; }
@@ -27,6 +31,5 @@ namespace AspnetCoreMvcFull.Data
     public DbSet<BinReport> BinReports { get; set; }
   }
 }
-
 
 
