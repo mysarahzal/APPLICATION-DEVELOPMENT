@@ -17,7 +17,7 @@ namespace AspnetCoreMvcFull.Models
     public Guid BinId { get; set; }  // Foreign Key to Bins
 
     [ForeignKey("Route")]
-    public Guid RouteId { get; set; }  // Foreign Key to Bins
+    //public Guid RouteId { get; set; }  // Foreign Key to Bins
 
     [Required]
     [Range(1, int.MaxValue, ErrorMessage = "Order in route must be greater than 0.")]

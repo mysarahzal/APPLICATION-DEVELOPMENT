@@ -13,7 +13,7 @@ namespace AspnetCoreMvcFull.Data
     public DbSet<Client> Clients { get; set; }
     public DbSet<Bin> Bins { get; set; }
     public DbSet<RouteBins> RouteBins { get; set; }
-    public DbSet<AspnetCoreMvcFull.Models.Route> Routes { get; set; }  // Fully qualified namespace
+    public DbSet<AspnetCoreMvcFull.Models.RoutePlan> Routes { get; set; }  // Fully qualified namespace
 
     // Other models
     public DbSet<Alert> Alerts { get; set; }
@@ -92,9 +92,9 @@ namespace AspnetCoreMvcFull.Data
 
       // Configure other relationships that might cause cascade issues
       modelBuilder.Entity<RouteBins>()
-          .HasOne(rb => rb.Route)
+          .HasOne(rb => rb.RoutePlan)
           .WithMany(r => r.RouteBins)
-          .HasForeignKey(rb => rb.RouteId)
+          .HasForeignKey(rb => rb.Id)
           .OnDelete(DeleteBehavior.NoAction);
 
       modelBuilder.Entity<RouteBins>()
