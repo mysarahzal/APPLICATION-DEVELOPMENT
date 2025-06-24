@@ -1,34 +1,50 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AspnetCoreMvcFull.Models
 {
   public class Schedule
   {
-    public int Id { get; set; }  // No nullable
-    public int ScheduleId { get; set; }
-    public int TruckId { get; set; }  // No nullable
+    [Key]
+    public int Id { get; set; }
 
     [Required]
-    public int CollectorId { get; set; }  // No nullable
+    public int TruckId { get; set; }
 
     [Required]
-    public int RouteId { get; set; }  // No nullable, ensure the type matches the primary key of Route
+    public int CollectorId { get; set; }
 
     [Required]
-    public DateTime ScheduleStartTime { get; set; }  // No nullable
-    public DateTime ScheduleEndTime { get; set; }  // No nullable
-    //public DateTime ScheduledDay { get; set; }
-    public DateTime ActualStartTime { get; set; }  // No nullable
-    public DateTime ActualEndTime { get; set; }  // No nullable
-    public string Status { get; set; }  // No nullable
-    public string AdminNotes { get; set; }  // No nullable
-    public DateTime CreatedAt { get; set; }  // No nullable
-    public DateTime UpdatedAt { get; set; }  // No nullable
+    public Guid RouteId { get; set; }  // Guid to match RoutePlan.Id
+
+    [Required]
+    public DateTime ScheduleStartTime { get; set; }
+
+    public DateTime ScheduleEndTime { get; set; }
+    public DateTime? ActualStartTime { get; set; }
+    public DateTime? ActualEndTime { get; set; }
+
+    [StringLength(50)]
+    public string Status { get; set; } = "Scheduled";
+
+    public string AdminNotes { get; set; }
+
+    [Required]
+    public DateTime CreatedAt { get; set; }
+
+    [Required]
+    public DateTime UpdatedAt { get; set; }
 
     // Navigation Properties
+    [ForeignKey("CollectorId")]
     public virtual User Collector { get; set; }
-    //public virtual User User { get; set; }  // No nullable
-    public virtual Road Road { get; set; }  // No nullable
-    public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }  // No nullable
+
+    [ForeignKey("TruckId")]
+    public virtual Truck Truck { get; set; }
+
+    [ForeignKey("RouteId")]
+    public virtual RoutePlan Route { get; set; }  // FIXED: Points to RoutePlan
+
+    public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }
   }
 }
