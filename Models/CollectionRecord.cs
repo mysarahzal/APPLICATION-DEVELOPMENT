@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace AspnetCoreMvcFull.Models
 {
@@ -9,31 +10,36 @@ namespace AspnetCoreMvcFull.Models
   [Index(nameof(BinId))]
   public class CollectionRecord
   {
+    [Key]
     public Guid Id { get; set; }
 
     // Foreign Keys
-    public Guid BinId { get; set; }  // Change BinId to Guid (from int to Guid)
-    public Guid CollectionPointId { get; set; }  // Ensure CollectionPointId is Guid
+    [Required]
+    public Guid BinId { get; set; }
+
+    [Required]
+    public Guid CollectionPointId { get; set; }
+
+    [Required]
+    public int UserId { get; set; }
+
+    [Required]
+    public int TruckId { get; set; }  // Changed from Guid to int to match Truck.Id
 
     // Navigation Properties
-    [DeleteBehavior(DeleteBehavior.Restrict)]
     [ForeignKey("CollectionPointId")]
     public virtual CollectionPoint CollectionPoint { get; set; }
 
-    [DeleteBehavior(DeleteBehavior.Restrict)]
     [ForeignKey("BinId")]
     public virtual Bin Bin { get; set; }
 
-    public int UserId { get; set; }
-    [DeleteBehavior(DeleteBehavior.Restrict)]
     [ForeignKey("UserId")]
     public virtual User User { get; set; }
 
-    public Guid TruckId { get; set; }
-    [DeleteBehavior(DeleteBehavior.Restrict)]
     [ForeignKey("TruckId")]
     public virtual Truck Truck { get; set; }
 
+    [Required]
     public DateTime PickupTimestamp { get; set; }
 
     [Column(TypeName = "decimal(18,6)")]
@@ -42,18 +48,17 @@ namespace AspnetCoreMvcFull.Models
     [Column(TypeName = "decimal(18,6)")]
     public decimal GpsLongitude { get; set; }
 
-    public string BinPlateIdCaptured { get; set; }
+    public string BinPlateIdCaptured { get; set; } = string.Empty;
+
     public bool IssueReported { get; set; }
-    public string IssueDescription { get; set; }
+
+    public string IssueDescription { get; set; } = string.Empty;
 
     public virtual ICollection<Image> Images { get; set; }
 
     // Constructor
     public CollectionRecord()
     {
-      Bin = new Bin();
-      User = new User();
-      Truck = new Truck();
       Images = new List<Image>();
       BinPlateIdCaptured = string.Empty;
       IssueDescription = string.Empty;

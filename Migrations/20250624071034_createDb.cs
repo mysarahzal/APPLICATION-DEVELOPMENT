@@ -78,6 +78,56 @@ namespace AspnetCoreMvcFull.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RoutePlan",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ExpectedDurationMinutes = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RoutePlan", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Routes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ExpectedDurationMinutes = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Routes", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Trucks",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LicensePlate = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Trucks", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -119,28 +169,41 @@ namespace AspnetCoreMvcFull.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Trucks",
+                name: "Schedules",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    LicensePlate = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CapacityTon = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Make = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Model = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TruckId = table.Column<int>(type: "int", nullable: false),
+                    CollectorId = table.Column<int>(type: "int", nullable: false),
+                    RouteId = table.Column<int>(type: "int", nullable: false),
+                    ScheduleStartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ScheduleEndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ActualStartTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActualEndTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    AdminNotes = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    DriverId = table.Column<int>(type: "int", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Trucks", x => x.Id);
+                    table.PrimaryKey("PK_Schedules", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Trucks_Users_DriverId",
-                        column: x => x.DriverId,
+                        name: "FK_Schedules_Routes_RouteId",
+                        column: x => x.RouteId,
+                        principalTable: "Routes",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Schedules_Trucks_TruckId",
+                        column: x => x.TruckId,
+                        principalTable: "Trucks",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Schedules_Users_CollectorId",
+                        column: x => x.CollectorId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -171,9 +234,10 @@ namespace AspnetCoreMvcFull.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RouteId = table.Column<int>(type: "int", nullable: false),
                     BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OrderInRoute = table.Column<int>(type: "int", nullable: false),
-                    RoadId = table.Column<int>(type: "int", nullable: false)
+                    RoutePlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -182,57 +246,17 @@ namespace AspnetCoreMvcFull.Migrations
                         name: "FK_RouteBins_Bins_BinId",
                         column: x => x.BinId,
                         principalTable: "Bins",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_RouteBins_Roads_RoadId",
-                        column: x => x.RoadId,
-                        principalTable: "Roads",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Schedules",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    ScheduleId = table.Column<int>(type: "int", nullable: false),
-                    TruckId = table.Column<int>(type: "int", nullable: false),
-                    CollectorId = table.Column<int>(type: "int", nullable: false),
-                    RouteId = table.Column<int>(type: "int", nullable: false),
-                    ScheduleStartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ScheduleEndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ActualStartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ActualEndTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AdminNotes = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RoadId = table.Column<int>(type: "int", nullable: false),
-                    TruckId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Schedules", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Schedules_Roads_RoadId",
-                        column: x => x.RoadId,
-                        principalTable: "Roads",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Schedules_Trucks_TruckId1",
-                        column: x => x.TruckId1,
-                        principalTable: "Trucks",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Schedules_Users_CollectorId",
-                        column: x => x.CollectorId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        name: "FK_RouteBins_RoutePlan_RoutePlanId",
+                        column: x => x.RoutePlanId,
+                        principalTable: "RoutePlan",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_RouteBins_Routes_RouteId",
+                        column: x => x.RouteId,
+                        principalTable: "Routes",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -244,7 +268,8 @@ namespace AspnetCoreMvcFull.Migrations
                     BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OrderInSchedule = table.Column<int>(type: "int", nullable: false),
                     IsCollected = table.Column<bool>(type: "bit", nullable: false),
-                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    BinId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -253,14 +278,17 @@ namespace AspnetCoreMvcFull.Migrations
                         name: "FK_CollectionPoints_Bins_BinId",
                         column: x => x.BinId,
                         principalTable: "Bins",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_CollectionPoints_Bins_BinId1",
+                        column: x => x.BinId1,
+                        principalTable: "Bins",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CollectionPoints_Schedules_ScheduleId",
                         column: x => x.ScheduleId,
                         principalTable: "Schedules",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -296,13 +324,15 @@ namespace AspnetCoreMvcFull.Migrations
                     BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CollectionPointId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
-                    TruckId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TruckId = table.Column<int>(type: "int", nullable: false),
                     PickupTimestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
                     GpsLatitude = table.Column<decimal>(type: "decimal(18,6)", nullable: false),
                     GpsLongitude = table.Column<decimal>(type: "decimal(18,6)", nullable: false),
                     BinPlateIdCaptured = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IssueReported = table.Column<bool>(type: "bit", nullable: false),
-                    IssueDescription = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    IssueDescription = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BinId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    UserId1 = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -311,26 +341,32 @@ namespace AspnetCoreMvcFull.Migrations
                         name: "FK_CollectionRecords_Bins_BinId",
                         column: x => x.BinId,
                         principalTable: "Bins",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_CollectionRecords_Bins_BinId1",
+                        column: x => x.BinId1,
+                        principalTable: "Bins",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CollectionRecords_CollectionPoints_CollectionPointId",
                         column: x => x.CollectionPointId,
                         principalTable: "CollectionPoints",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CollectionRecords_Trucks_TruckId",
                         column: x => x.TruckId,
                         principalTable: "Trucks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_CollectionRecords_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_CollectionRecords_Users_UserId1",
+                        column: x => x.UserId1,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -371,6 +407,11 @@ namespace AspnetCoreMvcFull.Migrations
                 column: "BinId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CollectionPoints_BinId1",
+                table: "CollectionPoints",
+                column: "BinId1");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CollectionPoints_ScheduleId",
                 table: "CollectionPoints",
                 column: "ScheduleId");
@@ -379,6 +420,11 @@ namespace AspnetCoreMvcFull.Migrations
                 name: "IX_CollectionRecords_BinId",
                 table: "CollectionRecords",
                 column: "BinId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CollectionRecords_BinId1",
+                table: "CollectionRecords",
+                column: "BinId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CollectionRecords_CollectionPointId",
@@ -396,6 +442,11 @@ namespace AspnetCoreMvcFull.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CollectionRecords_UserId1",
+                table: "CollectionRecords",
+                column: "UserId1");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Images_CollectionRecordId",
                 table: "Images",
                 column: "CollectionRecordId");
@@ -411,9 +462,14 @@ namespace AspnetCoreMvcFull.Migrations
                 column: "BinId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RouteBins_RoadId",
+                name: "IX_RouteBins_RouteId",
                 table: "RouteBins",
-                column: "RoadId");
+                column: "RouteId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RouteBins_RoutePlanId",
+                table: "RouteBins",
+                column: "RoutePlanId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Schedules_CollectorId",
@@ -421,19 +477,14 @@ namespace AspnetCoreMvcFull.Migrations
                 column: "CollectorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Schedules_RoadId",
+                name: "IX_Schedules_RouteId",
                 table: "Schedules",
-                column: "RoadId");
+                column: "RouteId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Schedules_TruckId1",
+                name: "IX_Schedules_TruckId",
                 table: "Schedules",
-                column: "TruckId1");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Trucks_DriverId",
-                table: "Trucks",
-                column: "DriverId");
+                column: "TruckId");
         }
 
         /// <inheritdoc />
@@ -455,10 +506,16 @@ namespace AspnetCoreMvcFull.Migrations
                 name: "PickupReports");
 
             migrationBuilder.DropTable(
+                name: "Roads");
+
+            migrationBuilder.DropTable(
                 name: "RouteBins");
 
             migrationBuilder.DropTable(
                 name: "CollectionRecords");
+
+            migrationBuilder.DropTable(
+                name: "RoutePlan");
 
             migrationBuilder.DropTable(
                 name: "CollectionPoints");
@@ -473,7 +530,7 @@ namespace AspnetCoreMvcFull.Migrations
                 name: "Clients");
 
             migrationBuilder.DropTable(
-                name: "Roads");
+                name: "Routes");
 
             migrationBuilder.DropTable(
                 name: "Trucks");
