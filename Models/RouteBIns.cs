@@ -17,7 +17,7 @@ namespace AspnetCoreMvcFull.Models
     public int OrderInRoute { get; set; }  // Order of the bin in the route
 
     // Navigation properties
-    public virtual Road Road { get; set; }  // Navigation to Road
+    public virtual Route Route { get; set; }  // Navigation to Road
     public virtual Bin Bin { get; set; }  // Navigation to Bins
   }
 }
