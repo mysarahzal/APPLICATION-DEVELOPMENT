@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AspnetCoreMvcFull.Migrations
 {
     /// <inheritdoc />
-    public partial class createDb : Migration
+    public partial class Createdb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -197,6 +197,32 @@ namespace AspnetCoreMvcFull.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "RouteBins",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrderInRoute = table.Column<int>(type: "int", nullable: false),
+                    RoadId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RouteBins", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RouteBins_Bins_BinId",
+                        column: x => x.BinId,
+                        principalTable: "Bins",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_RouteBins_Roads_RoadId",
+                        column: x => x.RoadId,
+                        principalTable: "Roads",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "CollectionPoints",
                 columns: table => new
                 {
@@ -367,6 +393,16 @@ namespace AspnetCoreMvcFull.Migrations
                 column: "ScheduleId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RouteBins_BinId",
+                table: "RouteBins",
+                column: "BinId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RouteBins_RoadId",
+                table: "RouteBins",
+                column: "RoadId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Schedules_CollectorId",
                 table: "Schedules",
                 column: "CollectorId");
@@ -394,6 +430,9 @@ namespace AspnetCoreMvcFull.Migrations
 
             migrationBuilder.DropTable(
                 name: "PickupReports");
+
+            migrationBuilder.DropTable(
+                name: "RouteBins");
 
             migrationBuilder.DropTable(
                 name: "CollectionRecords");
