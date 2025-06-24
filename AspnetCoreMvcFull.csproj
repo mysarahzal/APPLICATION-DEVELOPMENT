@@ -26,9 +26,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Migrations\" />
-    <Folder Include="Views\Schedule\NewFolder\" />
-  </ItemGroup>
-
 </Project>

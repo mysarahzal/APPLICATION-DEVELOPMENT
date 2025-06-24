@@ -26,6 +26,8 @@ namespace AspnetCoreMvcFull.Models
 
     public DateTime CreatedAt { get; set; }  // No nullable
 
+    public virtual ICollection<Truck> Trucks { get; set; } // For drivers
+    public virtual ICollection<Schedule> DriverSchedules { get; set; }
     public virtual ICollection<CollectionRecord> CollectionRecords { get; set; }
   }
 }
