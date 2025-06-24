@@ -1,5 +1,3 @@
-
-
 using AspnetCoreMvcFull.Data;
 using AspnetCoreMvcFull.Models;
 using Microsoft.AspNetCore.Mvc;
