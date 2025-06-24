@@ -1,3 +1,49 @@
+@* @model IEnumerable<AspnetCoreMvcFull.Models.Schedule> *@
+
+@* @{ *@
+@* 	ViewData["Title"] = "All Schedules"; *@
+@* } *@
+
+@* <h2>All Schedules</h2> *@
+
+@* <p> *@
+@* 	@Html.ActionLink("Create New", "Create", null, new { @class = "btn btn-primary" }) *@
+@* </p> *@
+
+@* <table class="table"> *@
+@* 	<tr> *@
+@* 		<th>Client</th> *@
+@* 		<th>Location</th> *@
+@* 		<th>Schedule Date</th> *@
+@* 		<th>Frequency</th> *@
+@* 		<th>Bin Type</th> *@
+@* 		<th>Status</th> *@
+@* 		<th>Actions</th> *@
+@* 	</tr> *@
+
+@* 	@foreach (var item in Model) *@
+@* 	{ *@
+@* 		<tr> *@
+@* 			<td>@Html.DisplayFor(modelItem => item.Collector.FirstName)</td> *@
+@* 			@* <td>@Html.DisplayFor(modelItem => item.BinId.Location)</td> *@ 
+@* 			<td>@Html.DisplayFor(modelItem => item.ScheduleStartTime)</td> *@
+@* 			@* <td>@Html.DisplayFor(modelItem => item.Frequency)</td> *@ 
+@* 			@* <td>@Html.DisplayFor(modelItem => item.Bin.Type)</td> *@ 
+@* 			<td> *@
+@* 				<span class="status @item.Status.ToLower()">@item.Status</span> *@
+@* 			</td> *@
+@* 			<td> *@
+@* 				@Html.ActionLink("Edit", "Edit", new { id = item.Id }, new { @class = "btn btn-secondary" }) *@
+@* 				@Html.ActionLink("Delete", "Delete", new { id = item.Id }, new { @class = "btn btn-danger" }) *@
+@* 				@if (item.Status == "Pending") *@
+@* 				{ *@
+@* 					@Html.ActionLink("Mark as Missed", "MarkAsMissed", new { id = item.Id }, new { @class = "btn btn-warning" }) *@
+@* 				} *@
+@* 			</td> *@
+@* 		</tr> *@
+@* 	} *@
+@* </table> *@
+
 @model IEnumerable<AspnetCoreMvcFull.Models.Schedule>
 
 @{
@@ -12,9 +58,8 @@
 <table class="table">
 	<thead>
 		<tr>
-			<th>Schedule ID</th>
-			<th>Driver</th>
 			<th>Route</th>
+			<th>Collector</th>
 			<th>Start Time</th>
 			<th>End Time</th>
 			<th>Status</th>
@@ -25,15 +70,14 @@
 		@foreach (var item in Model)
 		{
 			<tr>
-				<td>@item.ScheduleId</td>
-				<td>@item.Collector?.FirstName @item.Collector?.LastName</td>
-				<td>@item.Route?.Name</td>
-				<td>@item.ScheduleStartTime.ToString("g")</td>
-				<td>@item.ScheduleEndTime.ToString("g")</td>
-				<td>@item.Status</td>
+				@* <td>@Html.DisplayFor(modelItem => item.Road.Name)</td> *@
+				<td>@Html.DisplayFor(modelItem => item.Collector.FirstName) @Html.DisplayFor(modelItem => item.Collector.LastName)</td>
+				<td>@Html.DisplayFor(modelItem => item.ScheduleStartTime)</td>
+				<td>@Html.DisplayFor(modelItem => item.ScheduleEndTime)</td>
+				<td>@Html.DisplayFor(modelItem => item.Status)</td>
 				<td>
-					<a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
-					<a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
+					<a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+					<a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
 				</td>
 			</tr>
 		}

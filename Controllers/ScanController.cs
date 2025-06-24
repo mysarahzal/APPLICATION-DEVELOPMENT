@@ -56,7 +56,7 @@ namespace AspnetCoreMvcFull.Controllers
           CollectionPointId = Guid.NewGuid(), // Set to appropriate collection point if needed
           BinId = bin.Id,
           UserId = 1, // Set to current user ID (int type)
-          TruckId = Guid.NewGuid(), // Set to current truck
+          //TruckId = Guid.NewGuid(), // Set to current truck
           PickupTimestamp = DateTime.UtcNow, // Current time
           GpsLatitude = 0.0m, // Default value since bin doesn't have coordinates
           GpsLongitude = 0.0m, // Default value since bin doesn't have coordinates

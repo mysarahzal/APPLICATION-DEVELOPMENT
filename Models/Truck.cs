@@ -5,13 +5,8 @@ namespace AspnetCoreMvcFull.Models
 {
   public class Truck
   {
-    public Guid Id { get; set; }
+    public int Id { get; set; }  // Changed from Guid to int
     public string LicensePlate { get; set; }
-
-    //[Column(TypeName = "decimal(18,2)")]  // Precision and scale for CapacityTon
-    //public decimal CapacityTon { get; set; }
-
-    //public string Make { get; set; }
     public string Model { get; set; }
     public string Status { get; set; }
 
@@ -19,12 +14,6 @@ namespace AspnetCoreMvcFull.Models
     public DateTime UpdatedAt { get; set; }
 
     // Navigation Property
-    public User Driver { get; set; }
-    public virtual ICollection<Schedule> Schedules { get; set; }
     public ICollection<CollectionRecord> CollectionRecords { get; set; }
   }
 }
-
-
-
-

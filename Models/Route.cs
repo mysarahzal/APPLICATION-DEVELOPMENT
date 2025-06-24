@@ -7,26 +7,25 @@ namespace AspnetCoreMvcFull.Models
   public class Route
   {
     [Key]
-    public Guid Id { get; set; }  // Primary Key
+    public int Id { get; set; }  // Changed from Guid to int
 
     [Required]
     [StringLength(255, ErrorMessage = "Route name cannot exceed 255 characters.")]
-    public string Name { get; set; }  // Name of the route
+    public string Name { get; set; }
 
-    public string Description { get; set; }  // Description of the route
+    public string Description { get; set; }
 
     [Required]
     [Range(1, int.MaxValue, ErrorMessage = "Expected duration must be greater than 0.")]
-    public int ExpectedDurationMinutes { get; set; }  // Expected duration of the route in minutes
+    public int ExpectedDurationMinutes { get; set; }
 
     [Required]
-    public DateTime CreatedAt { get; set; }  // Date when the route was created
+    public DateTime CreatedAt { get; set; }
 
     [Required]
-    public DateTime UpdatedAt { get; set; }  // Date when the route was last updated
+    public DateTime UpdatedAt { get; set; }
 
     // Navigation property for the related RouteBins
     public virtual ICollection<RouteBins> RouteBins { get; set; }
   }
 }
-

@@ -9,6 +9,9 @@ namespace AspnetCoreMvcFull.Models
     [Key]
     public Guid Id { get; set; }  // Primary Key
 
+    [Required]
+    public int RouteId { get; set; }  // Foreign Key to Route - THIS WAS MISSING
+
     [ForeignKey("Bin")]
     public Guid BinId { get; set; }  // Foreign Key to Bins
 

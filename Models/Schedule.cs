@@ -1,34 +1,50 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AspnetCoreMvcFull.Models
 {
   public class Schedule
   {
-    public int Id { get; set; }  // No nullable
-    public int ScheduleId { get; set; }
-    public int TruckId { get; set; }  // No nullable
+    [Key]
+    public int Id { get; set; }  // Primary key - remove ScheduleId as it's redundant
 
     [Required]
-    public int CollectorId { get; set; }  // No nullable
+    public int TruckId { get; set; }  // Foreign key to Truck - already correct as int
 
     [Required]
-    public int RouteId { get; set; }  // No nullable, ensure the type matches the primary key of Route
+    public int CollectorId { get; set; }  // Foreign key to User
 
     [Required]
-    public DateTime ScheduleStartTime { get; set; }  // No nullable
-    public DateTime ScheduleEndTime { get; set; }  // No nullable
-    //public DateTime ScheduledDay { get; set; }
-    public DateTime ActualStartTime { get; set; }  // No nullable
-    public DateTime ActualEndTime { get; set; }  // No nullable
-    public string Status { get; set; }  // No nullable
-    public string AdminNotes { get; set; }  // No nullable
-    public DateTime CreatedAt { get; set; }  // No nullable
-    public DateTime UpdatedAt { get; set; }  // No nullable
+    public int RouteId { get; set; }  // Foreign key to Route
 
-    // Navigation Properties
+    [Required]
+    public DateTime ScheduleStartTime { get; set; }
+
+    public DateTime ScheduleEndTime { get; set; }
+    public DateTime? ActualStartTime { get; set; }  // Made nullable since it might not be set initially
+    public DateTime? ActualEndTime { get; set; }    // Made nullable since it might not be set initially
+
+    [StringLength(50)]
+    public string Status { get; set; } = "Scheduled";
+
+    public string AdminNotes { get; set; }
+
+    [Required]
+    public DateTime CreatedAt { get; set; }
+
+    [Required]
+    public DateTime UpdatedAt { get; set; }
+
+    // Navigation Properties with proper Foreign Key attributes
+    [ForeignKey("CollectorId")]
     public virtual User Collector { get; set; }
-    //public virtual User User { get; set; }  // No nullable
-    public virtual Route Route { get; set; }  // No nullable
-    public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }  // No nullable
+
+    [ForeignKey("TruckId")]
+    public virtual Truck Truck { get; set; }
+
+    [ForeignKey("RouteId")]
+    public virtual Route Route { get; set; }
+
+    public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }
   }
 }
