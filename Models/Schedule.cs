@@ -28,7 +28,7 @@ namespace AspnetCoreMvcFull.Models
     // Navigation Properties
     public virtual User Collector { get; set; }
     //public virtual User User { get; set; }  // No nullable
-    public virtual Road Road { get; set; }  // No nullable
+    public virtual Route Route { get; set; }  // No nullable
     public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }  // No nullable
   }
 }

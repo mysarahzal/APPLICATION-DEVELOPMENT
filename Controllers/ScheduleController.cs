@@ -2,7 +2,6 @@ using AspnetCoreMvcFull.Data;
 using AspnetCoreMvcFull.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,135 +16,38 @@ namespace AspnetCoreMvcFull.Controllers
       _context = context;
     }
 
-    // UC08: Admin Manage Pickup Schedule (CRUD)
+    // UC08: Manage Pickup Schedule - Admin CRUD
     public async Task<IActionResult> Index()
     {
       var schedules = await _context.Schedules
           .Include(s => s.Collector)
-          .Include(s => s.Road)
+          .Include(s => s.Route)
           .ToListAsync();
       return View(schedules);
     }
 
-    //// GET: Schedule/Create
-    //public IActionResult Create()
-    //{
-    //  // Get only users with Collector or Driver role
-    //  ViewBag.Collectors = _context.Users
-    //      .Where(u => u.Role == "Collector" || u.Role == "Driver")
-    //      .ToList();
-
-    //  return View();
-    //}
-
-
-    // GET: Schedule/Create
-    public async Task<IActionResult> Create()
+    // UC08: Create
+    public IActionResult Create()
     {
-      try
-      {
-        Console.WriteLine("=== CREATE GET ACTION STARTED ===");
-
-        // Get only users with Collector or Driver role
-        var collectors = await _context.Users
-            .Where(u => u.Role == "Collector" || u.Role == "Driver")
-            .ToListAsync();
-
-        Console.WriteLine($"Found {collectors.Count} collectors/drivers");
-
-        ViewBag.Collectors = collectors;
-
-        Console.WriteLine("=== RETURNING CREATE VIEW ===");
-        return View();
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"ERROR in Create GET: {ex.Message}");
-        Console.WriteLine($"Stack trace: {ex.StackTrace}");
-
-        ViewBag.ErrorMessage = ex.Message;
-        return View("Error"); // Create a simple error view
-      }
+      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Driver").ToList();
+      ViewBag.Routes = _context.Roads.ToList();
+      return View();
     }
 
-    //// POST: Schedule/Create
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public async Task<IActionResult> Create([Bind("TruckId,CollectorId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes")] Schedule schedule)
-    //{
-    //  try
-    //  {
-    //    if (ModelState.IsValid)
-    //    {
-    //      // Generate a unique Schedule ID
-    //      //schedule.ScheduleId = $"SCH-{DateTime.Now:yyyyMMddHHmmss}";
-    //      schedule.CreatedAt = DateTime.Now;
-    //      schedule.UpdatedAt = DateTime.Now;
-
-    //      _context.Add(schedule);
-    //      await _context.SaveChangesAsync();
-
-    //      return RedirectToAction(nameof(Index));
-    //    }
-    //  }
-    //  catch (DbUpdateException ex)
-    //  {
-    //    // Log the error
-    //    //_logger.LogError(ex, "An error occurred while creating the schedule.");
-
-    //    // Add a model error
-    //    ModelState.AddModelError("", "Unable to save changes. " +
-    //        "Try again, and if the problem persists " +
-    //        "see your system administrator.");
-    //  }
-
-    //  // If we get here, something went wrong
-    //  ViewBag.Collectors = await _context.Users
-    //      .Where(u => u.Role == "Collector" || u.Role == "Driver")
-    //      .ToListAsync();
-
-    //  return View(schedule);
-    //}
-
-    // POST: Schedule/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("TruckId,CollectorId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes")] Schedule schedule)
+    public async Task<IActionResult> Create(Schedule schedule)
     {
-      try
+      if (ModelState.IsValid)
       {
-        if (ModelState.IsValid)
-        {
-          // Set timestamps
-          schedule.CreatedAt = DateTime.Now;
-          schedule.UpdatedAt = DateTime.Now;
-
-          // Set default values for required fields if they're not set
-          if (schedule.ActualStartTime == DateTime.MinValue)
-            schedule.ActualStartTime = DateTime.Now;
-          if (schedule.ActualEndTime == DateTime.MinValue)
-            schedule.ActualEndTime = DateTime.Now;
-
-          _context.Add(schedule);
-          await _context.SaveChangesAsync();
-
-          TempData["SuccessMessage"] = "Schedule created successfully!";
-          return RedirectToAction(nameof(Index));
-        }
+        schedule.CreatedAt = DateTime.Now;
+        schedule.UpdatedAt = DateTime.Now;
+        _context.Add(schedule);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
       }
-      catch (DbUpdateException ex)
-      {
-        // Log the error
-        ModelState.AddModelError("", "Unable to save changes. " +
-            "Try again, and if the problem persists " +
-            "see your system administrator. Error: " + ex.InnerException?.Message);
-      }
-
-      // If we get here, something went wrong - reload the dropdown data
-      ViewBag.Collectors = await _context.Users
-          .Where(u => u.Role == "Collector" || u.Role == "Driver")
-          .ToListAsync();
-
+      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Driver").ToList();
+      ViewBag.Routes = _context.Roads.ToList();
       return View(schedule);
     }
 
@@ -162,9 +64,7 @@ namespace AspnetCoreMvcFull.Controllers
       {
         return NotFound();
       }
-
-      ViewBag.Trucks = _context.Trucks.ToList();
-      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Collector").ToList();
+      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Driver").ToList();
       ViewBag.Routes = _context.Roads.ToList();
       return View(schedule);
     }
@@ -199,6 +99,8 @@ namespace AspnetCoreMvcFull.Controllers
         }
         return RedirectToAction(nameof(Index));
       }
+      ViewBag.Collectors = _context.Users.Where(u => u.Role == "Driver").ToList();
+      ViewBag.Routes = _context.Roads.ToList();
       return View(schedule);
     }
 
@@ -212,7 +114,7 @@ namespace AspnetCoreMvcFull.Controllers
 
       var schedule = await _context.Schedules
           .Include(s => s.Collector)
-          .Include(s => s.Road)
+          .Include(s => s.Route)
           .FirstOrDefaultAsync(m => m.Id == id);
       if (schedule == null)
       {
@@ -233,24 +135,26 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // UC09: Driver Views Schedule
-    public async Task<IActionResult> DriverSchedule()
+    public async Task<IActionResult> DriverSchedule(int driverId)
     {
-      // In a real app, you'd filter by the logged-in driver's ID
       var driverSchedules = await _context.Schedules
-          .Include(s => s.Collector)
-          .Include(s => s.Road)
-          .Where(s => s.CollectorId == GetCurrentUserId()) // You'd implement GetCurrentUserId()
+          .Include(s => s.Route)
+          .Include(s => s.CollectionPoints)
+          .Where(s => s.CollectorId == driverId)
+          .OrderBy(s => s.ScheduleStartTime)
           .ToListAsync();
 
       return View(driverSchedules);
     }
 
     // UC10: Admin Views All Job Schedules
-    public async Task<IActionResult> AllSchedules()
+    public async Task<IActionResult> AdminScheduleOverview()
     {
       var allSchedules = await _context.Schedules
           .Include(s => s.Collector)
-          .Include(s => s.Road)
+          .Include(s => s.Route)
+          .Include(s => s.CollectionPoints)
+          .OrderBy(s => s.ScheduleStartTime)
           .ToListAsync();
 
       return View(allSchedules);
@@ -259,13 +163,6 @@ namespace AspnetCoreMvcFull.Controllers
     private bool ScheduleExists(int id)
     {
       return _context.Schedules.Any(e => e.Id == id);
-    }
-
-    // Helper method - in a real app, you'd get this from authentication
-    private int GetCurrentUserId()
-    {
-      // Implement your logic to get current user ID
-      return 1; // Placeholder
     }
   }
 }

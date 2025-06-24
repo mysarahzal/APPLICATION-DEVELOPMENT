@@ -29,7 +29,7 @@ namespace AspnetCoreMvcFull.Data
     public DbSet<User> Users { get; set; }
     public DbSet<Truck> Trucks { get; set; }
     public DbSet<BinReport> BinReports { get; set; }
-    public DbSet<RouteBins> RouteBins { get; set; }
+    //public DbSet<RouteBins> RouteBins { get; set; }
     public DbSet<RoutePlan> RoutePlan { get; set; }
   }
 }

@@ -6,104 +6,53 @@
 
 <h1>Create Schedule</h1>
 
-@if (ViewBag.ErrorMessage != null)
-{
-	<div class="alert alert-danger">
-		@ViewBag.ErrorMessage
-	</div>
-}
-
-<form asp-action="Create" method="post" id="createForm">
-	@Html.AntiForgeryToken()
-	<div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-	<!-- Truck Dropdown -->
+<form asp-action="Create">
 	<div class="form-group">
-		<label asp-for="TruckId" class="control-label">Truck</label>
-		<select asp-for="TruckId" class="form-control" required>
-			<option value="">-- Select Truck --</option>
-			<option value="1">JSA 1283</option>
-			<!-- Add all other truck options here -->
-		</select>
+		<label asp-for="TruckId" class="control-label"></label>
+		<input asp-for="TruckId" class="form-control" />
 		<span asp-validation-for="TruckId" class="text-danger"></span>
 	</div>
-
-	<!-- Collector Dropdown -->
 	<div class="form-group">
-		<label asp-for="CollectorId" class="control-label">Collector</label>
-		<select asp-for="CollectorId" class="form-control" required>
-			<option value="">-- Select Collector --</option>
-			@foreach (var collector in ViewBag.Collectors)
-			{
-				<option value="@collector.Id">@collector.FirstName @collector.LastName</option>
-			}
+		<label asp-for="CollectorId" class="control-label">Driver</label>
+		<select asp-for="CollectorId" class="form-control" asp-items="@(new SelectList(ViewBag.Collectors, "Id", "FirstName"))">
+			<option value="">Select Driver</option>
 		</select>
 		<span asp-validation-for="CollectorId" class="text-danger"></span>
 	</div>
-
-	<!-- Route Dropdown -->
 	<div class="form-group">
 		<label asp-for="RouteId" class="control-label">Route</label>
-		<select asp-for="RouteId" class="form-control" required>
-			<option value="">-- Select Route --</option>
-			<option value="1">JALAN SHAHBANDAR 1-3</option> 
-			<option value="2">JALAN SHAHBANDAR 4</option>
-			<option value="3">JALAN SHAHBANDAR 5-8</option>
-			<option value="4">JALAN LAKSAMANA 1</option>
-			<option value="5">JALAN LAKSAMANA 2</option>
-			<option value="6">JALAN PAHLAWAN 1</option>
-			<option value="7">JALAN PAHLAWAN 2</option>
-			<option value="8">JALAN BENTARA 1</option>
-			<option value="9">JALAN BENTARA 20</option>
-			<option value="10">JALAN PERKASA 3-5</option>
-			<option value="11">POH CHEONG (JLN SEELEONG)</option>
-			<option value="12">FAMILY MART CALTEX</option>>
-			<!-- Add all other route options here -->
+		<select asp-for="RouteId" class="form-control" asp-items="@(new SelectList(ViewBag.Routes, "Id", "RouteName"))">
+			<option value="">Select Route</option>
+			<option value="">Jalan Perkasa</option>
 		</select>
 		<span asp-validation-for="RouteId" class="text-danger"></span>
 	</div>
-
-	<!-- Date/Time Inputs -->
 	<div class="form-group">
-		<label asp-for="ScheduleStartTime" class="control-label">Start Time</label>
-		<input asp-for="ScheduleStartTime" class="form-control" type="datetime-local" required />
+		<label asp-for="ScheduleStartTime" class="control-label"></label>
+		<input asp-for="ScheduleStartTime" class="form-control" type="datetime-local" />
 		<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
 	</div>
-
 	<div class="form-group">
-		<label asp-for="ScheduleEndTime" class="control-label">End Time</label>
-		<input asp-for="ScheduleEndTime" class="form-control" type="datetime-local" required />
+		<label asp-for="ScheduleEndTime" class="control-label"></label>
+		<input asp-for="ScheduleEndTime" class="form-control" type="datetime-local" />
 		<span asp-validation-for="ScheduleEndTime" class="text-danger"></span>
 	</div>
-
-	<!-- Status Dropdown -->
 	<div class="form-group">
-		<label asp-for="Status" class="control-label">Status</label>
-		<select asp-for="Status" class="form-control" required>
-			<option value="">-- Select Status --</option>
-			<option value="scheduled">Scheduled</option>
-			<option value="missed">Missed</option>
-			<option value="completed">Completed</option>
+		<label asp-for="Status" class="control-label"></label>
+		<select asp-for="Status" class="form-control">
+			<option value="Scheduled">Scheduled</option>
+			<option value="In Progress">In Progress</option>
+			<option value="Completed">Completed</option>
+			<option value="Cancelled">Cancelled</option>
 		</select>
 		<span asp-validation-for="Status" class="text-danger"></span>
 	</div>
-
-	<!-- Notes -->
 	<div class="form-group">
-		<label asp-for="AdminNotes" class="control-label">Admin Notes</label>
+		<label asp-for="AdminNotes" class="control-label"></label>
 		<textarea asp-for="AdminNotes" class="form-control"></textarea>
 		<span asp-validation-for="AdminNotes" class="text-danger"></span>
 	</div>
-
-	<!-- Submit Button -->
 	<div class="form-group">
-		<button type="submit" class="btn btn-primary" id="submitBtn">Create</button>
-		<a asp-action="Index" class="btn btn-secondary">Cancel</a>
+		<input type="submit" value="Create" class="btn btn-primary" />
 	</div>
 </form>
-
-@section Scripts {
-	@{
-		await Html.RenderPartialAsync("_ValidationScriptsPartial");
-	}
-}
