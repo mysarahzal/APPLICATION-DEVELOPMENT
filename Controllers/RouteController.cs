@@ -17,7 +17,7 @@ namespace AspnetCoreMvcFull.Controllers
     // GET: Route
     public async Task<IActionResult> Index()
     {
-      var routes = await _context.RoutePlan
+      var routes = await _context.RoutePlans  // Changed from RoutePlan to RoutePlans
           .Include(r => r.RouteBins)
           .ToListAsync();
       return View(routes);
@@ -31,7 +31,7 @@ namespace AspnetCoreMvcFull.Controllers
         return NotFound();
       }
 
-      var route = await _context.RoutePlan
+      var route = await _context.RoutePlans  // Changed from RoutePlan to RoutePlans
           .Include(r => r.RouteBins)
           .ThenInclude(rb => rb.Bin)
           .FirstOrDefaultAsync(m => m.Id == id);
@@ -53,36 +53,28 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: Route/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("Name,Description,ExpectedDurationMinutes")] AspnetCoreMvcFull.Models.RoutePlan route)
+    public async Task<IActionResult> Create([Bind("Name,Description,ExpectedDurationMinutes")] RoutePlan route)  // Simplified type name
     {
       // Initialize RouteBins collection to avoid validation issues
       route.RouteBins = new List<RouteBins>();
 
       // Remove RouteBins from ModelState validation
       ModelState.Remove("RouteBins");
+      ModelState.Remove("CreatedAt");
+      ModelState.Remove("UpdatedAt");
 
-      // Debug: Print all validation errors FIRST
-      if (!ModelState.IsValid)
+      if (ModelState.IsValid)
       {
-        foreach (var error in ModelState)
-        {
-          System.Diagnostics.Debug.WriteLine($"Field: {error.Key}");
-          foreach (var err in error.Value.Errors)
-          {
-            System.Diagnostics.Debug.WriteLine($"  Error: {err.ErrorMessage}");
-          }
-        }
-        return View(route); // Return early if validation fails
+        route.Id = Guid.NewGuid();
+        route.CreatedAt = DateTime.UtcNow;
+        route.UpdatedAt = DateTime.UtcNow;
+
+        _context.Add(route);
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Index));
       }
 
-      // Only execute this if ModelState IS valid
-      route.Id = Guid.NewGuid();
-      route.CreatedAt = DateTime.UtcNow;
-      route.UpdatedAt = DateTime.UtcNow;
-
-      _context.Add(route);
-      await _context.SaveChangesAsync();
-      return RedirectToAction(nameof(Index));
+      return View(route);
     }
 
     // GET: Route/Edit/5
@@ -93,7 +85,7 @@ namespace AspnetCoreMvcFull.Controllers
         return NotFound();
       }
 
-      var route = await _context.RoutePlan.FindAsync(id);
+      var route = await _context.RoutePlans.FindAsync(id);  // Changed from RoutePlan to RoutePlans
       if (route == null)
       {
         return NotFound();
@@ -104,12 +96,15 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: Route/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Description,ExpectedDurationMinutes,CreatedAt")] AspnetCoreMvcFull.Models.RoutePlan route)
+    public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Description,ExpectedDurationMinutes,CreatedAt")] RoutePlan route)  // Simplified type name
     {
       if (id != route.Id)
       {
         return NotFound();
       }
+
+      ModelState.Remove("UpdatedAt");
+      ModelState.Remove("RouteBins");
 
       if (ModelState.IsValid)
       {
@@ -143,7 +138,7 @@ namespace AspnetCoreMvcFull.Controllers
         return NotFound();
       }
 
-      var route = await _context.RoutePlan
+      var route = await _context.RoutePlans  // Changed from RoutePlan to RoutePlans
           .Include(r => r.RouteBins)
           .FirstOrDefaultAsync(m => m.Id == id);
 
@@ -160,7 +155,7 @@ namespace AspnetCoreMvcFull.Controllers
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(Guid id)
     {
-      var route = await _context.RoutePlan
+      var route = await _context.RoutePlans  // Changed from RoutePlan to RoutePlans
           .Include(r => r.RouteBins)
           .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -168,7 +163,7 @@ namespace AspnetCoreMvcFull.Controllers
       {
         // Remove associated RouteBins first
         _context.RouteBins.RemoveRange(route.RouteBins);
-        _context.RoutePlan.Remove(route);
+        _context.RoutePlans.Remove(route);  // Changed from RoutePlan to RoutePlans
         await _context.SaveChangesAsync();
       }
 
@@ -177,7 +172,7 @@ namespace AspnetCoreMvcFull.Controllers
 
     private bool RouteExists(Guid id)
     {
-      return _context.RoutePlan.Any(e => e.Id == id);
+      return _context.RoutePlans.Any(e => e.Id == id);  // Changed from RoutePlan to RoutePlans
     }
 
     // GET: Route/ManageBins/5
@@ -188,7 +183,7 @@ namespace AspnetCoreMvcFull.Controllers
         return NotFound();
       }
 
-      var route = await _context.RoutePlan
+      var route = await _context.RoutePlans  // Changed from RoutePlan to RoutePlans
           .Include(r => r.RouteBins)
           .ThenInclude(rb => rb.Bin)
           .ThenInclude(b => b.Client)
@@ -211,13 +206,12 @@ namespace AspnetCoreMvcFull.Controllers
       return View(route);
     }
 
-    // POST: Route/UpdateBinOrder - Simplified without request models
+    // POST: Route/UpdateBinOrder
     [HttpPost]
     public async Task<IActionResult> UpdateBinOrder(Guid routeId, string updates)
     {
       try
       {
-        // Parse the JSON string manually or use System.Text.Json
         var updateList = System.Text.Json.JsonSerializer.Deserialize<List<dynamic>>(updates);
 
         foreach (var update in updateList)
@@ -241,13 +235,12 @@ namespace AspnetCoreMvcFull.Controllers
       }
     }
 
-    // POST: Route/AddBinToRoute - Simplified
+    // POST: Route/AddBinToRoute
     [HttpPost]
     public async Task<IActionResult> AddBinToRoute(Guid routeId, Guid binId)
     {
       try
       {
-        // Check if bin is already in route
         var existingRouteBin = await _context.RouteBins
             .FirstOrDefaultAsync(rb => rb.RouteId == routeId && rb.BinId == binId);
 
@@ -256,7 +249,6 @@ namespace AspnetCoreMvcFull.Controllers
           return Json(new { success = false, message = "Bin is already in this route" });
         }
 
-        // Get next order number
         var maxOrder = await _context.RouteBins
             .Where(rb => rb.RouteId == routeId)
             .MaxAsync(rb => (int?)rb.OrderInRoute) ?? 0;
@@ -279,7 +271,7 @@ namespace AspnetCoreMvcFull.Controllers
       }
     }
 
-    // POST: Route/RemoveBinFromRoute - Simplified
+    // POST: Route/RemoveBinFromRoute
     [HttpPost]
     public async Task<IActionResult> RemoveBinFromRoute(Guid routeBinId)
     {
@@ -292,7 +284,6 @@ namespace AspnetCoreMvcFull.Controllers
           _context.RouteBins.Remove(routeBin);
           await _context.SaveChangesAsync();
 
-          // Reorder remaining bins
           await ReorderBinsInRoute(routeId);
         }
         return Json(new { success = true });

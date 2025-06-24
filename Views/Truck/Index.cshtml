@@ -1,0 +1,97 @@
+@model IEnumerable<AspnetCoreMvcFull.Models.Truck>
+
+@{
+	ViewData["Title"] = "Index";
+}
+
+<div class="container-fluid">
+	<div class="d-flex justify-content-between align-items-center mb-4">
+		<h1>Truck Management</h1>
+		<a asp-action="Create" class="btn btn-primary">
+			<i class="fas fa-plus"></i> Add New Truck
+		</a>
+	</div>
+
+	@if (TempData["Success"] != null)
+	{
+		<div class="alert alert-success alert-dismissible fade show" role="alert">
+			@TempData["Success"]
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+	}
+
+	@if (Model.Any())
+	{
+		<div class="row">
+			@foreach (var item in Model)
+			{
+				<div class="col-md-6 col-lg-4 col-xl-3 mb-4">
+					<div class="card h-100 shadow-sm">
+						<div class="card-header bg-light d-flex justify-content-between align-items-center">
+							<h6 class="card-title mb-0 fw-bold">
+								<i class="fas fa-truck text-primary"></i>
+								@Html.DisplayFor(modelItem => item.LicensePlate)
+							</h6>
+							<span class="badge bg-@(item.Status.ToLower() == "available" ? "success" : item.Status.ToLower() == "assigned" ? "primary" : item.Status.ToLower() == "maintenance" ? "warning" : "secondary")">
+								@Html.DisplayFor(modelItem => item.Status)
+							</span>
+						</div>
+						<div class="card-body">
+							<div class="mb-2">
+								<small class="text-muted">Model</small>
+								<div class="fw-semibold">@Html.DisplayFor(modelItem => item.Model)</div>
+							</div>
+							<div class="mb-3">
+								<small class="text-muted">Created</small>
+								<div class="small">@item.CreatedAt.ToString("MMM dd, yyyy")</div>
+							</div>
+						</div>
+						<div class="card-footer bg-transparent">
+							<div class="btn-group w-100" role="group">
+								<a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-warning btn-sm">
+									<i class="fas fa-edit"></i> Edit
+								</a>
+								<a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-outline-danger btn-sm">
+									<i class="fas fa-trash"></i> Delete
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+	else
+	{
+		<div class="text-center py-5">
+			<div class="mb-4">
+				<i class="fas fa-truck fa-4x text-muted"></i>
+			</div>
+			<h4 class="text-muted">No trucks found</h4>
+			<p class="text-muted mb-4">Start by adding your first truck to the fleet.</p>
+			<a asp-action="Create" class="btn btn-primary btn-lg">
+				<i class="fas fa-plus"></i> Add First Truck
+			</a>
+		</div>
+	}
+</div>
+
+<style>
+	.card {
+		transition: transform 0.2s ease-in-out;
+		border: 1px solid #dee2e6;
+	}
+
+	.card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0,0,0,0.12) !important;
+	}
+
+	.card-header {
+		border-bottom: 1px solid #dee2e6;
+	}
+
+	.btn-group .btn {
+		flex: 1;
+	}
+</style>
