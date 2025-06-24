@@ -13,7 +13,7 @@ namespace AspnetCoreMvcFull.Data
     public DbSet<Client> Clients { get; set; }
     public DbSet<Bin> Bins { get; set; }
     public DbSet<RouteBins> RouteBins { get; set; }
-    public DbSet<AspnetCoreMvcFull.Models.RoutePlan> Routes { get; set; }  // Fully qualified namespace
+    public DbSet<RoutePlan> RoutePlans { get; set; }  // DbSet name (plural)
 
     // Other models
     public DbSet<Alert> Alerts { get; set; }
@@ -27,13 +27,15 @@ namespace AspnetCoreMvcFull.Data
     public DbSet<User> Users { get; set; }
     public DbSet<Truck> Trucks { get; set; }
     public DbSet<BinReport> BinReports { get; set; }
-    public DbSet<RoutePlan> RoutePlan { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
       base.OnModelCreating(modelBuilder);
 
-      // Configure CollectionRecord relationships with NO ACTION to prevent cascade cycles
+      // IMPORTANT: Configure RoutePlan to use the existing "RoutePlan" table name (singular)
+      modelBuilder.Entity<RoutePlan>().ToTable("RoutePlan");
+
+      // Configure CollectionRecord relationships
       modelBuilder.Entity<CollectionRecord>()
           .HasOne(cr => cr.CollectionPoint)
           .WithMany(cp => cp.CollectionRecords)
@@ -90,11 +92,11 @@ namespace AspnetCoreMvcFull.Data
           .HasForeignKey(s => s.CollectorId)
           .OnDelete(DeleteBehavior.NoAction);
 
-      // Configure other relationships that might cause cascade issues
+      // Configure RouteBins relationships
       modelBuilder.Entity<RouteBins>()
           .HasOne(rb => rb.RoutePlan)
           .WithMany(r => r.RouteBins)
-          .HasForeignKey(rb => rb.Id)
+          .HasForeignKey(rb => rb.RouteId)
           .OnDelete(DeleteBehavior.NoAction);
 
       modelBuilder.Entity<RouteBins>()
@@ -102,9 +104,6 @@ namespace AspnetCoreMvcFull.Data
           .WithMany()
           .HasForeignKey(rb => rb.BinId)
           .OnDelete(DeleteBehavior.NoAction);
-
-      // Add other foreign key configurations as needed for your other models
-      // This prevents cascade delete cycles across your entire database schema
     }
   }
 }

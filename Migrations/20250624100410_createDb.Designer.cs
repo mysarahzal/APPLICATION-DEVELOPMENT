@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-    [Migration("20250624065326_CreateDb")]
-    partial class CreateDb
+    [Migration("20250624100410_createDb")]
+    partial class createDb
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -173,6 +173,9 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<Guid>("BinId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("BinId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CollectedAt")
                         .HasColumnType("datetime2");
 
@@ -189,6 +192,8 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.HasIndex("BinId");
 
+                    b.HasIndex("BinId1");
+
                     b.HasIndex("ScheduleId");
 
                     b.ToTable("CollectionPoints");
@@ -201,6 +206,9 @@ namespace AspnetCoreMvcFull.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BinId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BinId1")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("BinPlateIdCaptured")
@@ -226,21 +234,28 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<DateTime>("PickupTimestamp")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("TruckId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("TruckId")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UserId1")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BinId");
 
+                    b.HasIndex("BinId1");
+
                     b.HasIndex("CollectionPointId");
 
                     b.HasIndex("TruckId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.ToTable("CollectionRecords");
                 });
@@ -378,14 +393,11 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<Guid>("RouteId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("RoutePlanId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("BinId");
 
-                    b.HasIndex("RoutePlanId");
+                    b.HasIndex("RouteId");
 
                     b.ToTable("RouteBins");
                 });
@@ -416,7 +428,7 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RoutePlan");
+                    b.ToTable("RoutePlan", (string)null);
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Schedule", b =>
@@ -427,10 +439,10 @@ namespace AspnetCoreMvcFull.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("ActualEndTime")
+                    b.Property<DateTime?>("ActualEndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("ActualStartTime")
+                    b.Property<DateTime?>("ActualStartTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("AdminNotes")
@@ -443,24 +455,19 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("RoadId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RouteId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("RouteId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("ScheduleEndTime")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("ScheduleId")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("ScheduleStartTime")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("TruckId")
                         .HasColumnType("int");
@@ -472,28 +479,25 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.HasIndex("CollectorId");
 
-                    b.HasIndex("RoadId");
+                    b.HasIndex("RouteId");
+
+                    b.HasIndex("TruckId");
 
                     b.ToTable("Schedules");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Truck", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
 
-                    b.Property<decimal>("CapacityTon")
-                        .HasColumnType("decimal(18,2)");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("LicensePlate")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Make")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -578,15 +582,19 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionPoint", b =>
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
-                        .WithMany("CollectionPoints")
+                        .WithMany()
                         .HasForeignKey("BinId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("AspnetCoreMvcFull.Models.Bin", null)
+                        .WithMany("CollectionPoints")
+                        .HasForeignKey("BinId1");
 
                     b.HasOne("AspnetCoreMvcFull.Models.Schedule", "Schedule")
                         .WithMany("CollectionPoints")
                         .HasForeignKey("ScheduleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Bin");
@@ -597,28 +605,36 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionRecord", b =>
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
-                        .WithMany("CollectionRecords")
+                        .WithMany()
                         .HasForeignKey("BinId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("AspnetCoreMvcFull.Models.Bin", null)
+                        .WithMany("CollectionRecords")
+                        .HasForeignKey("BinId1");
 
                     b.HasOne("AspnetCoreMvcFull.Models.CollectionPoint", "CollectionPoint")
                         .WithMany("CollectionRecords")
                         .HasForeignKey("CollectionPointId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("AspnetCoreMvcFull.Models.Truck", "Truck")
                         .WithMany("CollectionRecords")
                         .HasForeignKey("TruckId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("AspnetCoreMvcFull.Models.User", "User")
-                        .WithMany("CollectionRecords")
+                        .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("AspnetCoreMvcFull.Models.User", null)
+                        .WithMany("CollectionRecords")
+                        .HasForeignKey("UserId1");
 
                     b.Navigation("Bin");
 
@@ -654,13 +670,13 @@ namespace AspnetCoreMvcFull.Migrations
                     b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
                         .WithMany()
                         .HasForeignKey("BinId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("AspnetCoreMvcFull.Models.RoutePlan", "RoutePlan")
                         .WithMany("RouteBins")
-                        .HasForeignKey("RoutePlanId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("RouteId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Bin");
@@ -673,18 +689,26 @@ namespace AspnetCoreMvcFull.Migrations
                     b.HasOne("AspnetCoreMvcFull.Models.User", "Collector")
                         .WithMany()
                         .HasForeignKey("CollectorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("AspnetCoreMvcFull.Models.Road", "Road")
+                    b.HasOne("AspnetCoreMvcFull.Models.RoutePlan", "Route")
                         .WithMany()
-                        .HasForeignKey("RoadId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasForeignKey("RouteId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("AspnetCoreMvcFull.Models.Truck", "Truck")
+                        .WithMany()
+                        .HasForeignKey("TruckId")
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Collector");
 
-                    b.Navigation("Road");
+                    b.Navigation("Route");
+
+                    b.Navigation("Truck");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>

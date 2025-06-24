@@ -19,7 +19,7 @@ namespace AspnetCoreMvcFull.Controllers
     {
       var schedules = await _context.Schedules
           .Include(s => s.Collector)
-          .Include(s => s.Truck) // Include truck details
+          .Include(s => s.Truck)
           .Include(s => s.Route)
           .OrderByDescending(s => s.CreatedAt)
           .ToListAsync();
@@ -31,26 +31,18 @@ namespace AspnetCoreMvcFull.Controllers
     {
       try
       {
-        // Get ALL trucks from your Truck table that you created via Truck CRUD
-        // You can filter by status if you want only available trucks
         ViewBag.Trucks = await _context.Trucks
-            .Where(t => t.Status == "Available") // Only show available trucks
-            .OrderBy(t => t.LicensePlate) // Sort by license plate
+            .Where(t => t.Status == "Available")
+            .OrderBy(t => t.LicensePlate)
             .ToListAsync();
 
-        // Alternative: Get ALL trucks regardless of status
-        // ViewBag.Trucks = await _context.Trucks
-        //     .OrderBy(t => t.LicensePlate)
-        //     .ToListAsync();
-
-        // Get collectors/drivers
         ViewBag.Collectors = await _context.Users
             .Where(u => u.Role == "Collector" || u.Role == "Driver")
             .OrderBy(u => u.FirstName)
             .ToListAsync();
 
-        // Get routes
-        ViewBag.Routes = await _context.Routes
+        // FIXED: Changed from Routes to RoutePlans
+        ViewBag.Routes = await _context.RoutePlans
             .OrderBy(r => r.Name)
             .ToListAsync();
 
@@ -73,7 +65,7 @@ namespace AspnetCoreMvcFull.Controllers
       ModelState.Remove("ActualEndTime");
       ModelState.Remove("CreatedAt");
       ModelState.Remove("UpdatedAt");
-      ModelState.Remove("ScheduleId");
+      ModelState.Remove("Id");  // Remove Id validation since it's auto-generated
 
       if (ModelState.IsValid)
       {
@@ -82,9 +74,9 @@ namespace AspnetCoreMvcFull.Controllers
           // Set automatic fields
           schedule.CreatedAt = DateTime.Now;
           schedule.UpdatedAt = DateTime.Now;
-          schedule.ActualStartTime = DateTime.MinValue;
-          schedule.ActualEndTime = DateTime.MinValue;
-          schedule.Id = new Random().Next(1000, 9999);
+          schedule.ActualStartTime = null;  // Use null instead of DateTime.MinValue
+          schedule.ActualEndTime = null;    // Use null instead of DateTime.MinValue
+                                            // Don't manually set Id - let EF Core auto-generate it
 
           _context.Add(schedule);
           await _context.SaveChangesAsync();
@@ -98,7 +90,7 @@ namespace AspnetCoreMvcFull.Controllers
         }
       }
 
-      // If validation fails, reload dropdown data including trucks
+      // If validation fails, reload dropdown data
       await LoadDropdownData();
       return View(schedule);
     }
@@ -124,7 +116,7 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: Schedule/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,ScheduleId,TruckId,CollectorId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes,CreatedAt,ActualStartTime,ActualEndTime")] Schedule schedule)
+    public async Task<IActionResult> Edit(int id, [Bind("Id,TruckId,CollectorId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes,CreatedAt,ActualStartTime,ActualEndTime")] Schedule schedule)
     {
       if (id != schedule.Id)
       {
@@ -202,9 +194,8 @@ namespace AspnetCoreMvcFull.Controllers
     // Helper method to load all dropdown data
     private async Task LoadDropdownData()
     {
-      // Load trucks from your Truck CRUD system
       ViewBag.Trucks = await _context.Trucks
-          .Where(t => t.Status == "Available") // Only available trucks
+          .Where(t => t.Status == "Available")
           .OrderBy(t => t.LicensePlate)
           .ToListAsync();
 
@@ -213,7 +204,8 @@ namespace AspnetCoreMvcFull.Controllers
           .OrderBy(u => u.FirstName)
           .ToListAsync();
 
-      ViewBag.Routes = await _context.Routes
+      // FIXED: Changed from Routes to RoutePlans
+      ViewBag.Routes = await _context.RoutePlans
           .OrderBy(r => r.Name)
           .ToListAsync();
     }

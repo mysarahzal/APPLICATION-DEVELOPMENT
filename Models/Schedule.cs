@@ -6,23 +6,23 @@ namespace AspnetCoreMvcFull.Models
   public class Schedule
   {
     [Key]
-    public int Id { get; set; }  // Primary key - remove ScheduleId as it's redundant
+    public int Id { get; set; }
 
     [Required]
-    public int TruckId { get; set; }  // Foreign key to Truck - already correct as int
+    public int TruckId { get; set; }
 
     [Required]
-    public int CollectorId { get; set; }  // Foreign key to User
+    public int CollectorId { get; set; }
 
     [Required]
-    public int RouteId { get; set; }  // Foreign key to Route
+    public Guid RouteId { get; set; }  // Guid to match RoutePlan.Id
 
     [Required]
     public DateTime ScheduleStartTime { get; set; }
 
     public DateTime ScheduleEndTime { get; set; }
-    public DateTime? ActualStartTime { get; set; }  // Made nullable since it might not be set initially
-    public DateTime? ActualEndTime { get; set; }    // Made nullable since it might not be set initially
+    public DateTime? ActualStartTime { get; set; }
+    public DateTime? ActualEndTime { get; set; }
 
     [StringLength(50)]
     public string Status { get; set; } = "Scheduled";
@@ -35,7 +35,7 @@ namespace AspnetCoreMvcFull.Models
     [Required]
     public DateTime UpdatedAt { get; set; }
 
-    // Navigation Properties with proper Foreign Key attributes
+    // Navigation Properties
     [ForeignKey("CollectorId")]
     public virtual User Collector { get; set; }
 
@@ -43,7 +43,7 @@ namespace AspnetCoreMvcFull.Models
     public virtual Truck Truck { get; set; }
 
     [ForeignKey("RouteId")]
-    public virtual Route Route { get; set; }
+    public virtual RoutePlan Route { get; set; }  // FIXED: Points to RoutePlan
 
     public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }
   }

@@ -64,7 +64,6 @@ namespace AspnetCoreMvcFull.Controllers
     {
       if (ModelState.IsValid)
       {
-        // Check if bin is already in this route
         var existingRouteBin = await _context.RouteBins
             .FirstOrDefaultAsync(rb => rb.RouteId == routeBin.RouteId && rb.BinId == routeBin.BinId);
 
@@ -75,7 +74,6 @@ namespace AspnetCoreMvcFull.Controllers
           return View(routeBin);
         }
 
-        // Auto-assign order if not provided
         if (routeBin.OrderInRoute <= 0)
         {
           var maxOrder = await _context.RouteBins
@@ -126,7 +124,6 @@ namespace AspnetCoreMvcFull.Controllers
       {
         try
         {
-          // Check if bin is already in this route (excluding current record)
           var existingRouteBin = await _context.RouteBins
               .FirstOrDefaultAsync(rb => rb.RouteId == routeBin.RouteId &&
                                  rb.BinId == routeBin.BinId &&
@@ -193,7 +190,6 @@ namespace AspnetCoreMvcFull.Controllers
         _context.RouteBins.Remove(routeBin);
         await _context.SaveChangesAsync();
 
-        // Reorder remaining bins in the route
         await ReorderBinsInRoute(routeBin.RouteId);
       }
 
@@ -203,7 +199,8 @@ namespace AspnetCoreMvcFull.Controllers
     // GET: RouteBin/ByRoute/5
     public async Task<IActionResult> ByRoute(Guid routeId)
     {
-      var route = await _context.RoutePlan.FindAsync(routeId);
+      // FIXED: Changed from RoutePlan to RoutePlans
+      var route = await _context.RoutePlans.FindAsync(routeId);
       if (route == null)
       {
         return NotFound();
@@ -228,8 +225,9 @@ namespace AspnetCoreMvcFull.Controllers
 
     private async Task PopulateDropdowns(Guid? selectedRouteId = null, Guid? selectedBinId = null)
     {
+      // FIXED: Changed from RoutePlan to RoutePlans
       ViewBag.RouteId = new SelectList(
-          await _context.RoutePlan.OrderBy(r => r.Name).ToListAsync(),
+          await _context.RoutePlans.OrderBy(r => r.Name).ToListAsync(),
           "Id", "Name", selectedRouteId);
 
       ViewBag.BinId = new SelectList(
@@ -260,4 +258,3 @@ namespace AspnetCoreMvcFull.Controllers
     }
   }
 }
-
