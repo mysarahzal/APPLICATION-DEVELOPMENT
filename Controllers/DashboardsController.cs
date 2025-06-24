@@ -20,8 +20,10 @@ public class DashboardsController : Controller
   {
     var vm = new DashboardViewModel
     {
+      FleetCount = _context.Trucks.Count(),
       CollectorCount = _context.Users.Count(u => u.Role.ToLower() == "collector"),
       DriverCount = _context.Users.Count(u => u.Role.ToLower() == "driver"),
+      ClientCount = _context.Clients.Count(),
     };
 
     return View(vm);
