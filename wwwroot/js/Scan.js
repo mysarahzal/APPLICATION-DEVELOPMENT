@@ -6,10 +6,14 @@ let isProcessing = false
 let lastDetectedPlate = null
 let lastDetectionTime = 0
 
+// GPS location
+const currentLocation = { latitude: 0, longitude: 0 }
+
 // Auto-load everything when page loads
 document.addEventListener("DOMContentLoaded", async () => {
   await loadDetectionModel()
   await loadOCR()
+  await getCurrentLocation()
   await startCamera()
 })
 
@@ -67,6 +71,48 @@ async function loadOCR() {
   } catch (error) {
     console.error("OCR loading failed:", error)
     updateStatus("❌ OCR failed: " + error.message)
+  }
+}
+
+async function getCurrentLocation() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      console.warn("Geolocation not supported")
+      resolve()
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        currentLocation.latitude = position.coords.latitude
+        currentLocation.longitude = position.coords.longitude
+        console.log("✅ Location obtained:", currentLocation)
+        updateGPSDisplay()
+        resolve()
+      },
+      (error) => {
+        console.warn("Location access denied:", error)
+        updateGPSDisplay("Location access denied")
+        resolve() // Continue without location
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
+    )
+  })
+}
+
+function updateGPSDisplay(errorMessage = null) {
+  const gpsElement = document.getElementById("gpsLocation")
+  if (gpsElement) {
+    if (errorMessage) {
+      gpsElement.textContent = errorMessage
+      gpsElement.className = "text-warning"
+    } else if (currentLocation.latitude && currentLocation.longitude) {
+      gpsElement.textContent = `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}`
+      gpsElement.className = "text-success"
+    } else {
+      gpsElement.textContent = "Getting location..."
+      gpsElement.className = "text-muted"
+    }
   }
 }
 
@@ -356,17 +402,22 @@ function updateLiveDetection(plateId, source, confidence) {
   const confidenceSpan = document.getElementById("detectionConfidence")
   const liveCountSpan = document.getElementById("liveDetectionCount")
 
-  plateIdSpan.textContent = plateId
-  sourceSpan.textContent = `${source} (ABC1234)`
-  confidenceSpan.textContent = confidence
-  liveCountSpan.textContent = liveDetectionCount
-  liveDetectionDiv.style.display = "block"
+  if (plateIdSpan) plateIdSpan.textContent = plateId
+  if (sourceSpan) sourceSpan.textContent = `${source} (ABC1234)`
+  if (confidenceSpan) confidenceSpan.textContent = confidence
+  if (liveCountSpan) liveCountSpan.textContent = liveDetectionCount
+  if (liveDetectionDiv) liveDetectionDiv.style.display = "block"
+
+  // Update GPS display
+  updateGPSDisplay()
 
   // Add success animation
-  liveDetectionDiv.classList.add("success-pulse")
-  setTimeout(() => {
-    liveDetectionDiv.classList.remove("success-pulse")
-  }, 2000)
+  if (liveDetectionDiv) {
+    liveDetectionDiv.classList.add("success-pulse")
+    setTimeout(() => {
+      liveDetectionDiv.classList.remove("success-pulse")
+    }, 2000)
+  }
 }
 
 function clearLiveDetection() {
@@ -375,10 +426,10 @@ function clearLiveDetection() {
   const sourceSpan = document.getElementById("detectionSource")
   const confidenceSpan = document.getElementById("detectionConfidence")
 
-  plateIdSpan.textContent = "-"
-  sourceSpan.textContent = "-"
-  confidenceSpan.textContent = "-"
-  liveDetectionDiv.style.display = "none"
+  if (plateIdSpan) plateIdSpan.textContent = "-"
+  if (sourceSpan) sourceSpan.textContent = "-"
+  if (confidenceSpan) confidenceSpan.textContent = "-"
+  if (liveDetectionDiv) liveDetectionDiv.style.display = "none"
   lastDetectedPlate = null
 }
 
@@ -389,6 +440,7 @@ async function submitDetection(plateId, imageData) {
       <div class="alert alert-info">
         🔍 Auto-detected ABC1234: <strong>${plateId}</strong><br>
         📤 Checking database and saving...
+        ${currentLocation.latitude ? `<br>📍 GPS: ${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}` : ""}
       </div>
     `,
       "info",
@@ -397,33 +449,53 @@ async function submitDetection(plateId, imageData) {
     const response = await fetch("/Scan/ProcessDetection", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ binPlateId: plateId, imageData: imageData }),
+      body: JSON.stringify({
+        binPlateId: plateId,
+        imageData: imageData,
+        latitude: currentLocation.latitude || 0,
+        longitude: currentLocation.longitude || 0,
+        collectorId: 1, // You can modify this based on your authentication
+      }),
     })
 
     const result = await response.json()
 
     if (result.success) {
-      showResult(
-        `
-        <div class="alert alert-success">
-          <h5>✅ ${result.message}</h5>
-          <hr>
-          <div class="row">
-            <div class="col-md-6">
-              <p><strong>🔍 ABC1234 Plate:</strong> ${result.binPlateId}</p>
-              <p><strong>📍 Location:</strong> ${result.binLocation || "Not specified"}</p>
-              <p><strong>📅 Collection Time:</strong> ${result.collectionTime}</p>
-            </div>
-            <div class="col-md-6">
-              <p><strong>🏢 Client:</strong> ${result.clientName || "Not specified"}</p>
-              <p><strong>📋 Record ID:</strong> ${result.collectionRecordId}</p>
-              <p><strong>🎯 Auto-captured successfully!</strong></p>
+      if (result.alreadyCollected) {
+        showResult(
+          `
+          <div class="alert alert-warning">
+            ⚠️ ${result.message}<br>
+            <small>Plate: <strong>${result.binPlateId}</strong> - Last collected: ${result.collectionTime}</small>
+          </div>
+        `,
+          "warning",
+        )
+      } else {
+        showResult(
+          `
+          <div class="alert alert-success">
+            <h5>✅ ${result.message}</h5>
+            <hr>
+            <div class="row">
+              <div class="col-md-6">
+                <p><strong>🔍 ABC1234 Plate:</strong> ${result.binPlateId}</p>
+                <p><strong>📍 Location:</strong> ${result.binLocation || "Not specified"}</p>
+                <p><strong>📅 Collection Time:</strong> ${result.collectionTime}</p>
+                <p><strong>🌍 GPS:</strong> ${result.gpsLocation || "Not available"}</p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>🏢 Client:</strong> ${result.clientName || "Not specified"}</p>
+                <p><strong>📋 Record ID:</strong> ${result.collectionRecordId}</p>
+                <p><strong>🚛 Truck:</strong> ${result.truckLicensePlate || "Unknown"}</p>
+                <p><strong>👤 Collector:</strong> ${result.collectorName || "Unknown"}</p>
+              </div>
             </div>
           </div>
-        </div>
-      `,
-        "success",
-      )
+        `,
+          "success",
+        )
+      }
 
       // Clear the detection after successful processing
       setTimeout(() => {
@@ -466,7 +538,8 @@ async function submitDetection(plateId, imageData) {
 }
 
 function showResult(message, type) {
-  document.getElementById("result").innerHTML = message
+  const resultDiv = document.getElementById("result")
+  if (resultDiv) resultDiv.innerHTML = message
 }
 
 function updateStatus(message) {
