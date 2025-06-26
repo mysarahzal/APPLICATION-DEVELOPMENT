@@ -94,8 +94,6 @@ namespace AspnetCoreMvcFull.Controllers
         {
           Id = Guid.NewGuid(),
           CollectionRecordId = newBinReport.Id,  // Link to the bin report (CollectionRecord)
-          ImageUrl = $"/uploads/{uniqueFileName}",  // Use the uploaded image URL
-          ImageType = "before",  // Type of the image (this could be "before", "during", etc.)
           CapturedAt = DateTime.Now,
           CreatedAt = DateTime.Now
         };
@@ -134,7 +132,7 @@ namespace AspnetCoreMvcFull.Controllers
     {
       var reports = await (from cr in _context.CollectionRecords
                              //join bin in _context.Bins on cr.BinId equals bin.Id
-                           join user in _context.Users on cr.UserId equals user.Id
+                           join user in _context.Users on cr.CollectorId equals user.Id
                            //join truck in _context.Trucks on cr.TruckId equals truck.Id
                            join img in _context.Images on cr.Id equals img.CollectionRecordId into images
                            from image in images.DefaultIfEmpty() // To handle the case where there may not be an image
@@ -147,9 +145,6 @@ namespace AspnetCoreMvcFull.Controllers
                              GpsLongitude = cr.GpsLongitude,
                              CollectorEmail = user.Email,
                              //TruckLicensePlate = truck.LicensePlate,
-                             IssueReported = cr.IssueReported,
-                             IssueDescription = cr.IssueDescription,
-                             ImageUrl = (image != null && image.ImageUrl != null) ? image.ImageUrl : "/uploads/default.png" // Default image if no image found
                            }).ToListAsync();
 
       return View(reports);
