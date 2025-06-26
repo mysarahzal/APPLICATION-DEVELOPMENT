@@ -84,10 +84,16 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<decimal>("FillLevel")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<decimal?>("Latitude")
+                        .HasColumnType("decimal(10,8)");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasColumnType("decimal(11,8)");
 
                     b.Property<string>("Zone")
                         .IsRequired()

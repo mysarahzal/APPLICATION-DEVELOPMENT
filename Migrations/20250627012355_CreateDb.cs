@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AspnetCoreMvcFull.Migrations
 {
     /// <inheritdoc />
-    public partial class createDB : Migration
+    public partial class CreateDb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -138,6 +138,8 @@ namespace AspnetCoreMvcFull.Migrations
                     Location = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     FillLevel = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
                     Zone = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Latitude = table.Column<decimal>(type: "decimal(10,8)", nullable: true),
+                    Longitude = table.Column<decimal>(type: "decimal(11,8)", nullable: true),
                     ClientID = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>

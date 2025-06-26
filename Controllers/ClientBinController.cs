@@ -179,6 +179,10 @@ namespace AspnetCoreMvcFull.Controllers
       if (model.Bin.FillLevel < 0 || model.Bin.FillLevel > 100)
         ModelState.AddModelError("Bin.FillLevel", "Fill level must be between 0 and 100");
 
+      // Add this validation after the existing validations in CreateBin method
+      if (!model.Bin.Latitude.HasValue || !model.Bin.Longitude.HasValue)
+        ModelState.AddModelError("", "Please select a location from the map suggestions to get coordinates");
+
       // Check if the selected client exists
       if (model.Bin.ClientID > 0)
       {
@@ -273,6 +277,10 @@ namespace AspnetCoreMvcFull.Controllers
           existingBin.FillLevel = model.Bin.FillLevel;
           existingBin.Zone = model.Bin.Zone;
           existingBin.ClientID = model.Bin.ClientID;
+
+          // Add these lines after the existing property updates
+          existingBin.Latitude = model.Bin.Latitude;
+          existingBin.Longitude = model.Bin.Longitude;
 
           await _dbContext.SaveChangesAsync();
           TempData["SuccessMessage"] = "Bin updated successfully!";
@@ -406,7 +414,10 @@ namespace AspnetCoreMvcFull.Controllers
           fillLevel = bin.FillLevel,
           zone = bin.Zone,
           clientID = bin.ClientID,
-          clientName = bin.Client?.ClientName
+          clientName = bin.Client?.ClientName,
+          // Add these properties to the JSON return object
+          latitude = bin.Latitude,
+          longitude = bin.Longitude,
         });
       }
       catch (Exception ex)
