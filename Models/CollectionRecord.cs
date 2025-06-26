@@ -1,19 +1,14 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using System;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AspnetCoreMvcFull.Models
 {
-  [Index(nameof(CollectionPointId))]
-  [Index(nameof(BinId))]
   public class CollectionRecord
   {
     [Key]
     public Guid Id { get; set; }
 
-    // Foreign Keys
     [Required]
     public Guid BinId { get; set; }
 
@@ -21,23 +16,10 @@ namespace AspnetCoreMvcFull.Models
     public Guid CollectionPointId { get; set; }
 
     [Required]
-    public int UserId { get; set; }
+    public int CollectorId { get; set; }
 
     [Required]
-    public int TruckId { get; set; }  // Changed from Guid to int to match Truck.Id
-
-    // Navigation Properties
-    [ForeignKey("CollectionPointId")]
-    public virtual CollectionPoint CollectionPoint { get; set; }
-
-    [ForeignKey("BinId")]
-    public virtual Bin Bin { get; set; }
-
-    [ForeignKey("UserId")]
-    public virtual User User { get; set; }
-
-    [ForeignKey("TruckId")]
-    public virtual Truck Truck { get; set; }
+    public int TruckId { get; set; }
 
     [Required]
     public DateTime PickupTimestamp { get; set; }
@@ -48,20 +30,23 @@ namespace AspnetCoreMvcFull.Models
     [Column(TypeName = "decimal(18,6)")]
     public decimal GpsLongitude { get; set; }
 
-    public string BinPlateIdCaptured { get; set; } = string.Empty;
+    public string? BinPlateIdCaptured { get; set; }
 
-    public bool IssueReported { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public string IssueDescription { get; set; } = string.Empty;
+    // Navigation Properties
+    [ForeignKey(nameof(BinId))]
+    public virtual Bin Bin { get; set; }
 
-    public virtual ICollection<Image> Images { get; set; }
+    [ForeignKey(nameof(CollectionPointId))]
+    public virtual CollectionPoint CollectionPoint { get; set; }
 
-    // Constructor
-    public CollectionRecord()
-    {
-      Images = new List<Image>();
-      BinPlateIdCaptured = string.Empty;
-      IssueDescription = string.Empty;
-    }
+    [ForeignKey(nameof(CollectorId))]
+    public virtual User Collector { get; set; }
+
+    [ForeignKey(nameof(TruckId))]
+    public virtual Truck Truck { get; set; }
+
+    public virtual Image Image { get; set; }
   }
 }

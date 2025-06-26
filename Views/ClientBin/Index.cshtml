@@ -233,7 +233,7 @@
                                                     <td>@bin.Client?.ClientName</td>
                                                     <td>
                                                         <!-- Edit Button -->
-                                                        <button type="button" class="btn btn-primary me-2" onclick="editBin('@bin.Id')">
+														<button type="button" class="btn btn-primary me-2" onclick="editBin('@bin.Id.ToString()')">
                                                             <i class="fas fa-edit me-1"></i>Edit
                                                         </button>
 
@@ -394,24 +394,35 @@
 
         // Bin management functions
 		function editBin(binId) {
-			fetch(`/ClientBin/GetBin?id=${binId}`)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('editBinId').value = data.id;
-                    document.getElementById('editBinPlateId').value = data.binPlateId;
-                    document.getElementById('editBinLocation').value = data.location;
-                    document.getElementById('editBinFillLevel').value = data.fillLevel;
-                    document.getElementById('editBinZone').value = data.zone;
-                    document.getElementById('editBinClientID').value = data.clientID;
+		// Add some debugging
+		console.log('Editing bin with ID:', binId);
+    
+		fetch(`/ClientBin/GetBin?id=${encodeURIComponent(binId)}`)
+			.then(response => {
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`);
+				}
+				return response.json();
+			})
+			.then(data => {
+				console.log('Received bin data:', data);
+            
+				document.getElementById('editBinId').value = data.id;
+				document.getElementById('editBinPlateId').value = data.binPlateId;
+				document.getElementById('editBinLocation').value = data.location;
+				document.getElementById('editBinFillLevel').value = data.fillLevel;
+				document.getElementById('editBinZone').value = data.zone;
+				document.getElementById('editBinClientID').value = data.clientID;
 
-                    var modal = new bootstrap.Modal(document.getElementById('editBinModal'));
-                    modal.show();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Error loading bin data');
-                });
-        }
+				var bootstrap = window.bootstrap; // Declare the bootstrap variable
+				var modal = new bootstrap.Modal(document.getElementById('editBinModal'));
+				modal.show();
+			})
+			.catch(error => {
+				console.error('Error:', error);
+				alert('Error loading bin data: ' + error.message);
+			});
+		}
 
         function deleteBin(binId, binPlateId) {
             if (confirm(`Are you sure you want to delete bin "${binPlateId}"?`)) {
