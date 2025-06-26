@@ -21,6 +21,18 @@
 						</div>
 					}
 
+					<!-- ADD THE DEBUG CODE HERE -->
+					@if (ViewBag.Trucks != null)
+					{
+						<div class="alert alert-info">
+							<strong>Debug Info:</strong><br>
+							Trucks loaded: @((ViewBag.Trucks as List<AspnetCoreMvcFull.Models.Truck>)?.Count ?? 0)<br>
+							Collectors loaded: @((ViewBag.Collectors as List<AspnetCoreMvcFull.Models.User>)?.Count ?? 0)<br>
+							Routes loaded: @((ViewBag.Routes as List<AspnetCoreMvcFull.Models.RoutePlan>)?.Count ?? 0)
+						</div>
+					}
+					<!-- END DEBUG CODE -->
+
 					<form asp-action="Create" method="post">
 						<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
@@ -78,6 +90,7 @@
 						</div>
 
 						<!-- Route Dropdown -->
+						<!-- Replace your Route dropdown section with this: -->
 						<div class="form-group mb-3">
 							<label asp-for="RouteId" class="form-label">
 								<i class="fas fa-route"></i> Select Route
@@ -88,7 +101,7 @@
 								{
 									@foreach (var route in ViewBag.Routes)
 									{
-										<option value="@route.Id">
+										<option value="@route.Id.ToString()">
 											@route.Name
 											@if (!string.IsNullOrEmpty(route.Description))
 											{
@@ -101,6 +114,29 @@
 							</select>
 							<span asp-validation-for="RouteId" class="text-danger"></span>
 						</div>
+						@* <div class="form-group mb-3"> *@
+						@* 	<label asp-for="RouteId" class="form-label"> *@
+						@* 		<i class="fas fa-route"></i> Select Route *@
+						@* 	</label> *@
+						@* 	<select asp-for="RouteId" class="form-select" required> *@
+						@* 		<option value="">-- Select Route --</option> *@
+						@* 		@if (ViewBag.Routes != null) *@
+						@* 		{ *@
+						@* 			@foreach (var route in ViewBag.Routes) *@
+						@* 			{ *@
+						@* 				<option value="@route.Id"> *@
+						@* 					@route.Name *@
+						@* 					@if (!string.IsNullOrEmpty(route.Description)) *@
+						@* 					{ *@
+						@* 						<span>- @route.Description</span> *@
+						@* 					} *@
+						@* 					(@route.ExpectedDurationMinutes min) *@
+						@* 				</option> *@
+						@* 			} *@
+						@* 		} *@
+						@* 	</select> *@
+						@* 	<span asp-validation-for="RouteId" class="text-danger"></span> *@
+						@* </div> *@
 
 						<div class="row">
 							<div class="col-md-6">
