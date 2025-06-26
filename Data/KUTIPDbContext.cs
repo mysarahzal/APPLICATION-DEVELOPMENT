@@ -34,10 +34,11 @@ namespace AspnetCoreMvcFull.Data
     {
       base.OnModelCreating(modelBuilder);
 
-      // IMPORTANT: Configure RoutePlan to use the existing "RoutePlan" table name (singular)
+      // Use "RoutePlan" table name (singular)
       modelBuilder.Entity<RoutePlan>().ToTable("RoutePlan");
 
-      // Configure CollectionRecord relationships
+      // --- CollectionRecord Relationships ---
+
       modelBuilder.Entity<CollectionRecord>()
           .HasOne(cr => cr.CollectionPoint)
           .WithMany(cp => cp.CollectionRecords)
@@ -46,15 +47,17 @@ namespace AspnetCoreMvcFull.Data
 
       modelBuilder.Entity<CollectionRecord>()
           .HasOne(cr => cr.Bin)
-          .WithMany()
+          .WithMany(b => b.CollectionRecords)
           .HasForeignKey(cr => cr.BinId)
           .OnDelete(DeleteBehavior.NoAction);
 
       modelBuilder.Entity<CollectionRecord>()
-          .HasOne(cr => cr.User)
-          .WithMany()
-          .HasForeignKey(cr => cr.UserId)
-          .OnDelete(DeleteBehavior.NoAction);
+      .HasOne(cr => cr.Collector)
+      .WithMany(u => u.CollectionRecords)   // <- use the real nav property
+      .HasForeignKey(cr => cr.CollectorId)
+      .OnDelete(DeleteBehavior.NoAction);
+
+
 
       modelBuilder.Entity<CollectionRecord>()
           .HasOne(cr => cr.Truck)
@@ -62,7 +65,14 @@ namespace AspnetCoreMvcFull.Data
           .HasForeignKey(cr => cr.TruckId)
           .OnDelete(DeleteBehavior.NoAction);
 
-      // Configure CollectionPoint relationships
+      modelBuilder.Entity<CollectionRecord>()
+          .HasOne(cr => cr.Image)
+          .WithOne(i => i.CollectionRecord)
+          .HasForeignKey<Image>(i => i.CollectionRecordId)
+          .OnDelete(DeleteBehavior.Cascade);
+
+      // --- CollectionPoint Relationships ---
+
       modelBuilder.Entity<CollectionPoint>()
           .HasOne(cp => cp.Schedule)
           .WithMany(s => s.CollectionPoints)
@@ -71,11 +81,12 @@ namespace AspnetCoreMvcFull.Data
 
       modelBuilder.Entity<CollectionPoint>()
           .HasOne(cp => cp.Bin)
-          .WithMany()
+          .WithMany(b => b.CollectionPoints)
           .HasForeignKey(cp => cp.BinId)
           .OnDelete(DeleteBehavior.NoAction);
 
-      // Configure Schedule relationships
+      // --- Schedule Relationships ---
+
       modelBuilder.Entity<Schedule>()
           .HasOne(s => s.Truck)
           .WithMany()
@@ -94,7 +105,8 @@ namespace AspnetCoreMvcFull.Data
           .HasForeignKey(s => s.CollectorId)
           .OnDelete(DeleteBehavior.NoAction);
 
-      // Configure RouteBins relationships - FIXED: Add proper navigation
+      // --- RouteBins Relationships ---
+
       modelBuilder.Entity<RouteBins>()
           .HasOne(rb => rb.RoutePlan)
           .WithMany(r => r.RouteBins)
@@ -103,7 +115,7 @@ namespace AspnetCoreMvcFull.Data
 
       modelBuilder.Entity<RouteBins>()
           .HasOne(rb => rb.Bin)
-          .WithMany(b => b.RouteBins)  // FIXED: Add the navigation property
+          .WithMany(b => b.RouteBins)
           .HasForeignKey(rb => rb.BinId)
           .OnDelete(DeleteBehavior.NoAction);
     }

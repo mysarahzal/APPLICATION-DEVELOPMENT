@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AspnetCoreMvcFull.Migrations
 {
     /// <inheritdoc />
-    public partial class createDb : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -245,8 +245,7 @@ namespace AspnetCoreMvcFull.Migrations
                     BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OrderInSchedule = table.Column<int>(type: "int", nullable: false),
                     IsCollected = table.Column<bool>(type: "bit", nullable: false),
-                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    BinId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -254,11 +253,6 @@ namespace AspnetCoreMvcFull.Migrations
                     table.ForeignKey(
                         name: "FK_CollectionPoints_Bins_BinId",
                         column: x => x.BinId,
-                        principalTable: "Bins",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_CollectionPoints_Bins_BinId1",
-                        column: x => x.BinId1,
                         principalTable: "Bins",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -300,16 +294,13 @@ namespace AspnetCoreMvcFull.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CollectionPointId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false),
+                    CollectorId = table.Column<int>(type: "int", nullable: false),
                     TruckId = table.Column<int>(type: "int", nullable: false),
                     PickupTimestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
                     GpsLatitude = table.Column<decimal>(type: "decimal(18,6)", nullable: false),
                     GpsLongitude = table.Column<decimal>(type: "decimal(18,6)", nullable: false),
-                    BinPlateIdCaptured = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    IssueReported = table.Column<bool>(type: "bit", nullable: false),
-                    IssueDescription = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    BinId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    UserId1 = table.Column<int>(type: "int", nullable: true)
+                    BinPlateIdCaptured = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -317,11 +308,6 @@ namespace AspnetCoreMvcFull.Migrations
                     table.ForeignKey(
                         name: "FK_CollectionRecords_Bins_BinId",
                         column: x => x.BinId,
-                        principalTable: "Bins",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_CollectionRecords_Bins_BinId1",
-                        column: x => x.BinId1,
                         principalTable: "Bins",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -335,13 +321,8 @@ namespace AspnetCoreMvcFull.Migrations
                         principalTable: "Trucks",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_CollectionRecords_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_CollectionRecords_Users_UserId1",
-                        column: x => x.UserId1,
+                        name: "FK_CollectionRecords_Users_CollectorId",
+                        column: x => x.CollectorId,
                         principalTable: "Users",
                         principalColumn: "Id");
                 });
@@ -352,8 +333,7 @@ namespace AspnetCoreMvcFull.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CollectionRecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ImageType = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ImageData = table.Column<byte[]>(type: "varbinary(max)", nullable: false),
                     CapturedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -384,11 +364,6 @@ namespace AspnetCoreMvcFull.Migrations
                 column: "BinId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CollectionPoints_BinId1",
-                table: "CollectionPoints",
-                column: "BinId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_CollectionPoints_ScheduleId",
                 table: "CollectionPoints",
                 column: "ScheduleId");
@@ -399,14 +374,14 @@ namespace AspnetCoreMvcFull.Migrations
                 column: "BinId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CollectionRecords_BinId1",
-                table: "CollectionRecords",
-                column: "BinId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_CollectionRecords_CollectionPointId",
                 table: "CollectionRecords",
                 column: "CollectionPointId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CollectionRecords_CollectorId",
+                table: "CollectionRecords",
+                column: "CollectorId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_CollectionRecords_TruckId",
@@ -414,19 +389,10 @@ namespace AspnetCoreMvcFull.Migrations
                 column: "TruckId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CollectionRecords_UserId",
-                table: "CollectionRecords",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_CollectionRecords_UserId1",
-                table: "CollectionRecords",
-                column: "UserId1");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Images_CollectionRecordId",
                 table: "Images",
-                column: "CollectionRecordId");
+                column: "CollectionRecordId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_MissedPickups_ScheduleId",

@@ -12,8 +12,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
+<<<<<<<< HEAD:Migrations/20250625164140_InitialCreate.Designer.cs
+    [Migration("20250625164140_InitialCreate")]
+    partial class InitialCreate
+========
     [Migration("20250626010623_createDb")]
     partial class createDb
+>>>>>>>> 01cd47793be35df8ea7cef3b663afa57abb2d655:Migrations/20250626010623_createDb.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -173,10 +178,7 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<Guid>("BinId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("BinId1")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CollectedAt")
+                    b.Property<DateTime?>("CollectedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsCollected")
@@ -192,8 +194,6 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.HasIndex("BinId");
 
-                    b.HasIndex("BinId1");
-
                     b.HasIndex("ScheduleId");
 
                     b.ToTable("CollectionPoints");
@@ -208,15 +208,17 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<Guid>("BinId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("BinId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("BinPlateIdCaptured")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("CollectionPointId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("CollectorId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal>("GpsLatitude")
                         .HasColumnType("decimal(18,6)");
@@ -224,38 +226,21 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<decimal>("GpsLongitude")
                         .HasColumnType("decimal(18,6)");
 
-                    b.Property<string>("IssueDescription")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IssueReported")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime>("PickupTimestamp")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("TruckId")
                         .HasColumnType("int");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("UserId1")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("BinId");
 
-                    b.HasIndex("BinId1");
-
                     b.HasIndex("CollectionPointId");
 
+                    b.HasIndex("CollectorId");
+
                     b.HasIndex("TruckId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("UserId1");
 
                     b.ToTable("CollectionRecords");
                 });
@@ -275,17 +260,14 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ImageType")
+                    b.Property<byte[]>("ImageData")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("varbinary(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CollectionRecordId");
+                    b.HasIndex("CollectionRecordId")
+                        .IsUnique();
 
                     b.ToTable("Images");
                 });
@@ -582,14 +564,10 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionPoint", b =>
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
-                        .WithMany()
+                        .WithMany("CollectionPoints")
                         .HasForeignKey("BinId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
-
-                    b.HasOne("AspnetCoreMvcFull.Models.Bin", null)
-                        .WithMany("CollectionPoints")
-                        .HasForeignKey("BinId1");
 
                     b.HasOne("AspnetCoreMvcFull.Models.Schedule", "Schedule")
                         .WithMany("CollectionPoints")
@@ -605,18 +583,20 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionRecord", b =>
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.Bin", "Bin")
-                        .WithMany()
+                        .WithMany("CollectionRecords")
                         .HasForeignKey("BinId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("AspnetCoreMvcFull.Models.Bin", null)
-                        .WithMany("CollectionRecords")
-                        .HasForeignKey("BinId1");
-
                     b.HasOne("AspnetCoreMvcFull.Models.CollectionPoint", "CollectionPoint")
                         .WithMany("CollectionRecords")
                         .HasForeignKey("CollectionPointId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("AspnetCoreMvcFull.Models.User", "Collector")
+                        .WithMany("CollectionRecords")
+                        .HasForeignKey("CollectorId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -626,32 +606,24 @@ namespace AspnetCoreMvcFull.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("AspnetCoreMvcFull.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("AspnetCoreMvcFull.Models.User", null)
-                        .WithMany("CollectionRecords")
-                        .HasForeignKey("UserId1");
-
                     b.Navigation("Bin");
 
                     b.Navigation("CollectionPoint");
 
-                    b.Navigation("Truck");
+                    b.Navigation("Collector");
 
-                    b.Navigation("User");
+                    b.Navigation("Truck");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Image", b =>
                 {
-                    b.HasOne("AspnetCoreMvcFull.Models.CollectionRecord", null)
-                        .WithMany("Images")
-                        .HasForeignKey("CollectionRecordId")
+                    b.HasOne("AspnetCoreMvcFull.Models.CollectionRecord", "CollectionRecord")
+                        .WithOne("Image")
+                        .HasForeignKey("AspnetCoreMvcFull.Models.Image", "CollectionRecordId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CollectionRecord");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.MissedPickup", b =>
@@ -732,7 +704,8 @@ namespace AspnetCoreMvcFull.Migrations
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.CollectionRecord", b =>
                 {
-                    b.Navigation("Images");
+                    b.Navigation("Image")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.RoutePlan", b =>
