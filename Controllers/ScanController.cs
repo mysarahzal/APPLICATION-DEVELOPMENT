@@ -100,7 +100,7 @@ namespace AspnetCoreMvcFull.Controllers
 
         _context.CollectionRecords.Add(collectionRecord);
 
-        // Create Image record
+        // Create Image record with proper format
         var image = new Image
         {
           Id = Guid.NewGuid(),
@@ -117,6 +117,8 @@ namespace AspnetCoreMvcFull.Controllers
         collectionPoint.CollectedAt = currentTime;
 
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation($"Successfully saved collection record for plate {plateId} with image size: {imageBytes.Length} bytes");
 
         return Json(new
         {
@@ -150,16 +152,58 @@ namespace AspnetCoreMvcFull.Controllers
 
     private byte[] ConvertBase64ToBytes(string base64Data)
     {
-      var base64 = base64Data.Contains(",") ? base64Data.Split(',')[1] : base64Data;
-      return Convert.FromBase64String(base64);
+      try
+      {
+        // Handle data URL format (data:image/jpeg;base64,...)
+        if (base64Data.StartsWith("data:"))
+        {
+          var base64Index = base64Data.IndexOf("base64,");
+          if (base64Index != -1)
+          {
+            base64Data = base64Data.Substring(base64Index + 7);
+          }
+        }
+
+        // Clean the base64 string
+        base64Data = base64Data.Replace(" ", "").Replace("\n", "").Replace("\r", "");
+
+        var imageBytes = Convert.FromBase64String(base64Data);
+        _logger.LogInformation($"Converted base64 to {imageBytes.Length} bytes");
+
+        return imageBytes;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error converting base64 to bytes");
+        throw new ArgumentException("Invalid base64 image data", ex);
+      }
     }
 
     [HttpGet]
     public async Task<IActionResult> GetImage(Guid imageId)
     {
-      var image = await _context.Images.FindAsync(imageId);
-      if (image?.ImageData == null) return NotFound();
-      return File(image.ImageData, "image/jpeg");
+      try
+      {
+        var image = await _context.Images.FindAsync(imageId);
+        if (image?.ImageData == null)
+        {
+          _logger.LogWarning($"Image not found for ID: {imageId}");
+          return NotFound("Image not found");
+        }
+
+        _logger.LogInformation($"Serving image {imageId} with size: {image.ImageData.Length} bytes");
+
+        // Set proper headers for image display
+        Response.Headers.Add("Cache-Control", "public, max-age=3600");
+        Response.Headers.Add("Content-Disposition", "inline");
+
+        return File(image.ImageData, "image/jpeg");
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error retrieving image {ImageId}", imageId);
+        return BadRequest($"Error retrieving image: {ex.Message}");
+      }
     }
   }
 

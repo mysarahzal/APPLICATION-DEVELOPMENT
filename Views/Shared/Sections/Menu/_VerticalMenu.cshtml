@@ -87,6 +87,14 @@
 				<div>Truck</div>
 			</a>
 		</li>
+
+        <!-- Bin Detector -->
+        <li class='menu-item@(currentPage.StartsWith("/Scan") ? " active" : "")'>
+            <a asp-controller="Scan" asp-action="Index" class="menu-link">
+        <div>Bin Detector</div>
+        </a>
+</li>
+
         @* </ul> *@
         @* </li> *@
     </ul>
