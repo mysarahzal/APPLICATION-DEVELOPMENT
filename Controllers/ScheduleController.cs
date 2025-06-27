@@ -171,12 +171,30 @@ namespace AspnetCoreMvcFull.Controllers
           .Include(s => s.Route)
           .Include(s => s.CollectionPoints)
           .ThenInclude(cp => cp.Bin)
+          .ThenInclude(b => b.Client)
           .FirstOrDefaultAsync(s => s.Id == id);
 
       if (schedule == null)
       {
         return NotFound();
       }
+
+      // Get all bins in the route
+      var routeBins = await _context.RouteBins
+          .Include(rb => rb.Bin)
+          .ThenInclude(b => b.Client)
+          .Where(rb => rb.RouteId == schedule.RouteId)
+          .OrderBy(rb => rb.OrderInRoute)
+          .ToListAsync();
+
+      // Get bins that are already in the schedule
+      var scheduledBinIds = schedule.CollectionPoints.Select(cp => cp.BinId).ToList();
+
+      // Get available bins (not yet in schedule)
+      var availableBins = routeBins.Where(rb => !scheduledBinIds.Contains(rb.BinId)).ToList();
+
+      ViewBag.RouteBins = routeBins;
+      ViewBag.AvailableBins = availableBins;
 
       await LoadDropdownData();
       return View(schedule);
@@ -243,41 +261,10 @@ namespace AspnetCoreMvcFull.Controllers
                 .ToListAsync();
 
             // Recalculate route center coordinates
-            if (routeBins.Any())
-            {
-              var validCoordinates = routeBins
-                  .Where(rb => rb.Bin.Latitude.HasValue && rb.Bin.Longitude.HasValue)
-                  .ToList();
-
-              if (validCoordinates.Any())
-              {
-                existingSchedule.RouteCenterLatitude = validCoordinates.Average(rb => rb.Bin.Latitude.Value);
-                existingSchedule.RouteCenterLongitude = validCoordinates.Average(rb => rb.Bin.Longitude.Value);
-              }
-            }
+            await RecalculateRouteCenterCoordinates(existingSchedule, routeBins);
 
             // Create new collection points
-            var newCollectionPoints = new List<CollectionPoint>();
-            foreach (var routeBin in routeBins)
-            {
-              var collectionPoint = new CollectionPoint
-              {
-                Id = Guid.NewGuid(),
-                ScheduleId = existingSchedule.Id,
-                BinId = routeBin.BinId,
-                OrderInSchedule = routeBin.OrderInRoute,
-                IsCollected = false,
-                CollectedAt = null,
-                Latitude = routeBin.Bin.Latitude,
-                Longitude = routeBin.Bin.Longitude
-              };
-              newCollectionPoints.Add(collectionPoint);
-            }
-
-            if (newCollectionPoints.Any())
-            {
-              _context.CollectionPoints.AddRange(newCollectionPoints);
-            }
+            await CreateCollectionPointsForBins(existingSchedule.Id, routeBins);
           }
 
           await _context.SaveChangesAsync();
@@ -353,7 +340,7 @@ namespace AspnetCoreMvcFull.Controllers
       return RedirectToAction(nameof(Index));
     }
 
-    // Helper method to load all dropdown data - FIXED VERSION
+    // Helper method to load all dropdown data
     private async Task LoadDropdownData()
     {
       try
@@ -380,7 +367,6 @@ namespace AspnetCoreMvcFull.Controllers
             .OrderBy(r => r.Name)
             .ToListAsync();
 
-        // FIXED: Get scheduled routes with their schedules using a separate query
         var scheduledRoutes = await _context.RoutePlans
             .Where(r => activeScheduleRouteIds.Contains(r.Id))
             .OrderBy(r => r.Name)
@@ -435,7 +421,7 @@ namespace AspnetCoreMvcFull.Controllers
       return View(schedule);
     }
 
-    // AJAX method to get route bins - SINGLE VERSION ONLY
+    // AJAX method to get route bins
     [HttpGet]
     public async Task<IActionResult> GetRouteBins(Guid routeId)
     {
@@ -499,6 +485,181 @@ namespace AspnetCoreMvcFull.Controllers
       catch (Exception ex)
       {
         return Json(new { error = ex.Message });
+      }
+    }
+
+    // NEW: Add bin to schedule
+    [HttpPost]
+    public async Task<IActionResult> AddBinToSchedule(int scheduleId, Guid binId)
+    {
+      try
+      {
+        var schedule = await _context.Schedules
+            .Include(s => s.CollectionPoints)
+            .FirstOrDefaultAsync(s => s.Id == scheduleId);
+
+        if (schedule == null)
+        {
+          return Json(new { success = false, message = "Schedule not found" });
+        }
+
+        // Check if bin is already in schedule
+        if (schedule.CollectionPoints.Any(cp => cp.BinId == binId))
+        {
+          return Json(new { success = false, message = "Bin is already in this schedule" });
+        }
+
+        // Get the bin and route bin info
+        var routeBin = await _context.RouteBins
+            .Include(rb => rb.Bin)
+            .FirstOrDefaultAsync(rb => rb.BinId == binId && rb.RouteId == schedule.RouteId);
+
+        if (routeBin == null)
+        {
+          return Json(new { success = false, message = "Bin not found in this route" });
+        }
+
+        // Create new collection point
+        var collectionPoint = new CollectionPoint
+        {
+          Id = Guid.NewGuid(),
+          ScheduleId = scheduleId,
+          BinId = binId,
+          OrderInSchedule = routeBin.OrderInRoute,
+          IsCollected = false,
+          CollectedAt = null,
+          Latitude = routeBin.Bin.Latitude,
+          Longitude = routeBin.Bin.Longitude
+        };
+
+        _context.CollectionPoints.Add(collectionPoint);
+
+        // Recalculate route center coordinates
+        var allRouteBins = await _context.RouteBins
+            .Include(rb => rb.Bin)
+            .Where(rb => rb.RouteId == schedule.RouteId)
+            .ToListAsync();
+
+        await RecalculateRouteCenterCoordinates(schedule, allRouteBins);
+
+        await _context.SaveChangesAsync();
+
+        return Json(new
+        {
+          success = true,
+          message = "Bin added to schedule successfully",
+          binPlateId = routeBin.Bin.BinPlateId,
+          location = routeBin.Bin.Location
+        });
+      }
+      catch (Exception ex)
+      {
+        return Json(new { success = false, message = "Error adding bin: " + ex.Message });
+      }
+    }
+
+    // NEW: Remove bin from schedule
+    [HttpPost]
+    public async Task<IActionResult> RemoveBinFromSchedule(int scheduleId, Guid binId)
+    {
+      try
+      {
+        var collectionPoint = await _context.CollectionPoints
+            .FirstOrDefaultAsync(cp => cp.ScheduleId == scheduleId && cp.BinId == binId);
+
+        if (collectionPoint == null)
+        {
+          return Json(new { success = false, message = "Collection point not found" });
+        }
+
+        // Check if bin has been collected
+        if (collectionPoint.IsCollected)
+        {
+          return Json(new { success = false, message = "Cannot remove bin that has already been collected" });
+        }
+
+        _context.CollectionPoints.Remove(collectionPoint);
+
+        // Recalculate route center coordinates
+        var schedule = await _context.Schedules.FindAsync(scheduleId);
+        var allRouteBins = await _context.RouteBins
+            .Include(rb => rb.Bin)
+            .Where(rb => rb.RouteId == schedule.RouteId)
+            .ToListAsync();
+
+        await RecalculateRouteCenterCoordinates(schedule, allRouteBins);
+
+        await _context.SaveChangesAsync();
+
+        return Json(new { success = true, message = "Bin removed from schedule successfully" });
+      }
+      catch (Exception ex)
+      {
+        return Json(new { success = false, message = "Error removing bin: " + ex.Message });
+      }
+    }
+
+    // Helper method to recalculate route center coordinates
+    private async Task RecalculateRouteCenterCoordinates(Schedule schedule, List<RouteBins> routeBins)
+    {
+      // Get current collection points for this schedule
+      var currentCollectionPoints = await _context.CollectionPoints
+          .Where(cp => cp.ScheduleId == schedule.Id)
+          .Select(cp => cp.BinId)
+          .ToListAsync();
+
+      // Filter route bins to only those in the schedule
+      var scheduledBins = routeBins.Where(rb => currentCollectionPoints.Contains(rb.BinId)).ToList();
+
+      if (scheduledBins.Any())
+      {
+        var validCoordinates = scheduledBins
+            .Where(rb => rb.Bin.Latitude.HasValue && rb.Bin.Longitude.HasValue)
+            .ToList();
+
+        if (validCoordinates.Any())
+        {
+          schedule.RouteCenterLatitude = validCoordinates.Average(rb => rb.Bin.Latitude.Value);
+          schedule.RouteCenterLongitude = validCoordinates.Average(rb => rb.Bin.Longitude.Value);
+        }
+        else
+        {
+          schedule.RouteCenterLatitude = null;
+          schedule.RouteCenterLongitude = null;
+        }
+      }
+      else
+      {
+        schedule.RouteCenterLatitude = null;
+        schedule.RouteCenterLongitude = null;
+      }
+
+      schedule.UpdatedAt = DateTime.Now;
+    }
+
+    // Helper method to create collection points for bins
+    private async Task CreateCollectionPointsForBins(int scheduleId, List<RouteBins> routeBins)
+    {
+      var collectionPoints = new List<CollectionPoint>();
+      foreach (var routeBin in routeBins)
+      {
+        var collectionPoint = new CollectionPoint
+        {
+          Id = Guid.NewGuid(),
+          ScheduleId = scheduleId,
+          BinId = routeBin.BinId,
+          OrderInSchedule = routeBin.OrderInRoute,
+          IsCollected = false,
+          CollectedAt = null,
+          Latitude = routeBin.Bin.Latitude,
+          Longitude = routeBin.Bin.Longitude
+        };
+        collectionPoints.Add(collectionPoint);
+      }
+
+      if (collectionPoints.Any())
+      {
+        _context.CollectionPoints.AddRange(collectionPoints);
       }
     }
   }
