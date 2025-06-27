@@ -84,7 +84,7 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<decimal>("FillLevel")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<decimal?>("Latitude")
+                    b.Property<decimal>("Latitude")
                         .HasColumnType("decimal(10,8)");
 
                     b.Property<string>("Location")
@@ -92,8 +92,8 @@ namespace AspnetCoreMvcFull.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<decimal?>("Longitude")
-                        .HasColumnType("decimal(11,8)");
+                    b.Property<decimal>("Longitude")
+                        .HasColumnType("decimal(10,8)");
 
                     b.Property<string>("Zone")
                         .IsRequired()
@@ -179,8 +179,17 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<DateTime?>("CollectedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("IsCollected")
                         .HasColumnType("bit");
+
+                    b.Property<decimal>("Latitude")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Longitude")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("OrderInSchedule")
                         .HasColumnType("int");
