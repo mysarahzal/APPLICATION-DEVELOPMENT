@@ -27,6 +27,14 @@ namespace AspnetCoreMvcFull.Models
     [StringLength(50, ErrorMessage = "Zone cannot exceed 50 characters")]
     public string Zone { get; set; }
 
+    [Column(TypeName = "decimal(10,8)")]
+    [Display(Name = "Latitude")]
+    public decimal? Latitude { get; set; }
+
+    [Column(TypeName = "decimal(11,8)")]
+    [Display(Name = "Longitude")]
+    public decimal? Longitude { get; set; }
+
     // Foreign Key and Navigation Property for the related Client
     [Required(ErrorMessage = "Please select a client")]
     [Display(Name = "Client")]

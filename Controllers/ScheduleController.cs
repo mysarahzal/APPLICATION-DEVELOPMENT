@@ -21,6 +21,8 @@ namespace AspnetCoreMvcFull.Controllers
           .Include(s => s.Collector)
           .Include(s => s.Truck)
           .Include(s => s.Route)
+          .Include(s => s.CollectionPoints)
+          .ThenInclude(cp => cp.Bin)
           .OrderByDescending(s => s.CreatedAt)
           .ToListAsync();
       return View(schedules);
@@ -31,21 +33,7 @@ namespace AspnetCoreMvcFull.Controllers
     {
       try
       {
-        ViewBag.Trucks = await _context.Trucks
-            .Where(t => t.Status == "Available")
-            .OrderBy(t => t.LicensePlate)
-            .ToListAsync();
-
-        ViewBag.Collectors = await _context.Users
-            .Where(u => u.Role == "Collector" || u.Role == "Driver")
-            .OrderBy(u => u.FirstName)
-            .ToListAsync();
-
-        // FIXED: Changed from Routes to RoutePlans
-        ViewBag.Routes = await _context.RoutePlans
-            .OrderBy(r => r.Name)
-            .ToListAsync();
-
+        await LoadDropdownData();
         return View();
       }
       catch (Exception ex)
@@ -55,7 +43,6 @@ namespace AspnetCoreMvcFull.Controllers
       }
     }
 
-    // POST: Schedule/Create
     // POST: Schedule/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -71,15 +58,8 @@ namespace AspnetCoreMvcFull.Controllers
       ModelState.Remove("Truck");
       ModelState.Remove("Route");
       ModelState.Remove("CollectionPoints");
-
-      // Debug: Log validation errors
-      if (!ModelState.IsValid)
-      {
-        foreach (var error in ModelState)
-        {
-          Console.WriteLine($"Validation Error - Key: {error.Key}, Errors: {string.Join(", ", error.Value.Errors.Select(e => e.ErrorMessage))}");
-        }
-      }
+      ModelState.Remove("RouteCenterLatitude");
+      ModelState.Remove("RouteCenterLongitude");
 
       if (ModelState.IsValid)
       {
@@ -111,10 +91,56 @@ namespace AspnetCoreMvcFull.Controllers
             schedule.ActualStartTime = null;
             schedule.ActualEndTime = null;
 
+            // Get bins from the selected route with their coordinates
+            var routeBins = await _context.RouteBins
+                .Include(rb => rb.Bin)
+                .Where(rb => rb.RouteId == schedule.RouteId)
+                .OrderBy(rb => rb.OrderInRoute)
+                .ToListAsync();
+
+            // Calculate route center coordinates
+            if (routeBins.Any())
+            {
+              var validCoordinates = routeBins
+                  .Where(rb => rb.Bin.Latitude.HasValue && rb.Bin.Longitude.HasValue)
+                  .ToList();
+
+              if (validCoordinates.Any())
+              {
+                schedule.RouteCenterLatitude = validCoordinates.Average(rb => rb.Bin.Latitude.Value);
+                schedule.RouteCenterLongitude = validCoordinates.Average(rb => rb.Bin.Longitude.Value);
+              }
+            }
+
             _context.Add(schedule);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Schedule created successfully!";
+            // Create collection points for each bin in the route
+            var collectionPoints = new List<CollectionPoint>();
+            foreach (var routeBin in routeBins)
+            {
+              var collectionPoint = new CollectionPoint
+              {
+                Id = Guid.NewGuid(),
+                ScheduleId = schedule.Id,
+                BinId = routeBin.BinId,
+                OrderInSchedule = routeBin.OrderInRoute,
+                IsCollected = false,
+                CollectedAt = null,
+                // Copy coordinates from bin
+                Latitude = routeBin.Bin.Latitude,
+                Longitude = routeBin.Bin.Longitude
+              };
+              collectionPoints.Add(collectionPoint);
+            }
+
+            if (collectionPoints.Any())
+            {
+              _context.CollectionPoints.AddRange(collectionPoints);
+              await _context.SaveChangesAsync();
+            }
+
+            TempData["Success"] = $"Schedule created successfully with {collectionPoints.Count} collection points!";
             return RedirectToAction(nameof(Index));
           }
         }
@@ -130,46 +156,7 @@ namespace AspnetCoreMvcFull.Controllers
       await LoadDropdownData();
       return View(schedule);
     }
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public async Task<IActionResult> Create([Bind("TruckId,CollectorId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes")] Schedule schedule)
-    //{
-    //  // Remove validation for auto-generated fields
-    //  ModelState.Remove("ActualStartTime");
-    //  ModelState.Remove("ActualEndTime");
-    //  ModelState.Remove("CreatedAt");
-    //  ModelState.Remove("UpdatedAt");
-    //  ModelState.Remove("Id");  // Remove Id validation since it's auto-generated
 
-    //  if (ModelState.IsValid)
-    //  {
-    //    try
-    //    {
-    //      // Set automatic fields
-    //      schedule.CreatedAt = DateTime.Now;
-    //      schedule.UpdatedAt = DateTime.Now;
-    //      schedule.ActualStartTime = null;  // Use null instead of DateTime.MinValue
-    //      schedule.ActualEndTime = null;    // Use null instead of DateTime.MinValue
-    //                                        // Don't manually set Id - let EF Core auto-generate it
-
-    //      _context.Add(schedule);
-    //      await _context.SaveChangesAsync();
-
-    //      TempData["Success"] = "Schedule created successfully!";
-    //      return RedirectToAction(nameof(Index));
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //      ModelState.AddModelError("", "Error creating schedule: " + ex.Message);
-    //    }
-    //  }
-
-    //  // If validation fails, reload dropdown data
-    //  await LoadDropdownData();
-    //  return View(schedule);
-    //}
-
-    // GET: Schedule/Edit/5
     // GET: Schedule/Edit/5
     public async Task<IActionResult> Edit(int? id)
     {
@@ -182,6 +169,8 @@ namespace AspnetCoreMvcFull.Controllers
           .Include(s => s.Collector)
           .Include(s => s.Truck)
           .Include(s => s.Route)
+          .Include(s => s.CollectionPoints)
+          .ThenInclude(cp => cp.Bin)
           .FirstOrDefaultAsync(s => s.Id == id);
 
       if (schedule == null)
@@ -189,36 +178,10 @@ namespace AspnetCoreMvcFull.Controllers
         return NotFound();
       }
 
-      // Load dropdown data
       await LoadDropdownData();
-
-      // Debug logging
-      Console.WriteLine($"Editing schedule ID: {id}");
-      Console.WriteLine($"Schedule found: {schedule.Id}");
-      Console.WriteLine($"Current RouteId: {schedule.RouteId}");
-      Console.WriteLine($"Current TruckId: {schedule.TruckId}");
-      Console.WriteLine($"Current CollectorId: {schedule.CollectorId}");
-
       return View(schedule);
     }
-    //public async Task<IActionResult> Edit(int? id)
-    //{
-    //  if (id == null)
-    //  {
-    //    return NotFound();
-    //  }
 
-    //  var schedule = await _context.Schedules.FindAsync(id);
-    //  if (schedule == null)
-    //  {
-    //    return NotFound();
-    //  }
-
-    //  await LoadDropdownData();
-    //  return View(schedule);
-    //}
-
-    // POST: Schedule/Edit/5
     // POST: Schedule/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -235,29 +198,26 @@ namespace AspnetCoreMvcFull.Controllers
       ModelState.Remove("Truck");
       ModelState.Remove("Route");
       ModelState.Remove("CollectionPoints");
-
-      // Debug: Log validation errors
-      if (!ModelState.IsValid)
-      {
-        Console.WriteLine("ModelState is invalid:");
-        foreach (var error in ModelState)
-        {
-          Console.WriteLine($"Key: {error.Key}, Errors: {string.Join(", ", error.Value.Errors.Select(e => e.ErrorMessage))}");
-        }
-      }
+      ModelState.Remove("RouteCenterLatitude");
+      ModelState.Remove("RouteCenterLongitude");
 
       if (ModelState.IsValid)
       {
         try
         {
-          // Get the existing schedule from database
-          var existingSchedule = await _context.Schedules.FindAsync(id);
+          var existingSchedule = await _context.Schedules
+              .Include(s => s.CollectionPoints)
+              .FirstOrDefaultAsync(s => s.Id == id);
+
           if (existingSchedule == null)
           {
             return NotFound();
           }
 
-          // Update only the fields that can be changed
+          // Check if route changed
+          bool routeChanged = existingSchedule.RouteId != schedule.RouteId;
+
+          // Update schedule fields
           existingSchedule.TruckId = schedule.TruckId;
           existingSchedule.CollectorId = schedule.CollectorId;
           existingSchedule.RouteId = schedule.RouteId;
@@ -268,6 +228,57 @@ namespace AspnetCoreMvcFull.Controllers
           existingSchedule.ActualStartTime = schedule.ActualStartTime;
           existingSchedule.ActualEndTime = schedule.ActualEndTime;
           existingSchedule.UpdatedAt = DateTime.Now;
+
+          // If route changed, update collection points and coordinates
+          if (routeChanged)
+          {
+            // Remove existing collection points
+            _context.CollectionPoints.RemoveRange(existingSchedule.CollectionPoints);
+
+            // Get new route bins
+            var routeBins = await _context.RouteBins
+                .Include(rb => rb.Bin)
+                .Where(rb => rb.RouteId == schedule.RouteId)
+                .OrderBy(rb => rb.OrderInRoute)
+                .ToListAsync();
+
+            // Recalculate route center coordinates
+            if (routeBins.Any())
+            {
+              var validCoordinates = routeBins
+                  .Where(rb => rb.Bin.Latitude.HasValue && rb.Bin.Longitude.HasValue)
+                  .ToList();
+
+              if (validCoordinates.Any())
+              {
+                existingSchedule.RouteCenterLatitude = validCoordinates.Average(rb => rb.Bin.Latitude.Value);
+                existingSchedule.RouteCenterLongitude = validCoordinates.Average(rb => rb.Bin.Longitude.Value);
+              }
+            }
+
+            // Create new collection points
+            var newCollectionPoints = new List<CollectionPoint>();
+            foreach (var routeBin in routeBins)
+            {
+              var collectionPoint = new CollectionPoint
+              {
+                Id = Guid.NewGuid(),
+                ScheduleId = existingSchedule.Id,
+                BinId = routeBin.BinId,
+                OrderInSchedule = routeBin.OrderInRoute,
+                IsCollected = false,
+                CollectedAt = null,
+                Latitude = routeBin.Bin.Latitude,
+                Longitude = routeBin.Bin.Longitude
+              };
+              newCollectionPoints.Add(collectionPoint);
+            }
+
+            if (newCollectionPoints.Any())
+            {
+              _context.CollectionPoints.AddRange(newCollectionPoints);
+            }
+          }
 
           await _context.SaveChangesAsync();
           TempData["Success"] = "Schedule updated successfully!";
@@ -296,44 +307,6 @@ namespace AspnetCoreMvcFull.Controllers
       await LoadDropdownData();
       return View(schedule);
     }
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public async Task<IActionResult> Edit(int id, [Bind("Id,TruckId,CollectorId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes,CreatedAt,ActualStartTime,ActualEndTime")] Schedule schedule)
-    //{
-    //  if (id != schedule.Id)
-    //  {
-    //    return NotFound();
-    //  }
-
-    //  ModelState.Remove("UpdatedAt");
-
-    //  if (ModelState.IsValid)
-    //  {
-    //    try
-    //    {
-    //      schedule.UpdatedAt = DateTime.Now;
-    //      _context.Update(schedule);
-    //      await _context.SaveChangesAsync();
-
-    //      TempData["Success"] = "Schedule updated successfully!";
-    //      return RedirectToAction(nameof(Index));
-    //    }
-    //    catch (DbUpdateConcurrencyException)
-    //    {
-    //      if (!ScheduleExists(schedule.Id))
-    //      {
-    //        return NotFound();
-    //      }
-    //      else
-    //      {
-    //        throw;
-    //      }
-    //    }
-    //  }
-
-    //  await LoadDropdownData();
-    //  return View(schedule);
-    //}
 
     // GET: Schedule/Delete/5
     public async Task<IActionResult> Delete(int? id)
@@ -347,6 +320,8 @@ namespace AspnetCoreMvcFull.Controllers
           .Include(s => s.Collector)
           .Include(s => s.Truck)
           .Include(s => s.Route)
+          .Include(s => s.CollectionPoints)
+          .ThenInclude(cp => cp.Bin)
           .FirstOrDefaultAsync(m => m.Id == id);
 
       if (schedule == null)
@@ -362,9 +337,14 @@ namespace AspnetCoreMvcFull.Controllers
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-      var schedule = await _context.Schedules.FindAsync(id);
+      var schedule = await _context.Schedules
+          .Include(s => s.CollectionPoints)
+          .FirstOrDefaultAsync(s => s.Id == id);
+
       if (schedule != null)
       {
+        // Remove collection points first
+        _context.CollectionPoints.RemoveRange(schedule.CollectionPoints);
         _context.Schedules.Remove(schedule);
         await _context.SaveChangesAsync();
         TempData["Success"] = "Schedule deleted successfully!";
@@ -373,8 +353,7 @@ namespace AspnetCoreMvcFull.Controllers
       return RedirectToAction(nameof(Index));
     }
 
-    // Helper method to load all dropdown data
-    // Helper method to load all dropdown data
+    // Helper method to load all dropdown data - FIXED VERSION
     private async Task LoadDropdownData()
     {
       try
@@ -389,42 +368,138 @@ namespace AspnetCoreMvcFull.Controllers
             .OrderBy(u => u.FirstName)
             .ToListAsync();
 
-        ViewBag.Routes = await _context.RoutePlans
+        // Get routes that don't have active schedules (not completed or cancelled)
+        var activeScheduleRouteIds = await _context.Schedules
+            .Where(s => s.Status != "Completed" && s.Status != "Cancelled")
+            .Select(s => s.RouteId)
+            .Distinct()
+            .ToListAsync();
+
+        var availableRoutes = await _context.RoutePlans
+            .Where(r => !activeScheduleRouteIds.Contains(r.Id))
             .OrderBy(r => r.Name)
             .ToListAsync();
 
-        // Debug logging
-        Console.WriteLine($"Loaded {((List<Truck>)ViewBag.Trucks).Count} trucks");
-        Console.WriteLine($"Loaded {((List<User>)ViewBag.Collectors).Count} collectors");
-        Console.WriteLine($"Loaded {((List<RoutePlan>)ViewBag.Routes).Count} routes");
+        // FIXED: Get scheduled routes with their schedules using a separate query
+        var scheduledRoutes = await _context.RoutePlans
+            .Where(r => activeScheduleRouteIds.Contains(r.Id))
+            .OrderBy(r => r.Name)
+            .ToListAsync();
+
+        ViewBag.Routes = availableRoutes;
+        ViewBag.ScheduledRoutes = scheduledRoutes;
+
+        Console.WriteLine($"Available routes: {availableRoutes.Count}");
+        Console.WriteLine($"Scheduled routes: {scheduledRoutes.Count}");
       }
       catch (Exception ex)
       {
         Console.WriteLine($"Error loading dropdown data: {ex.Message}");
         ViewBag.ErrorMessage = "Error loading form data: " + ex.Message;
+
+        // Set empty lists to prevent null reference errors
+        ViewBag.Routes = new List<RoutePlan>();
+        ViewBag.ScheduledRoutes = new List<RoutePlan>();
+        ViewBag.Trucks = new List<Truck>();
+        ViewBag.Collectors = new List<User>();
       }
     }
-    //private async Task LoadDropdownData()
-    //{
-    //  ViewBag.Trucks = await _context.Trucks
-    //      .Where(t => t.Status == "Available")
-    //      .OrderBy(t => t.LicensePlate)
-    //      .ToListAsync();
-
-    //  ViewBag.Collectors = await _context.Users
-    //      .Where(u => u.Role == "Collector" || u.Role == "Driver")
-    //      .OrderBy(u => u.FirstName)
-    //      .ToListAsync();
-
-    //  // FIXED: Changed from Routes to RoutePlans
-    //  ViewBag.Routes = await _context.RoutePlans
-    //      .OrderBy(r => r.Name)
-    //      .ToListAsync();
-    //}
 
     private bool ScheduleExists(int id)
     {
       return _context.Schedules.Any(e => e.Id == id);
+    }
+
+    // GET: Schedule/Details/5
+    public async Task<IActionResult> Details(int? id)
+    {
+      if (id == null)
+      {
+        return NotFound();
+      }
+
+      var schedule = await _context.Schedules
+          .Include(s => s.Collector)
+          .Include(s => s.Truck)
+          .Include(s => s.Route)
+          .Include(s => s.CollectionPoints)
+          .ThenInclude(cp => cp.Bin)
+          .ThenInclude(b => b.Client)
+          .FirstOrDefaultAsync(m => m.Id == id);
+
+      if (schedule == null)
+      {
+        return NotFound();
+      }
+
+      return View(schedule);
+    }
+
+    // AJAX method to get route bins - SINGLE VERSION ONLY
+    [HttpGet]
+    public async Task<IActionResult> GetRouteBins(Guid routeId)
+    {
+      try
+      {
+        var routeBins = await _context.RouteBins
+            .Include(rb => rb.Bin)
+            .ThenInclude(b => b.Client)
+            .Where(rb => rb.RouteId == routeId)
+            .OrderBy(rb => rb.OrderInRoute)
+            .ToListAsync();
+
+        var result = routeBins.Select(rb => new {
+          id = rb.Id,
+          binId = rb.BinId,
+          binPlateId = rb.Bin.BinPlateId,
+          location = rb.Bin.Location,
+          zone = rb.Bin.Zone,
+          fillLevel = rb.Bin.FillLevel,
+          clientName = rb.Bin.Client?.ClientName,
+          latitude = rb.Bin.Latitude,
+          longitude = rb.Bin.Longitude,
+          orderInRoute = rb.OrderInRoute
+        }).ToList();
+
+        return Json(result);
+      }
+      catch (Exception ex)
+      {
+        return Json(new { error = ex.Message });
+      }
+    }
+
+    // Add method to check if route is already scheduled
+    [HttpGet]
+    public async Task<IActionResult> CheckRouteAvailability(Guid routeId)
+    {
+      try
+      {
+        var existingSchedule = await _context.Schedules
+            .Include(s => s.Route)
+            .Include(s => s.Collector)
+            .Where(s => s.RouteId == routeId && s.Status != "Completed" && s.Status != "Cancelled")
+            .FirstOrDefaultAsync();
+
+        if (existingSchedule != null)
+        {
+          return Json(new
+          {
+            isScheduled = true,
+            scheduleId = existingSchedule.Id,
+            routeName = existingSchedule.Route?.Name,
+            collectorName = $"{existingSchedule.Collector?.FirstName} {existingSchedule.Collector?.LastName}",
+            status = existingSchedule.Status,
+            startTime = existingSchedule.ScheduleStartTime.ToString("dd/MM/yyyy HH:mm")
+          });
+        }
+
+        return Json(new { isScheduled = false });
+      }
+      catch (Exception ex)
+      {
+        return Json(new { error = ex.Message });
+      }
     }
   }
 }

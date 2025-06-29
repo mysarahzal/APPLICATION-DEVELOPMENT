@@ -1,38 +1,183 @@
 @model AspnetCoreMvcFull.Models.Schedule
 
-<div>
-	<h4>Schedule Details</h4>
-	<hr />
-	<dl class="row">
-		<dt class="col-sm-2">Truck ID</dt>
-		<dd class="col-sm-10">@Model.TruckId</dd>
+@{
+    ViewData["Title"] = "Schedule Details";
+}
 
-		<dt class="col-sm-2">Collector</dt>
-		@* <dd class="col-sm-10">@Model.Collector?.FirstName @Model.Collector?.LastName</dd> *@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt"></i> Schedule Details
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Schedule Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>Schedule ID:</strong></td>
+                                    <td>@Model.Id</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Truck:</strong></td>
+                                    <td>@Model.Truck.LicensePlate - @Model.Truck.Model</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Collector:</strong></td>
+                                    <td>@Model.Collector.FirstName @Model.Collector.LastName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Route:</strong></td>
+                                    <td>@Model.Route.Name</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        <span class="badge @(Model.Status == "Completed" ? "bg-success" : Model.Status == "In Progress" ? "bg-warning" : "bg-primary")">
+                                            @Model.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Scheduled Time:</strong></td>
+                                    <td>@Model.ScheduleStartTime.ToString("yyyy-MM-dd HH:mm") - @Model.ScheduleEndTime.ToString("yyyy-MM-dd HH:mm")</td>
+                                </tr>
+                                @if (Model.RouteCenterLatitude.HasValue && Model.RouteCenterLongitude.HasValue)
+                                {
+                                    <tr>
+                                        <td><strong>Route Center:</strong></td>
+                                        <td>
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            @Model.RouteCenterLatitude.Value.ToString("F6"), @Model.RouteCenterLongitude.Value.ToString("F6")
+                                            <br>
+                                            <a href="https://www.google.com/maps?q=@Model.RouteCenterLatitude.Value,@Model.RouteCenterLongitude.Value"
+                                               target="_blank" class="btn btn-sm btn-outline-info mt-1">
+                                                <i class="fas fa-external-link-alt"></i> View Route Center on Map
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            @if (!string.IsNullOrEmpty(Model.AdminNotes))
+                            {
+                                <h5>Admin Notes</h5>
+                                <div class="alert alert-info">
+                                    @Model.AdminNotes
+                                </div>
+                            }
+                        </div>
+                    </div>
 
-		<dt class="col-sm-2">Route</dt>
-		@* <dd class="col-sm-10">@Model.Road?.Name</dd> *@
+                    <hr>
 
-		<dt class="col-sm-2">Scheduled Start</dt>
-		<dd class="col-sm-10">@Model.ScheduleStartTime.ToString("g")</dd>
+                    <h5>Collection Points (@Model.CollectionPoints.Count())</h5>
+                    @if (Model.CollectionPoints.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Bin</th>
+                                        <th>Location</th>
+                                        <th>Coordinates</th>
+                                        <th>Client</th>
+                                        <th>Status</th>
+                                        <th>Collected At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var cp in Model.CollectionPoints.OrderBy(c => c.OrderInSchedule))
+                                    {
+                                        <tr class="@(cp.IsCollected ? "table-success" : "")">
+                                            <td>
+                                                <span class="badge bg-primary">@cp.OrderInSchedule</span>
+                                            </td>
+                                            <td>
+                                                <strong>@cp.Bin.BinPlateId</strong>
+                                            </td>
+                                            <td>@cp.Bin.Location</td>
+                                            <td>
+                                                @if (cp.Latitude.HasValue && cp.Longitude.HasValue)
+                                                {
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-map-marker-alt"></i>
+                                                        @cp.Latitude.Value.ToString("F6"), @cp.Longitude.Value.ToString("F6")
+                                                        <br>
+                                                        <a href="https://www.google.com/maps?q=@cp.Latitude.Value,@cp.Longitude.Value"
+                                                           target="_blank" class="btn btn-sm btn-outline-info">
+                                                            <i class="fas fa-external-link-alt"></i> Map
+                                                        </a>
+                                                    </small>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-warning">
+                                                        <i class="fas fa-exclamation-triangle"></i> No coordinates
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>@cp.Bin.Client.ClientName</td>
+                                            <td>
+                                                @if (cp.IsCollected)
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check"></i> Collected
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">
+                                                        <i class="fas fa-clock"></i> Pending
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (cp.CollectedAt.HasValue)
+                                                {
+                                                    @cp.CollectedAt.Value.ToString("yyyy-MM-dd HH:mm")
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Not collected</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> No collection points found for this schedule.
+                        </div>
+                    }
 
-		<dt class="col-sm-2">Scheduled End</dt>
-		@* <dd class="col-sm-10">@Model.ScheduleEndTime.ToString("g")</dd> *@
-
-		<dt class="col-sm-2">Actual Start</dt>
-		@* <dd class="col-sm-10">@Model.ActualStartTime.ToString("g")</dd> *@
-
-		<dt class="col-sm-2">Actual End</dt>
-		@* <dd class="col-sm-10">@Model.ActualEndTime.ToString("g")</dd> *@
-
-		<dt class="col-sm-2">Status</dt>
-		<dd class="col-sm-10">@Model.Status</dd>
-
-		<dt class="col-sm-2">Admin Notes</dt>
-		<dd class="col-sm-10">@Model.AdminNotes</dd>
-	</dl>
-</div>
-<div>
-	<a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
-	<a asp-action="Index">Back to List</a>
+                    <div class="mt-4">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit Schedule
+                        </a>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                        @if (Model.CollectionPoints.Any() && Model.CollectionPoints.Any(cp => cp.Latitude.HasValue && cp.Longitude.HasValue))
+                        {
+                            <a href="https://www.google.com/maps/dir/@(string.Join("/", Model.CollectionPoints.Where(cp => cp.Latitude.HasValue && cp.Longitude.HasValue).OrderBy(cp => cp.OrderInSchedule).Select(cp => $"{cp.Latitude.Value},{cp.Longitude.Value}")))"
+                               target="_blank" class="btn btn-info">
+                                <i class="fas fa-route"></i> View Full Route on Google Maps
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
