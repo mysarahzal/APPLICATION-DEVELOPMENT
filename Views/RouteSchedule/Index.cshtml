@@ -1,0 +1,214 @@
+@model AspnetCoreMvcFull.Models.ViewModels.RouteScheduleViewModel
+@{
+    ViewData["Title"] = "Driver View - Route Schedule";
+}
+
+@section VendorStyles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <style>
+        .checkpoint-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+            .checkpoint-item.collected {
+                border-color: #28a745;
+                background: #f8fff9;
+            }
+
+        .checkpoint-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #6c757d;
+            background: white;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+        }
+
+            .checkpoint-circle.collected {
+                border-color: #28a745;
+                background: #28a745;
+                color: white;
+            }
+
+                .checkpoint-circle.collected::after {
+                    content: "✓";
+                    font-size: 18px;
+                }
+
+        .checkpoint-details {
+            flex: 1;
+        }
+
+        .checkpoint-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 2px;
+        }
+
+        .checkpoint-subtitle {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 2px;
+        }
+
+        .checkpoint-time {
+            font-size: 0.75rem;
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .fill-indicator {
+            width: 8px;
+            height: 40px;
+            border-radius: 4px;
+            background: #e9ecef;
+            position: relative;
+            margin-left: 8px;
+        }
+
+        .fill-level {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            border-radius: 4px;
+            transition: height 0.3s ease;
+        }
+
+        .fill-low {
+            background: #28a745;
+        }
+
+        .fill-medium {
+            background: #ffc107;
+        }
+
+        .fill-high {
+            background: #dc3545;
+        }
+
+        /* Force side-by-side layout */
+        .map-container {
+            display: flex;
+            gap: 20px;
+            min-height: 500px;
+        }
+
+        .checkpoints-panel {
+            flex: 0 0 350px; /* Fixed width for checkpoints */
+            min-width: 350px;
+        }
+
+        .map-panel {
+            flex: 1; /* Take remaining space */
+            min-width: 400px;
+        }
+
+        @@media (max-width: 768px) {
+            .map-container
+
+        {
+            flex-direction: column;
+        }
+
+        .checkpoints-panel {
+            flex: none;
+            min-width: auto;
+        }
+
+        .map-panel {
+            min-width: auto;
+        }
+
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="bg-white rounded shadow p-4">
+                <h4 class="mb-0 fw-bold text-primary">🚚 Route Schedule Management</h4>
+                <p class="mb-0 text-muted">Select a truck schedule to view collection points and route</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Selection -->
+    <div class="bg-white rounded shadow p-4 mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-1 fw-bold text-primary">🛣️ Route Schedule</h5>
+                <p class="mb-0 text-muted">Select a truck to view collection points</p>
+            </div>
+            <div class="col-md-4">
+                <select id="scheduleSelect" class="form-select">
+                    <option value="">Select a truck schedule...</option>
+                    @foreach (var schedule in Model.AvailableSchedules)
+                    {
+                        <option value="@schedule.ScheduleId"
+                                data-truck="@schedule.TruckName"
+                                data-route="@schedule.RouteName"
+                                data-count="@schedule.CollectionPointsCount">
+                            @schedule.TruckName - @schedule.RouteName (@schedule.CollectionPointsCount points)
+                        </option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Header (Hidden initially) -->
+    <div id="scheduleHeader" class="bg-white rounded shadow p-4 mb-4" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="mb-1 fw-bold text-primary" id="routeTitle">🛣️ Route: <span id="routeName"></span></h5>
+                <p class="mb-0 text-muted" id="truckInfo">🚛 Truck: <span id="truckName"></span></p>
+            </div>
+            <div class="badge bg-label-success text-dark px-3 py-2 rounded-pill" id="checkpointBadge">
+                0 Checkpoints
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkpoints & Map Side by Side -->
+    <div id="mapSection" style="display: none;">
+        <div class="map-container">
+            <!-- LEFT SIDE: Checkpoints -->
+            <div class="checkpoints-panel">
+                <div class="bg-white rounded shadow p-3 h-100">
+                    <h6 class="fw-bold mb-3 text-primary">📍 Collection Checkpoints</h6>
+                    <div id="checkpointsList" style="max-height: 450px; overflow-y: auto;">
+                        <p class="text-muted">Select a schedule to view checkpoints...</p>
+                    </div>
+                </div>
+            </div>
+            <!-- RIGHT SIDE: Map -->
+            <div class="map-panel">
+                <div id="scheduleMap" class="rounded shadow" style="height: 500px; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section VendorScripts {
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+}
+
+@section PageScripts {
+    <script src="~/js/routeschedule.js"></script>
+}

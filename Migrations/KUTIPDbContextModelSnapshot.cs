@@ -182,6 +182,12 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<bool>("IsCollected")
                         .HasColumnType("bit");
 
+                    b.Property<decimal?>("Latitude")
+                        .HasColumnType("decimal(10,8)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasColumnType("decimal(11,8)");
+
                     b.Property<int>("OrderInSchedule")
                         .HasColumnType("int");
 
@@ -434,6 +440,12 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("RouteCenterLatitude")
+                        .HasColumnType("decimal(10,8)");
+
+                    b.Property<decimal?>("RouteCenterLongitude")
+                        .HasColumnType("decimal(11,8)");
 
                     b.Property<Guid>("RouteId")
                         .HasColumnType("uniqueidentifier");

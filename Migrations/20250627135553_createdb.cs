@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AspnetCoreMvcFull.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateDb : Migration
+    public partial class createdb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -169,7 +169,9 @@ namespace AspnetCoreMvcFull.Migrations
                     Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     AdminNotes = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RouteCenterLatitude = table.Column<decimal>(type: "decimal(10,8)", nullable: true),
+                    RouteCenterLongitude = table.Column<decimal>(type: "decimal(11,8)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -247,7 +249,9 @@ namespace AspnetCoreMvcFull.Migrations
                     BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OrderInSchedule = table.Column<int>(type: "int", nullable: false),
                     IsCollected = table.Column<bool>(type: "bit", nullable: false),
-                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Latitude = table.Column<decimal>(type: "decimal(10,8)", nullable: true),
+                    Longitude = table.Column<decimal>(type: "decimal(11,8)", nullable: true)
                 },
                 constraints: table =>
                 {
