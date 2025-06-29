@@ -35,6 +35,15 @@ namespace AspnetCoreMvcFull.Models
     [Required]
     public DateTime UpdatedAt { get; set; }
 
+    // Add route center coordinates (calculated from bins in route)
+    [Column(TypeName = "decimal(10,8)")]
+    [Display(Name = "Route Center Latitude")]
+    public decimal? RouteCenterLatitude { get; set; }
+
+    [Column(TypeName = "decimal(11,8)")]
+    [Display(Name = "Route Center Longitude")]
+    public decimal? RouteCenterLongitude { get; set; }
+
     // Navigation Properties
     [ForeignKey("CollectorId")]
     public virtual User Collector { get; set; }
@@ -43,7 +52,7 @@ namespace AspnetCoreMvcFull.Models
     public virtual Truck Truck { get; set; }
 
     [ForeignKey("RouteId")]
-    public virtual RoutePlan Route { get; set; }  // FIXED: Points to RoutePlan
+    public virtual RoutePlan Route { get; set; }
 
     public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }
   }

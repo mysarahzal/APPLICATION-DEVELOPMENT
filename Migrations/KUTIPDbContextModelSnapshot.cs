@@ -84,10 +84,16 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<decimal>("FillLevel")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<decimal?>("Latitude")
+                        .HasColumnType("decimal(10,8)");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasColumnType("decimal(11,8)");
 
                     b.Property<string>("Zone")
                         .IsRequired()
@@ -175,6 +181,12 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<bool>("IsCollected")
                         .HasColumnType("bit");
+
+                    b.Property<decimal?>("Latitude")
+                        .HasColumnType("decimal(10,8)");
+
+                    b.Property<decimal?>("Longitude")
+                        .HasColumnType("decimal(11,8)");
 
                     b.Property<int>("OrderInSchedule")
                         .HasColumnType("int");
@@ -428,6 +440,12 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("RouteCenterLatitude")
+                        .HasColumnType("decimal(10,8)");
+
+                    b.Property<decimal?>("RouteCenterLongitude")
+                        .HasColumnType("decimal(11,8)");
 
                     b.Property<Guid>("RouteId")
                         .HasColumnType("uniqueidentifier");

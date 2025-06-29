@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace AspnetCoreMvcFull.Models
 {
@@ -17,6 +18,15 @@ namespace AspnetCoreMvcFull.Models
     public bool IsCollected { get; set; }
 
     public DateTime? CollectedAt { get; set; }
+
+    // Add latitude and longitude from bin
+    [Column(TypeName = "decimal(10,8)")]
+    [Display(Name = "Latitude")]
+    public decimal? Latitude { get; set; }
+
+    [Column(TypeName = "decimal(11,8)")]
+    [Display(Name = "Longitude")]
+    public decimal? Longitude { get; set; }
 
     [ForeignKey(nameof(ScheduleId))]
     public virtual Schedule Schedule { get; set; }
