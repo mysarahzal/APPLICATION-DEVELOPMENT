@@ -6,7 +6,15 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AspnetCoreMvcFull.Migrations
 {
     /// <inheritdoc />
+<<<<<<<< HEAD:Migrations/20250629004126_createDb.cs
     public partial class createDb : Migration
+========
+<<<<<<<< HEAD:Migrations/20250626023405_createDb'.cs
+    public partial class createDb : Migration
+========
+    public partial class CreateDb : Migration
+>>>>>>>> 008884da4a5f8e960137ece15eb71874e487eb5a:Migrations/20250627012355_CreateDb.cs
+>>>>>>>> 951d0fb072dfe299615d6b281ed47ad6e5283428:Migrations/20250627135553_createdb.cs
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
