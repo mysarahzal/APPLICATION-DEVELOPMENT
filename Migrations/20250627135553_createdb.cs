@@ -6,7 +6,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AspnetCoreMvcFull.Migrations
 {
     /// <inheritdoc />
-    public partial class createdb : Migration
+<<<<<<<< HEAD:Migrations/20250626023405_createDb'.cs
+    public partial class createDb : Migration
+========
+    public partial class CreateDb : Migration
+>>>>>>>> 008884da4a5f8e960137ece15eb71874e487eb5a:Migrations/20250627012355_CreateDb.cs
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -169,9 +173,7 @@ namespace AspnetCoreMvcFull.Migrations
                     Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     AdminNotes = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RouteCenterLatitude = table.Column<decimal>(type: "decimal(10,8)", nullable: true),
-                    RouteCenterLongitude = table.Column<decimal>(type: "decimal(11,8)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -249,9 +251,7 @@ namespace AspnetCoreMvcFull.Migrations
                     BinId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     OrderInSchedule = table.Column<int>(type: "int", nullable: false),
                     IsCollected = table.Column<bool>(type: "bit", nullable: false),
-                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    Latitude = table.Column<decimal>(type: "decimal(10,8)", nullable: true),
-                    Longitude = table.Column<decimal>(type: "decimal(11,8)", nullable: true)
+                    CollectedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {

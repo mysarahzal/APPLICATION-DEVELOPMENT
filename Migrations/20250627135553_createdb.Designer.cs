@@ -12,8 +12,13 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-    [Migration("20250627135553_createdb")]
-    partial class createdb
+<<<<<<<< HEAD:Migrations/20250626023405_createDb'.Designer.cs
+    [Migration("20250626023405_createDb'")]
+    partial class createDb
+========
+    [Migration("20250627012355_CreateDb")]
+    partial class CreateDb
+>>>>>>>> 008884da4a5f8e960137ece15eb71874e487eb5a:Migrations/20250627012355_CreateDb.Designer.cs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -184,12 +189,6 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<bool>("IsCollected")
                         .HasColumnType("bit");
-
-                    b.Property<decimal?>("Latitude")
-                        .HasColumnType("decimal(10,8)");
-
-                    b.Property<decimal?>("Longitude")
-                        .HasColumnType("decimal(11,8)");
 
                     b.Property<int>("OrderInSchedule")
                         .HasColumnType("int");
@@ -443,12 +442,6 @@ namespace AspnetCoreMvcFull.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("RouteCenterLatitude")
-                        .HasColumnType("decimal(10,8)");
-
-                    b.Property<decimal?>("RouteCenterLongitude")
-                        .HasColumnType("decimal(11,8)");
 
                     b.Property<Guid>("RouteId")
                         .HasColumnType("uniqueidentifier");
