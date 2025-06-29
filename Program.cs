@@ -1,5 +1,6 @@
 using AspnetCoreMvcFull.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,20 @@ builder.Services.AddHttpContextAccessor();
 // Register KUTIPDbContext with the connection string from appsettings.json
 builder.Services.AddDbContext<KUTIPDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DbConn")));
+
+// Add Authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+      options.LoginPath = "/Auth/LoginBasic";
+      options.LogoutPath = "/Auth/Logout";
+      options.AccessDeniedPath = "/Auth/AccessDenied";
+      options.ExpireTimeSpan = TimeSpan.FromHours(8);
+      options.SlidingExpiration = true;
+    });
+
+// Add Authorization
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -32,12 +47,14 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+// Add Authentication and Authorization middleware (ORDER MATTERS!)
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Map default route for controllers and views
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Dashboards}/{action=Index}/{id?}");
+    pattern: "{controller=Auth}/{action=LoginBasic}/{id?}"); // Changed default to Auth/LoginBasic
 
 app.Run();
-

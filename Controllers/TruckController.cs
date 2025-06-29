@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AspnetCoreMvcFull.Models;
 using AspnetCoreMvcFull.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AspnetCoreMvcFull.Controllers
 {
+  [Authorize(Roles = "Admin")]
   public class TruckController : Controller
   {
     private readonly KUTIPDbContext _context;

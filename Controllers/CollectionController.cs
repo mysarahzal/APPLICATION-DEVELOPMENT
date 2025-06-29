@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using AspnetCoreMvcFull.Data;
 using AspnetCoreMvcFull.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AspnetCoreMvcFull.Controllers
 {
   [Route("[controller]")]
+  [Authorize(Roles = "Admin")]
   public class CollectionController : Controller
   {
     private readonly KUTIPDbContext _context;

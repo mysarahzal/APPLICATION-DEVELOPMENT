@@ -1,280 +1,343 @@
 @{
-  ViewData["Title"] = "Dashboard - Analytics";
+    ViewData["Title"] = "Dashboard - Analytics";
+	Layout = "~/Views/Shared/_ContentNavbarLayout.cshtml";
 }
 
-
 @section VendorStyles {
-	<link rel="stylesheet" href="~/vendor/libs/apex-charts/apex-charts.css" />
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
-	<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="~/vendor/libs/apex-charts/apex-charts.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <style>
+        .route-legend {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .route-legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 0.85rem;
+        }
+
+        .route-color-box {
+            width: 20px;
+            height: 4px;
+            margin-right: 8px;
+            border-radius: 2px;
+        }
+
+        .route-toggle {
+            margin-left: auto;
+            cursor: pointer;
+        }
+    </style>
 }
 
 @section VendorScripts {
-	<script src="~/vendor/libs/apex-charts/apexcharts.js"></script>
-	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-	<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
+    <script src="~/vendor/libs/apex-charts/apexcharts.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
 }
 
 @section PageScripts {
-	<script src="~/js/dashboards-analytics.js"></script>
+    <script>
+        // Pass route data to JavaScript
+        window.allRoutesData = @Html.Raw(Json.Serialize(Model.AllRoutes));
+    </script>
+    <script src="~/js/dashboards-analytics.js"></script>
 }
 
 @* ************** Content ************** *@
+
 <div class="d-flex justify-content-end mb-4">
-	<button id="downloadDashboardPdf" class="btn btn-info mt-3">
-		<i class="ri-file-pdf-line me-1"></i> Download PDF
-	</button>
+    <button id="downloadDashboardPdf" class="btn btn-info mt-3">
+        <i class="ri-file-pdf-line me-1"></i> Download PDF
+    </button>
 </div>
 
 <!--New Row1-->
 <!--Total Pickup-->
 <div id="dashboard-printable-area">
-	<div class="row mb-4">
-		<div class="col-xl-4 col-md-6 mb-4">
-			<div class="card h-100">
-				<div class="card-body d-flex justify-content-between align-items-center">
-					<div>
-						<p class="text-muted mb-1">Total Pickups</p>
-						<h4 class="text-info fw-bold mb-1">30</h4>
-						<p class="text-sm text-info mb-0">
-							<i class="ri-arrow-up-line me-1"></i> 0.5% from last period
-						</p>
-					</div>
-					<div class="avatar bg-info bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
-						<i class="ri-truck-line text-info ri-36px"></i>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!--Missed Pickup-->
-		<div class="col-xl-4 col-md-6 mb-4">
-			<div class="card h-100">
-				<div class="card-body d-flex justify-content-between align-items-center">
-					<div>
-						<p class="text-muted mb-1">Missed Pickups</p>
-						<h4 class="text-danger fw-bold mb-1">2</h4>
-						<p class="text-sm text-danger mb-0">
-							<i class="ri-arrow-up-line me-1"></i> 3% from last period
-						</p>
-					</div>
-					<div class="avatar bg-danger bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
-						<i class="ri-delete-bin-line text-danger ri-36px"></i>
-					</div>
-				</div>
-			</div>
-		</div>
-		<!--Successful Rate-->
-		<div class="col-xl-4 col-md-6 mb-4">
-			<div class="card h-100">
-				<div class="card-body d-flex justify-content-between align-items-center">
-					<div>
-						<p class="text-muted mb-1">Successful Rate</p>
-						<h4 class="text-success fw-bold mb-1">96%</h4>
-						<p class="text-sm text-success mb-0">
-							<i class="ri-arrow-up-line me-1"></i> 1.2% from last period
-						</p>
-					</div>
-					<div class="avatar bg-success bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
-						<i class="ri-delete-bin-fill text-success ri-36px"></i>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<!--Alert-->
-	<div class="row mb-4">
-		<div class="col-lg-4 mb-4">
-			<div class="card">
-				<div class="card-body text-nowrap">
-					<h5 class="card-title mb-0 flex-wrap text-nowrap"> Alerts </h5>
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">Total Pickups</p>
+                        <h4 class="text-info fw-bold mb-1">30</h4>
+                        <p class="text-sm text-info mb-0">
+                            <i class="ri-arrow-up-line me-1"></i> 0.5% from last period
+                        </p>
+                    </div>
+                    <div class="avatar bg-info bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                        <i class="ri-truck-line text-info ri-36px"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-					<p class="mb-2">Total Active: <strong class="text-primary">7</strong></p>
+        <!--Missed Pickup-->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">Missed Pickups</p>
+                        <h4 class="text-danger fw-bold mb-1">2</h4>
+                        <p class="text-sm text-danger mb-0">
+                            <i class="ri-arrow-up-line me-1"></i> 3% from last period
+                        </p>
+                    </div>
+                    <div class="avatar bg-danger bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                        <i class="ri-delete-bin-line text-danger ri-36px"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-					<h4 class="mb-0"><span class="text-danger fw-bold">3</span> <span class="text-danger">Critical</span></h4>
+        <!--Successful Rate-->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">Successful Rate</p>
+                        <h4 class="text-success fw-bold mb-1">96%</h4>
+                        <p class="text-sm text-success mb-0">
+                            <i class="ri-arrow-up-line me-1"></i> 1.2% from last period
+                        </p>
+                    </div>
+                    <div class="avatar bg-success bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                        <i class="ri-delete-bin-fill text-success ri-36px"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-					<p class="mb-2">
-						<span class="text-warning fw-bold">4</span> High
-						<span class="text-success fw-bold">0</span> Medium
-					</p>
+        <!--Active Routes-->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1">Active Routes</p>
+                        <h4 class="text-primary fw-bold mb-1">@Model.TotalActiveRoutes</h4>
+                        <p class="text-sm text-muted mb-0">
+                            @Model.TotalCollectionPoints total collection points
+                        </p>
+                    </div>
+                    <div class="avatar bg-primary bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
+                        <i class="ri-route-line text-primary ri-36px"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-					<a href="/alerts" class="btn btn-sm btn-primary">View All Alerts</a>
-				</div>
+    <!--Alert-->
+    <div class="row mb-4">
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-body text-nowrap">
+                    <h5 class="card-title mb-0 flex-wrap text-nowrap"> Alerts </h5>
+                    <p class="mb-2">Total Active: <strong class="text-primary">7</strong></p>
+                    <h4 class="mb-0"><span class="text-danger fw-bold">3</span> <span class="text-danger">Critical</span></h4>
+                    <p class="mb-2">
+                        <span class="text-warning fw-bold">4</span> High
+                        <span class="text-success fw-bold">0</span> Medium
+                    </p>
+                    <a href="/alerts" class="btn btn-sm btn-primary">View All Alerts</a>
+                </div>
+                <img src="/img/elements/alertalarm.gif" class="position-absolute bottom-0 end-0 me-1 mb-1" width="150" alt="Blinking Alert">
+            </div>
+        </div>
 
-				<img src="/img/elements/alertalarm.gif" class="position-absolute bottom-0 end-0 me-1 mb-1" width="150" alt="Blinking Alert">
-			</div>
-		</div>
-		<!-- Total -->
-		<div class="col-lg-8 mb-4">
-			<div class="card h-100">
-				<div class="card-header">
-					<div class="d-flex align-items-center justify-content-between">
-						<h5 class="card-title m-0 me-2">Operational Resources</h5>
-						<div class="dropdown">
-							<button class="btn text-muted p-0" type="button" id="resourceID" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-								<i class="ri-more-2-line ri-24px"></i>
-							</button>
-							<div class="dropdown-menu dropdown-menu-end" aria-labelledby="resourceID">
-								<a class="dropdown-item" href="javascript:void(0);">Refresh</a>
-								<a class="dropdown-item" href="javascript:void(0);">View All</a>
-								<a class="dropdown-item" href="javascript:void(0);">Download Report</a>
-							</div>
-						</div>
-					</div>
-					<p class="small mb-0">Total Number</p>
-				</div>
-				<div class="card-body pt-lg-10">
-					<div class="row g-6">
-						<div class="col-md-3 col-6">
-							<div class="d-flex align-items-center">
-								<div class="avatar">
-									<div class="avatar-initial bg-primary rounded shadow-xs">
-										<i class="ri-truck-line ri-24px"></i>
-									</div>
-								</div>
-								<div class="ms-3">
-									<p class="mb-0">Fleets</p>
+        <!-- Total -->
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h5 class="card-title m-0 me-2">Operational Resources</h5>
+                        <div class="dropdown">
+                            <button class="btn text-muted p-0" type="button" id="resourceID" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="ri-more-2-line ri-24px"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="resourceID">
+                                <a class="dropdown-item" href="javascript:void(0);">Refresh</a>
+                                <a class="dropdown-item" href="javascript:void(0);">View All</a>
+                                <a class="dropdown-item" href="javascript:void(0);">Download Report</a>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="small mb-0">Total Number</p>
+                </div>
+
+                <div class="card-body pt-lg-10">
+                    <div class="row g-6">
+                        <div class="col-md-3 col-6">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar">
+                                    <div class="avatar-initial bg-primary rounded shadow-xs">
+                                        <i class="ri-truck-line ri-24px"></i>
+                                    </div>
+                                </div>
+                                <div class="ms-3">
+                                    <p class="mb-0">Fleets</p>
                                     <h5 class="mb-0">@Model.FleetCount</h5>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-3 col-6">
-							<div class="d-flex align-items-center">
-								<div class="avatar">
-									<div class="avatar-initial bg-success rounded shadow-xs">
-										<i class="ri-steering-line ri-24px"></i>
-									</div>
-								</div>
-								<div class="ms-3">
-									<p class="mb-0">Drivers</p>
-									<!-- Drivers -->
-									<h5 class="mb-0">@Model.DriverCount</h5>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-3 col-6">
-							<div class="d-flex align-items-center">
-								<div class="avatar">
-									<div class="avatar-initial bg-warning rounded shadow-xs">
-										<i class="ri-team-line ri-24px"></i>
-									</div>
-								</div>
-								<div class="ms-3">
-									<p class="mb-0">Collectors</p>
-									<!-- Collectors -->
-									<h5 class="mb-0">@Model.CollectorCount</h5>
-								</div>
-							</div>
-						</div>
-						<div class="col-md-3 col-6">
-							<div class="d-flex align-items-center">
-								<div class="avatar">
-									<div class="avatar-initial bg-info rounded shadow-xs">
-										<i class="ri-building-line ri-24px"></i>
-									</div>
-								</div>
-								<div class="ms-3">
-									<p class="mb-0">Clients</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar">
+                                    <div class="avatar-initial bg-success rounded shadow-xs">
+                                        <i class="ri-steering-line ri-24px"></i>
+                                    </div>
+                                </div>
+                                <div class="ms-3">
+                                    <p class="mb-0">Drivers</p>
+                                    <h5 class="mb-0">@Model.DriverCount</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar">
+                                    <div class="avatar-initial bg-warning rounded shadow-xs">
+                                        <i class="ri-team-line ri-24px"></i>
+                                    </div>
+                                </div>
+                                <div class="ms-3">
+                                    <p class="mb-0">Collectors</p>
+                                    <h5 class="mb-0">@Model.CollectorCount</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar">
+                                    <div class="avatar-initial bg-info rounded shadow-xs">
+                                        <i class="ri-building-line ri-24px"></i>
+                                    </div>
+                                </div>
+                                <div class="ms-3">
+                                    <p class="mb-0">Clients</p>
                                     <h5 class="mb-0">@Model.ClientCount</h5>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-	<!--Total PickUp overtime-->
-	<div class="row mb-4">
-		<div class="col-xl-6 col-md-12 mb-4">
-			<div class="card h-100">
-				<div class="card-header d-flex justify-content-between align-items-center">
-					<h5 class="card-title mb-0">Total vs. Missed Bin Pickups Over Time</h5>
-				</div>
-				<div class="card-body">
-					<div id="totalMissedPickupsAreaChart" style="min-height: 300px;"></div>
-				</div>
-			</div>
-		</div>
-		<!--Barchart-->
-		<div class="col-xl-6 col-md-12 mb-4">
-			<div class="card h-100">
-				<div class="card-header"><h5 class="mb-0">Pickups by Collector</h5></div>
-				<div class="card-body">
-					<div id="pickupByCollectorBarChart" style="min-height: 300px;"></div>
-				</div>
-			</div>
-		</div>
-	</div>
+    <!--Total PickUp overtime-->
+    <div class="row mb-4">
+        <div class="col-xl-6 col-md-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Total vs. Missed Bin Pickups Over Time</h5>
+                </div>
+                <div class="card-body">
+                    <div id="totalMissedPickupsAreaChart" style="min-height: 300px;"></div>
+                </div>
+            </div>
+        </div>
 
-	<!-- Charts Section -->
-	<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!--Barchart-->
+        <div class="col-xl-6 col-md-12 mb-4">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="mb-0">Pickups by Collector</h5></div>
+                <div class="card-body">
+                    <div id="pickupByCollectorBarChart" style="min-height: 300px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-		<!-- Map Section -->
-		<!-- Charts Section -->
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-			<!-- Beautiful Live Map Section -->
-			<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-				<div class="d-flex justify-content-between align-items-center mb-3">
-					<h4 class="fw-bold mb-0">Live Tracking in Johor</h4>
-					<div class="d-flex gap-4 align-items-center">
-						<div class="d-flex align-items-center gap-2">
-							<img src="~/img/elements/greenbin.png" width="22" height="22" />
-							<span class="text-muted small">Collected Bin</span>
-						</div>
-						<div class="d-flex align-items-center gap-2">
-							<img src="~/img/elements/redbin.png" width="22" height="22" />
-							<span class="text-muted small">Missed Bin</span>
-						</div>
-					</div>
-				</div>
-				<div id="map" class="w-100 rounded shadow" style="height: 450px;"></div>
-			</div>
-	</div>
+    <!-- All Routes Map Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">All Active Routes - Live Tracking</h5>
+                        <p class="text-muted small mb-0">@Model.TotalActiveRoutes active routes with @Model.TotalCollectionPoints collection points</p>
+                    </div>
+                    <div class="d-flex gap-4 align-items-center">
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="~/img/elements/greenbin.png" width="22" height="22" />
+                            <span class="text-muted small">Collected</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="~/img/elements/normalbin.png" width="22" height="22" />
+                            <span class="text-muted small">Pending</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-lg-9">
+                            <div id="map" class="w-100 rounded shadow" style="height: 500px;"></div>
+                        </div>
+                        <div class="col-lg-3">
+                            <div class="route-legend">
+                                <h6 class="fw-bold mb-3">Active Routes</h6>
+                                <div id="routeLegend">
+                                    <!-- Route legend will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
-</div>
 
-  <!-- Data Tables -->
 <!-- Recent Activity Table -->
 <div class="col-12">
-	<div class="card overflow-hidden">
-		<div class="card-header">
-			<h5 class="mb-0">Recent Activity</h5>
-		</div>
-		<div class="table-responsive">
-			<table class="table table-hover">
-				<thead class="bg-light">
-					<tr>
-						<th>Collector</th>
-						<th>Bin ID</th>
-						<th>Action</th>
-						<th>Timestamp</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>Ravi</td>
-						<td>BIN-JB-003</td>
-						<td><span class="badge bg-label-success">✅ Collected</span></td>
-						<td>18 Jun 2025, 10:30 AM</td>
-					</tr>
-					<tr>
-						<td>Nina</td>
-						<td>BIN-JB-005</td>
-						<td><span class="badge bg-label-danger">❌ Missed</span></td>
-						<td>18 Jun 2025, 09:00 AM</td>
-					</tr>
-					<tr>
-						<td>Ahmad</td>
-						<td>BIN-JB-001</td>
-						<td><span class="badge bg-label-warning">🛠️ Issue Reported</span></td>
-						<td>17 Jun 2025, 4:45 PM</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</div>
+    <div class="card overflow-hidden">
+        <div class="card-header">
+            <h5 class="mb-0">Recent Activity</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Collector</th>
+                        <th>Bin ID</th>
+                        <th>Action</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Ravi</td>
+                        <td>BIN-JB-003</td>
+                        <td><span class="badge bg-label-success">✅ Collected</span></td>
+                        <td>18 Jun 2025, 10:30 AM</td>
+                    </tr>
+                    <tr>
+                        <td>Nina</td>
+                        <td>BIN-JB-005</td>
+                        <td><span class="badge bg-label-danger">❌ Missed</span></td>
+                        <td>18 Jun 2025, 09:00 AM</td>
+                    </tr>
+                    <tr>
+                        <td>Ahmad</td>
+                        <td>BIN-JB-001</td>
+                        <td><span class="badge bg-label-warning">🛠️ Issue Reported</span></td>
+                        <td>17 Jun 2025, 4:45 PM</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-  <!--/ Data Tables -->

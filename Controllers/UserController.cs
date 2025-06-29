@@ -3,9 +3,11 @@ using AspnetCoreMvcFull.Models;
 using AspnetCoreMvcFull.Data;
 using System;
 using AspnetCoreMvcFull.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AspnetCoreMvcFull.Controllers
 {
+  [Authorize(Roles = "Admin")]
   public class UserController : Controller
   {
     private readonly KUTIPDbContext _context;

@@ -3,9 +3,11 @@ using AspnetCoreMvcFull.Models;
 using AspnetCoreMvcFull.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AspnetCoreMvcFull.Controllers
 {
+  [Authorize(Roles = "Collector")]
   public class ScanController : Controller
   {
     private readonly KUTIPDbContext _context;

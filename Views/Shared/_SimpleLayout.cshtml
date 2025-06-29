@@ -1,0 +1,153 @@
+@inject IHttpContextAccessor httpContextAccessor
+@using System.Security.Claims
+
+<!DOCTYPE html>
+<html lang="en"
+	  class='light-style layout-navbar-fixed'
+	  data-theme="theme-default" data-assets-path='@((httpContextAccessor.HttpContext?.Request.PathBase ?? "") + "/")'
+	  data-framework="aspnetcore-mvc"
+	  data-template='horizontal-menu-aspnet-core-mvc-template-free'>
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+	@{
+		string title = ViewData["title"] as string ?? "";
+		string appName = "KUTIP";
+	}
+	<title>@title | @appName - Waste Management System</title>
+	<meta name="description" content="" />
+
+	<!-- Favicon -->
+	<link rel="icon" type="image/x-icon" href="~/img/favicon/favicon.ico" />
+
+	<!-- Core Styles -->
+	@await Html.PartialAsync("Sections/_Styles")
+	<!-- Vendor Styles -->
+	@RenderSection("VendorStyles", required: false)
+	<!-- Page Styles -->
+	@RenderSection("PageStyles", required: false)
+	<!-- Include Scripts for customizer, helper, analytics, config -->
+	@await Html.PartialAsync("Sections/_ScriptsIncludes")
+</head>
+
+<body>
+	<!-- Layout wrapper -->
+	<div class="layout-wrapper layout-content-navbar">
+		<div class="layout-container">
+			<!-- Layout container -->
+			<div class="layout-page">
+				<!-- Navbar -->
+				<nav class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme" id="layout-navbar">
+					<div class="navbar-nav-right d-flex align-items-center w-100" id="navbar-collapse">
+						<!-- Brand/Logo -->
+						<div class="navbar-nav align-items-center">
+							<div class="nav-item d-flex align-items-center">
+								<span class="app-brand-text demo menu-text fw-bolder ms-2 text-primary fs-4">KUTIP</span>
+								<span class="badge bg-label-info ms-2">@(User.IsInRole("Driver") ? "Driver" : "Collector")</span>
+							</div>
+						</div>
+
+						<!-- Navigation Links -->
+						<ul class="navbar-nav flex-row align-items-center ms-auto">
+							@if (User.IsInRole("Driver"))
+							{
+								<li class="nav-item">
+									<a class="nav-link" href="@Url.Action("Index", "Dashboards")">
+										<i class="bx bx-home-circle me-1"></i>Dashboard
+									</a>
+								</li>
+								<li class="nav-item">
+									<a class="nav-link" href="@Url.Action("Index", "RouteSchedule")">
+										<i class="bx bx-calendar me-1"></i>My Route
+									</a>
+								</li>
+							}
+							else if (User.IsInRole("Collector"))
+							{
+								<li class="nav-item">
+									<a class="nav-link" href="@Url.Action("Index", "Scan")">
+										<i class="bx bx-qr-scan me-1"></i>Scan Bins
+									</a>
+								</li>
+								<li class="nav-item">
+									<a class="nav-link" href="@Url.Action("Index", "DetectBin")">
+										<i class="bx bx-search me-1"></i>Detect Bin
+									</a>
+								</li>
+								<li class="nav-item dropdown">
+									<a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+										<i class="bx bx-file me-1"></i>Reports
+									</a>
+									<ul class="dropdown-menu">
+										<li><a class="dropdown-item" href="@Url.Action("SubmitBinReport", "BinReport")">Submit Report</a></li>
+										<li><a class="dropdown-item" href="@Url.Action("SubmittedReports", "BinReport")">My Reports</a></li>
+									</ul>
+								</li>
+							}
+
+							<!-- User Account Dropdown -->
+							<li class="nav-item navbar-dropdown dropdown-user dropdown">
+								<a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
+									<div class="avatar avatar-online">
+										<i class="bx bx-user bx-md"></i>
+									</div>
+								</a>
+								<ul class="dropdown-menu dropdown-menu-end">
+									<li>
+										<a class="dropdown-item" href="#">
+											<div class="d-flex">
+												<div class="flex-shrink-0 me-3">
+													<div class="avatar avatar-online">
+														<i class="bx bx-user bx-md"></i>
+													</div>
+												</div>
+												<div class="flex-grow-1">
+													<span class="fw-semibold d-block">@User.FindFirst("FirstName")?.Value @User.FindFirst("LastName")?.Value</span>
+													<small class="text-muted">@User.FindFirst(ClaimTypes.Role)?.Value</small>
+												</div>
+											</div>
+										</a>
+									</li>
+									<li><div class="dropdown-divider"></div></li>
+									<li>
+										<a class="dropdown-item" href="@Url.Action("Logout", "Auth")">
+											<i class="bx bx-power-off me-2"></i>
+											<span class="align-middle">Log Out</span>
+										</a>
+									</li>
+								</ul>
+							</li>
+						</ul>
+					</div>
+				</nav>
+				<!-- / Navbar -->
+				<!-- Content wrapper -->
+				<div class="content-wrapper">
+					<!-- Content -->
+					<div class="container-xxl flex-grow-1 container-p-y">
+						@RenderBody()
+					</div>
+					<!-- / Content -->
+					<!-- Footer -->
+					@await Html.PartialAsync("Sections/Footer/_Footer")
+					<!-- / Footer -->
+					<div class="content-backdrop fade"></div>
+				</div>
+				<!-- Content wrapper -->
+			</div>
+			<!-- / Layout page -->
+		</div>
+	</div>
+	<!-- / Layout wrapper -->
+	<!-- Core Scripts -->
+	@await Html.PartialAsync("Sections/_Scripts")
+	<!-- Vendor Scripts -->
+	@RenderSection("VendorScripts", required: false)
+
+	<!-- Main JS-->
+	<script src='~/js/main.js'></script>
+	<!-- Page Scripts-->
+	@RenderSection("PageScripts", required: false)
+</body>
+</html>

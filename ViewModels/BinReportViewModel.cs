@@ -5,18 +5,25 @@ namespace AspnetCoreMvcFull.ViewModels
 {
   public class BinReportViewModel
   {
+    [Required(ErrorMessage = "Bin Plate ID is required")]
+    [Display(Name = "Bin Plate ID")]
+    public string BinPlateId { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Please provide a description")]
+    [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
+    [Display(Name = "Description")]
+    public string Description { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Please select an image file")]
+    [Display(Name = "Upload Image")]
+    public IFormFile ImageFile { get; set; }
+
+    [Display(Name = "Mark as Issue")]
+    public bool IsIssueReported { get; set; } = false;
+
+    // NEW: Add Severity field
     [Required]
-    public Guid BinId { get; set; }  // Bin ID to identify the bin
-
-    public string? IssueDescription { get; set; }  // Nullable, Description of any issue reported
-
-    [Required]
-    public IFormFile ImageFile { get; set; }  // Make ImageFile required (Non-nullable in this case)
-
-    public string? Description { get; set; }  // Nullable, Additional description if needed
+    [Display(Name = "Severity Level")]
+    public string Severity { get; set; } = "Medium";
   }
 }
-
-
-
-

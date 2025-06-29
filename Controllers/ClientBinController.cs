@@ -6,9 +6,11 @@ using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AspnetCoreMvcFull.Controllers
 {
+  [Authorize(Roles = "Admin")]
   public class ClientBinController : Controller
   {
     private readonly KUTIPDbContext _dbContext;

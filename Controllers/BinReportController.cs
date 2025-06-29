@@ -6,148 +6,307 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Linq;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AspnetCoreMvcFull.Controllers
 {
+  [Authorize]
   public class BinReportController : Controller
   {
     private readonly KUTIPDbContext _context;
+    private readonly ILogger<BinReportController> _logger;
 
-    public BinReportController(KUTIPDbContext context)
+    public BinReportController(KUTIPDbContext context, ILogger<BinReportController> logger)
     {
       _context = context;
+      _logger = logger;
     }
 
-    // GET: BinReport/Submit
+    // GET: BinReport/SubmitBinReport
+    [Authorize(Roles = "Collector")]
     public IActionResult SubmitBinReport()
     {
       return View();
     }
 
-    // POST: BinReport/Submit
+    // POST: BinReport/SubmitBinReport
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Collector")]
     public async Task<IActionResult> SubmitBinReport(BinReportViewModel model)
     {
-      if (!ModelState.IsValid)
+      try
       {
-        return View(model);  // Return the view with errors if the model is not valid
-      }
+        _logger.LogInformation("BinReport submission started for BinPlateId: {BinPlateId}", model.BinPlateId);
 
-      // Check if ImageFile is null before calling the DetectBinAsync method
-      if (model.ImageFile == null)
-      {
-        ModelState.AddModelError("", "No image file was provided.");
-        return View(model);  // Return the view with error if no image file is provided
-      }
-
-      // Call the bin detection method
-      var detectedBinDetails = await DetectBinAsync(model.ImageFile);
-      if (detectedBinDetails == null)
-      {
-        ModelState.AddModelError("", "Bin detection failed.");
-        return View(model);  // Return the view with error if bin detection fails
-      }
-
-      // Check if the bin is valid for reporting (Make sure the bin is still active and not collected)
-      var collectionPoint = await _context.CollectionPoints
-          .FirstOrDefaultAsync(cp => cp.BinId == model.BinId && !cp.IsCollected);
-      if (collectionPoint == null)
-      {
-        ModelState.AddModelError("", "No active collection point found for the specified Bin.");
-        return View(model);  // Return the view with error if collection point is not found
-      }
-
-      // Create a new bin report
-      var newBinReport = new BinReport
-      {
-        BinId = model.BinId,
-        ReportedAt = DateTime.Now,
-        Status = "reported",  // Set report status (this could be dynamic as per your application flow)
-        Description = model.Description ?? string.Empty,  // Ensure Description is not null
-        IsIssueReported = !string.IsNullOrEmpty(model.IssueDescription),
-        IssueDescription = model.IssueDescription ?? string.Empty  // Ensure IssueDescription is not null
-      };
-
-      // Add the new bin report to the database
-      _context.Add(newBinReport);
-      await _context.SaveChangesAsync();  // Save changes in the database
-
-      // Image handling (upload and store image)
-      if (model.ImageFile != null && model.ImageFile.Length > 0)
-      {
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-        if (!Directory.Exists(uploadsFolder))
-          Directory.CreateDirectory(uploadsFolder);
-
-        var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(model.ImageFile.FileName);
-        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-        // Save the uploaded image to the file system
-        using (var fileStream = new FileStream(filePath, FileMode.Create))
+        if (!ModelState.IsValid)
         {
-          await model.ImageFile.CopyToAsync(fileStream);  // Async file upload handling
+          _logger.LogWarning("ModelState is invalid");
+          foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+          {
+            _logger.LogWarning("Validation error: {Error}", error.ErrorMessage);
+          }
+          return View(model);
         }
 
-        // Create an Image record in the database
-        var image = new Image
+        // Check if ImageFile is provided
+        if (model.ImageFile == null || model.ImageFile.Length == 0)
+        {
+          ModelState.AddModelError("ImageFile", "Please select an image file.");
+          return View(model);
+        }
+
+        // Find the bin by BinPlateId
+        var bin = await _context.Bins
+            .Include(b => b.Client)
+            .FirstOrDefaultAsync(b => b.BinPlateId == model.BinPlateId);
+
+        if (bin == null)
+        {
+          ModelState.AddModelError("BinPlateId", $"Bin with Plate ID '{model.BinPlateId}' not found.");
+          return View(model);
+        }
+
+        _logger.LogInformation("Found bin: {BinId} with PlateId: {PlateId}", bin.Id, bin.BinPlateId);
+
+        // Create a new bin report
+        var newBinReport = new BinReport
         {
           Id = Guid.NewGuid(),
-          CollectionRecordId = newBinReport.Id,  // Link to the bin report (CollectionRecord)
-          CapturedAt = DateTime.Now,
-          CreatedAt = DateTime.Now
+          BinId = bin.Id,
+          ReportedAt = DateTime.UtcNow,
+          Status = "pending",
+          Description = model.Description,
+          IsIssueReported = model.IsIssueReported,
+          Severity = model.Severity, // NEW: Add severity
+          ReportedBy = User.Identity.Name ?? "Unknown Collector" // NEW: Auto-capture user
         };
 
-        _context.Images.Add(image);  // Add image record to the database
+        // Add the new bin report to the database
+        _context.BinReports.Add(newBinReport);
+
+        // Handle image upload
+        if (model.ImageFile != null && model.ImageFile.Length > 0)
+        {
+          // Save image to file system
+          var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "bin-reports");
+          if (!Directory.Exists(uploadsFolder))
+            Directory.CreateDirectory(uploadsFolder);
+
+          var uniqueFileName = $"{newBinReport.Id}_{Guid.NewGuid()}{Path.GetExtension(model.ImageFile.FileName)}";
+          var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+          using (var fileStream = new FileStream(filePath, FileMode.Create))
+          {
+            await model.ImageFile.CopyToAsync(fileStream);
+          }
+
+          var imageUrl = $"/uploads/bin-reports/{uniqueFileName}";
+
+          // Create a BinReportImage record in the database
+          var binReportImage = new BinReportImage
+          {
+            Id = Guid.NewGuid(),
+            BinReportId = newBinReport.Id,
+            ImagePath = imageUrl,
+            FileName = model.ImageFile.FileName,
+            ContentType = model.ImageFile.ContentType,
+            FileSize = model.ImageFile.Length,
+            CapturedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow
+          };
+
+          _context.BinReportImages.Add(binReportImage);
+          _logger.LogInformation("Image saved for bin report: {ReportId}", newBinReport.Id);
+        }
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Bin report saved successfully: {ReportId}", newBinReport.Id);
+
+        TempData["SuccessMessage"] = $"Your bin report for {bin.BinPlateId} has been submitted successfully! It will be reviewed by our team.";
+        return RedirectToAction(nameof(SubmitBinReport));
       }
-
-      await _context.SaveChangesAsync();  // Save the image details in the database
-
-      TempData["ShowSuccessMessage"] = true;  // Show success message after the report is submitted
-      return RedirectToAction(nameof(SubmitBinReport));  // Redirect back to the bin report submission page
-    }
-
-    // Placeholder method for YOLOv8 bin detection
-    private async Task<DetectedBinDetails?> DetectBinAsync(IFormFile binImage)
-    {
-      if (binImage == null)
+      catch (Exception ex)
       {
-        return null;  // Return null if binImage is null
+        _logger.LogError(ex, "Error submitting bin report");
+        ModelState.AddModelError("", "An error occurred while submitting the report. Please try again.");
+        return View(model);
       }
-
-      // Simulate async operation like API call
-      await Task.Delay(1000); // Simulate async work
-
-      // Simulated bin detection logic
-      return new DetectedBinDetails
-      {
-        BinId = Guid.NewGuid(),  // Simulated bin ID for the demonstration
-        Latitude = 1.2345M,      // Placeholder latitude (use M suffix for decimal literals)
-        Longitude = 2.3456M      // Placeholder longitude (use M suffix for decimal literals)
-      };
     }
 
     // GET: BinReport/SubmittedReports
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> SubmittedReports()
     {
-      var reports = await (from cr in _context.CollectionRecords
-                             //join bin in _context.Bins on cr.BinId equals bin.Id
-                           join user in _context.Users on cr.CollectorId equals user.Id
-                           //join truck in _context.Trucks on cr.TruckId equals truck.Id
-                           join img in _context.Images on cr.Id equals img.CollectionRecordId into images
-                           from image in images.DefaultIfEmpty() // To handle the case where there may not be an image
-                           select new SubmittedReportViewModel
-                           {
-                             CollectionRecordId = cr.Id,
-                             //BinPlateId = bin.BinPlateId,
-                             PickupTimestamp = cr.PickupTimestamp,
-                             GpsLatitude = cr.GpsLatitude,
-                             GpsLongitude = cr.GpsLongitude,
-                             CollectorEmail = user.Email,
-                             //TruckLicensePlate = truck.LicensePlate,
-                           }).ToListAsync();
+      try
+      {
+        var reports = await (from br in _context.BinReports
+                             join bin in _context.Bins on br.BinId equals bin.Id
+                             join client in _context.Clients on bin.ClientID equals client.ClientID
+                             join img in _context.BinReportImages on br.Id equals img.BinReportId into images
+                             from image in images.DefaultIfEmpty()
+                             select new SubmittedReportViewModel
+                             {
+                               CollectionRecordId = br.Id,
+                               BinPlateId = bin.BinPlateId,
+                               BinLocation = bin.Location,
+                               ClientName = client.ClientName,
+                               PickupTimestamp = br.ReportedAt,
+                               Status = br.Status,
+                               Description = br.Description,
+                               IsIssueReported = br.IsIssueReported,
+                               Severity = br.Severity, // NEW: Include severity
+                               ReportedBy = br.ReportedBy, // NEW: Include reporter
+                               AcknowledgedBy = br.AcknowledgedBy, // NEW: Include acknowledger
+                               AcknowledgedAt = br.AcknowledgedAt, // NEW: Include ack time
+                               ImageUrl = image != null ? image.ImagePath : null,
+                               FileName = image != null ? image.FileName : null,
+                               FileSize = image != null ? image.FileSize : 0
+                             }).OrderByDescending(r => r.PickupTimestamp).ToListAsync();
 
-      return View(reports);
+        return View(reports);
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error retrieving submitted reports");
+        return View(new List<SubmittedReportViewModel>());
+      }
+    }
+
+    // GET: BinReport/Details/{id}
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Details(Guid id)
+    {
+      try
+      {
+        var report = await (from br in _context.BinReports
+                            join bin in _context.Bins on br.BinId equals bin.Id
+                            join client in _context.Clients on bin.ClientID equals client.ClientID
+                            join img in _context.BinReportImages on br.Id equals img.BinReportId into images
+                            from image in images.DefaultIfEmpty()
+                            where br.Id == id
+                            select new SubmittedReportViewModel
+                            {
+                              CollectionRecordId = br.Id,
+                              BinPlateId = bin.BinPlateId,
+                              BinLocation = bin.Location,
+                              ClientName = client.ClientName,
+                              PickupTimestamp = br.ReportedAt,
+                              Status = br.Status,
+                              Description = br.Description,
+                              IsIssueReported = br.IsIssueReported,
+                              Severity = br.Severity, // NEW: Include severity
+                              ReportedBy = br.ReportedBy, // NEW: Include reporter
+                              AcknowledgedBy = br.AcknowledgedBy, // NEW: Include acknowledger
+                              AcknowledgedAt = br.AcknowledgedAt, // NEW: Include ack time
+                              ImageUrl = image != null ? image.ImagePath : null,
+                              FileName = image != null ? image.FileName : null,
+                              FileSize = image != null ? image.FileSize : 0
+                            }).FirstOrDefaultAsync();
+
+        if (report == null)
+        {
+          return NotFound();
+        }
+
+        return View(report);
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error retrieving report details: {ReportId}", id);
+        return NotFound();
+      }
+    }
+
+    // POST: BinReport/UpdateStatus/{id}
+    [Authorize(Roles = "Admin")]
+    [HttpPost]
+    public async Task<IActionResult> UpdateStatus(Guid id, string status)
+    {
+      try
+      {
+        var report = await _context.BinReports.FindAsync(id);
+        if (report != null)
+        {
+          report.Status = status;
+
+          // NEW: Track acknowledgment
+          if (status == "acknowledged" || status == "resolved")
+          {
+            report.AcknowledgedBy = User.Identity.Name;
+            report.AcknowledgedAt = DateTime.UtcNow;
+          }
+
+          await _context.SaveChangesAsync();
+
+          TempData["SuccessMessage"] = "Report status updated successfully!";
+          return Json(new { success = true, message = "Status updated successfully" });
+        }
+
+        return Json(new { success = false, message = "Report not found" });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error updating report status: {ReportId}", id);
+        return Json(new { success = false, message = "Error updating status" });
+      }
+    }
+
+    // NEW: GET: Alert summary for dashboard
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAlertSummary()
+    {
+      try
+      {
+        var reports = await _context.BinReports
+            .Where(r => r.Status != "resolved")
+            .GroupBy(r => r.Severity)
+            .Select(g => new { Severity = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var summary = new
+        {
+          TotalActive = reports.Sum(r => r.Count),
+          Critical = reports.FirstOrDefault(r => r.Severity == "Critical")?.Count ?? 0,
+          High = reports.FirstOrDefault(r => r.Severity == "High")?.Count ?? 0,
+          Medium = reports.FirstOrDefault(r => r.Severity == "Medium")?.Count ?? 0,
+          Low = reports.FirstOrDefault(r => r.Severity == "Low")?.Count ?? 0
+        };
+
+        return Json(summary);
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error getting alert summary");
+        return Json(new { TotalActive = 0, Critical = 0, High = 0, Medium = 0, Low = 0 });
+      }
+    }
+
+    // NEW: POST: BinReport/Acknowledge/{id}
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Acknowledge(Guid id, string resolutionNotes = "")
+    {
+      var report = await _context.BinReports.FindAsync(id);
+      if (report == null) return NotFound();
+
+      report.Status = "acknowledged";
+      report.AcknowledgedBy = User.Identity.Name;
+      report.AcknowledgedAt = DateTime.UtcNow;
+
+      if (!string.IsNullOrEmpty(resolutionNotes))
+      {
+        report.Description += $"\n\nResolution Notes: {resolutionNotes}";
+        report.Status = "resolved";
+      }
+
+      await _context.SaveChangesAsync();
+
+      TempData["SuccessMessage"] = report.Status == "resolved" ?
+          "Report resolved successfully!" : "Report acknowledged successfully!";
+
+      return RedirectToAction(nameof(SubmittedReports));
     }
   }
 }

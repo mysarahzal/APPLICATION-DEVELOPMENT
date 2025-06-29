@@ -48,5 +48,6 @@ namespace AspnetCoreMvcFull.Models
 
     // ADD THIS: Missing navigation property for RouteBins
     public virtual ICollection<RouteBins> RouteBins { get; set; } = new List<RouteBins>();
+    public virtual ICollection<BinReport> BinReports { get; set; } = new List<BinReport>();
   }
 }

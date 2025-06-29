@@ -2,31 +2,109 @@
 
 @{
 	ViewData["Title"] = "Resolve Missed Pickup";
+	Layout = "~/Views/Shared/_ContentNavbarLayout.cshtml";
 }
 
-<h1>Resolve Missed Pickup</h1>
-<hr />
+<div class="container-xxl flex-grow-1 container-p-y">
+	<div class="row">
+		<div class="col-12">
+			<div class="card">
+				<div class="card-header">
+					<h5 class="mb-0">
+						<i class="bx bx-edit me-2"></i>
+						Resolve Missed Pickup
+					</h5>
+				</div>
+				<div class="card-body">
+					<!-- Schedule Information -->
+					<div class="row mb-4">
+						<div class="col-md-6">
+							<div class="card bg-light">
+								<div class="card-body">
+									<h6 class="card-title">Schedule Information</h6>
+									<p><strong>Schedule ID:</strong> #@Model.Schedule?.Id</p>
+									<p><strong>Route:</strong> @Model.Schedule?.Route?.Name</p>
+									<p>
+										<strong>Collector:</strong>
+										@if (Model.Schedule?.Collector != null)
+										{
+											<span>@Model.Schedule.Collector.FirstName @Model.Schedule.Collector.LastName</span>
+											<br>
+											<small class="text-muted">@Model.Schedule.Collector.Email</small>
+										}
+										else
+										{
+											<span class="text-muted">Unknown Collector</span>
+										}
+									</p>
+									<p><strong>Scheduled Time:</strong> @Model.Schedule?.ScheduleStartTime.ToString("MMM dd, yyyy HH:mm") - @Model.Schedule?.ScheduleEndTime.ToString("HH:mm")</p>
+									<p><strong>Detected At:</strong> @Model.DetectedAt.ToString("MMM dd, yyyy HH:mm")</p>
+								</div>
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="card bg-light">
+								<div class="card-body">
+									<h6 class="card-title">Detection Details</h6>
+									<p>
+										<strong>Status:</strong>
+										<span class="badge bg-warning">@Model.Status</span>
+									</p>
+									<p><strong>Detection Method:</strong> Automated System</p>
+									@if (!string.IsNullOrEmpty(Model.Reason))
+									{
+										<p><strong>System Analysis:</strong> @Model.Reason</p>
+									}
+								</div>
+							</div>
+						</div>
+					</div>
 
-<div class="row">
-	<div class="col-md-6">
-		<form asp-action="Resolve" method="post">
-			<input type="hidden" asp-for="Id" />
+					<!-- Resolution Form -->
+					<form asp-action="Resolve" method="post">
+						<input type="hidden" asp-for="Id" />
 
-			<div class="form-group">
-				<label asp-for="Reason" class="control-label"></label>
-				<textarea asp-for="Reason" class="form-control" rows="3"></textarea>
-				<span asp-validation-for="Reason" class="text-danger"></span>
+						<div class="row">
+							<div class="col-md-6">
+								<div class="mb-3">
+									<label asp-for="Reason" class="form-label">
+										<i class="bx bx-info-circle me-1"></i>
+										Root Cause Analysis
+									</label>
+									<textarea asp-for="Reason" class="form-control" rows="4"
+											  placeholder="Provide detailed analysis of why this pickup was missed..."></textarea>
+									<span asp-validation-for="Reason" class="text-danger"></span>
+									<div class="form-text">Override the system-detected reason with your analysis</div>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="mb-3">
+									<label asp-for="Resolution" class="form-label">
+										<i class="bx bx-check-circle me-1"></i>
+										Resolution Action
+									</label>
+									<textarea asp-for="Resolution" class="form-control" rows="4"
+											  placeholder="Describe the corrective action taken..."></textarea>
+									<span asp-validation-for="Resolution" class="text-danger"></span>
+									<div class="form-text">Document what was done to resolve this issue</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="d-flex justify-content-end gap-2">
+							<a asp-action="Index" class="btn btn-secondary">
+								<i class="bx bx-arrow-back me-1"></i>
+								Cancel
+							</a>
+							<button type="submit" class="btn btn-success">
+								<i class="bx bx-check me-1"></i>
+								Resolve Missed Pickup
+							</button>
+						</div>
+					</form>
+				</div>
 			</div>
-
-			<div class="form-group">
-				<label asp-for="Resolution" class="control-label"></label>
-				<input asp-for="Resolution" class="form-control" />
-				<span asp-validation-for="Resolution" class="text-danger"></span>
-			</div>
-
-			<button type="submit" class="btn btn-success mt-2">Submit</button>
-			<a asp-action="Index" class="btn btn-secondary mt-2">Cancel</a>
-		</form>
+		</div>
 	</div>
 </div>
 

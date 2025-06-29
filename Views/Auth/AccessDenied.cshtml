@@ -1,0 +1,35 @@
+@{
+	ViewData["Title"] = "Access Denied";
+	Layout = "~/Views/Shared/_BlankLayout.cshtml";
+}
+
+<div class="container-xxl">
+	<div class="authentication-wrapper authentication-basic container-p-y">
+		<div class="authentication-inner">
+			<div class="card">
+				<div class="card-body">
+					<div class="app-brand justify-content-center">
+						<a href="/" class="app-brand-link gap-2">
+							<span class="app-brand-logo demo">
+								<!-- Your logo here -->
+							</span>
+							<span class="app-brand-text demo text-body fw-bolder">KUTIP</span>
+						</a>
+					</div>
+
+					<h4 class="mb-2 text-center">Access Denied</h4>
+					<p class="mb-4 text-center">You don't have permission to access this resource.</p>
+
+					<div class="text-center">
+						<a href="javascript:history.back()" class="btn btn-outline-secondary me-2">
+							<i class="bx bx-arrow-back me-2"></i>Go Back
+						</a>
+						<a href="@Url.Action("Logout", "Auth")" class="btn btn-primary">
+							<i class="bx bx-log-out me-2"></i>Logout
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

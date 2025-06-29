@@ -1,10 +1,12 @@
 using AspnetCoreMvcFull.Data;
 using AspnetCoreMvcFull.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace AspnetCoreMvcFull.Controllers
 {
+  [Authorize(Roles = "Admin")]
   public class ScheduleController : Controller
   {
     private readonly KUTIPDbContext _context;

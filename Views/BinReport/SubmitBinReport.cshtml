@@ -1,23 +1,230 @@
 @model AspnetCoreMvcFull.ViewModels.BinReportViewModel
 
-<h2>Submit Bin Report</h2>
+@{
+	ViewData["Title"] = "Submit Bin Report";
+}
 
-<form method="post" enctype="multipart/form-data">
-    <div class="form-group">
-        <label for="binId">Bin ID</label>
-        <input type="text" name="BinId" class="form-control" required />
-    </div>
+<div class="container mt-4">
+	<div class="row justify-content-center">
+		<div class="col-md-8">
+			<div class="card shadow">
+				<div class="card-header bg-primary text-white">
+					<h2 class="card-title mb-0">
+						<i class="fas fa-clipboard-list me-2"></i>Submit Bin Report
+					</h2>
+				</div>
+				<div class="card-body">
+					@* Success Message *@
+					@if (TempData["SuccessMessage"] != null)
+					{
+						<div class="alert alert-success alert-dismissible fade show" role="alert">
+							<i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+							<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+						</div>
+					}
 
-    <div class="form-group">
-        <label for="issueDescription">Issue Description</label>
-        <textarea name="IssueDescription" class="form-control"></textarea>
-    </div>
+					@* Validation Summary *@
+					<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-    <div class="form-group">
-        <label for="imageFile">Upload Image</label>
-        <input type="file" name="ImageFile" class="form-control" />
-    </div>
+					<form asp-action="SubmitBinReport" method="post" enctype="multipart/form-data" id="binReportForm">
+						@Html.AntiForgeryToken()
 
-    <button type="submit" class="btn btn-primary">Submit Report</button>
-</form>
+						<div class="row">
+							@* Bin Plate ID *@
+							<div class="col-md-6">
+								<div class="form-group mb-3">
+									<label asp-for="BinPlateId" class="form-label fw-bold">
+										<i class="fas fa-barcode text-primary me-2"></i>Bin Plate ID
+									</label>
+									<input asp-for="BinPlateId" type="text" class="form-control"
+										   placeholder="Enter bin plate ID (e.g., ABC1234)" required />
+									<div class="form-text">
+										<i class="fas fa-info-circle me-1"></i>Enter the plate ID exactly as shown on the bin
+									</div>
+									<span asp-validation-for="BinPlateId" class="text-danger"></span>
+								</div>
+							</div>
 
+							@* NEW: Severity Level *@
+							<div class="col-md-6">
+								<div class="form-group mb-3">
+									<label asp-for="Severity" class="form-label fw-bold">
+										<i class="fas fa-exclamation-circle text-warning me-2"></i>Severity Level
+									</label>
+									<select asp-for="Severity" class="form-select" required>
+										<option value="Low">🟢 Low - Minor issue</option>
+										<option value="Medium" selected>🟡 Medium - Moderate issue</option>
+										<option value="High">🟠 High - Urgent attention needed</option>
+										<option value="Critical">🔴 Critical - Immediate action required</option>
+									</select>
+									<div class="form-text">
+										<i class="fas fa-info-circle me-1"></i>Select the severity level of the issue
+									</div>
+									<span asp-validation-for="Severity" class="text-danger"></span>
+								</div>
+							</div>
+						</div>
+
+						@* Image Upload *@
+						<div class="form-group mb-3">
+							<label asp-for="ImageFile" class="form-label fw-bold">
+								<i class="fas fa-camera text-success me-2"></i>Upload Image
+							</label>
+							<input asp-for="ImageFile" type="file" class="form-control"
+								   accept="image/*" required id="imageInput" />
+							<div class="form-text">
+								<i class="fas fa-info-circle me-1"></i>Please upload a clear photo of the bin (Max 5MB)
+							</div>
+							<span asp-validation-for="ImageFile" class="text-danger"></span>
+							@* Image Preview *@
+							<div id="imagePreview" class="mt-2" style="display: none;">
+								<img id="previewImg" src="/placeholder.svg" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px;" />
+								<div class="mt-1">
+									<small id="fileInfo" class="text-muted"></small>
+								</div>
+							</div>
+						</div>
+
+						@* Single Description Field *@
+						<div class="form-group mb-3">
+							<label asp-for="Description" class="form-label fw-bold">
+								<i class="fas fa-comment text-info me-2"></i>Description
+							</label>
+							<textarea asp-for="Description" class="form-control" rows="4"
+									  placeholder="Describe the bin condition, any issues, or general observations..." required></textarea>
+							<div class="form-text">
+								<i class="fas fa-info-circle me-1"></i>Include any relevant details about the bin's condition, location, or issues
+							</div>
+							<span asp-validation-for="Description" class="text-danger"></span>
+						</div>
+
+						@* NEW: Reported By (Read-only) *@
+						<div class="form-group mb-3">
+							<label class="form-label fw-bold">
+								<i class="fas fa-user text-secondary me-2"></i>Reported By
+							</label>
+							<input type="text" class="form-control" value="@User.Identity.Name" readonly />
+							<div class="form-text">
+								<i class="fas fa-info-circle me-1"></i>Automatically filled from your login
+							</div>
+						</div>
+
+						@* Issue Flag *@
+						<div class="form-group mb-4">
+							<div class="form-check">
+								<input asp-for="IsIssueReported" class="form-check-input" type="checkbox" />
+								<label asp-for="IsIssueReported" class="form-check-label fw-bold">
+									<i class="fas fa-exclamation-triangle text-warning me-2"></i>Mark as Issue
+								</label>
+							</div>
+							<div class="form-text">
+								<i class="fas fa-info-circle me-1"></i>Check this box if the report describes a problem that needs attention
+							</div>
+						</div>
+
+						@* Submit Button *@
+						<div class="form-group text-end">
+							<button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+								<i class="fas fa-paper-plane me-2"></i>Submit Report
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_ValidationScriptsPartial");
+	}
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const form = document.getElementById('binReportForm');
+			const fileInput = document.getElementById('imageInput');
+			const imagePreview = document.getElementById('imagePreview');
+			const previewImg = document.getElementById('previewImg');
+			const fileInfo = document.getElementById('fileInfo');
+			const submitBtn = document.getElementById('submitBtn');
+
+			// Image preview functionality
+			fileInput.addEventListener('change', function(e) {
+				const file = e.target.files[0];
+				if (file) {
+					// Validate file size (max 5MB)
+					if (file.size > 5 * 1024 * 1024) {
+						alert('File size must be less than 5MB');
+						this.value = '';
+						imagePreview.style.display = 'none';
+						return;
+					}
+
+					// Validate file type
+					if (!file.type.startsWith('image/')) {
+						alert('Please select an image file');
+						this.value = '';
+						imagePreview.style.display = 'none';
+						return;
+					}
+
+					// Show file info
+					const fileSizeKB = (file.size / 1024).toFixed(2);
+					fileInfo.textContent = `${file.name} (${fileSizeKB} KB)`;
+
+					// Show preview
+					const reader = new FileReader();
+					reader.onload = function(e) {
+						previewImg.src = e.target.result;
+						imagePreview.style.display = 'block';
+					};
+					reader.readAsDataURL(file);
+				} else {
+					imagePreview.style.display = 'none';
+				}
+			});
+
+			// Form submission
+			form.addEventListener('submit', function(e) {
+				const binPlateId = document.querySelector('input[name="BinPlateId"]').value.trim();
+				const imageFile = document.querySelector('input[name="ImageFile"]').files[0];
+				const description = document.querySelector('textarea[name="Description"]').value.trim();
+				const severity = document.querySelector('select[name="Severity"]').value;
+
+				if (!binPlateId) {
+					alert('Please enter a Bin Plate ID');
+					e.preventDefault();
+					return;
+				}
+
+				if (!imageFile) {
+					alert('Please select an image file');
+					e.preventDefault();
+					return;
+				}
+
+				if (!description) {
+					alert('Please provide a description');
+					e.preventDefault();
+					return;
+				}
+
+				if (!severity) {
+					alert('Please select a severity level');
+					e.preventDefault();
+					return;
+				}
+
+				// Show loading state
+				submitBtn.disabled = true;
+				submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting...';
+			});
+
+			// Auto-format bin plate ID
+			const binPlateInput = document.querySelector('input[name="BinPlateId"]');
+			binPlateInput.addEventListener('input', function(e) {
+				this.value = this.value.toUpperCase().replace(/\s/g, '');
+			});
+		});
+	</script>
+}

@@ -29,6 +29,7 @@ namespace AspnetCoreMvcFull.Data
     public DbSet<User> Users { get; set; }
     public DbSet<Truck> Trucks { get; set; }
     public DbSet<BinReport> BinReports { get; set; }
+    public DbSet<BinReportImage> BinReportImages { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using AspnetCoreMvcFull.Models;
 using AspnetCoreMvcFull.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AspnetCoreMvcFull.Controllers
 {
+  [Authorize(Roles = "Admin")]
   public class RouteBinController : Controller
   {
     private readonly KUTIPDbContext _context;
