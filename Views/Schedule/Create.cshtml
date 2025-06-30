@@ -119,26 +119,67 @@
                             </div>
                         </div>
 
+                        <!-- Schedule Day and Time Section -->
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <!-- Day of Week -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="ScheduleDay" class="form-label">
+                                        <i class="fas fa-calendar-day"></i> Schedule Day
+                                    </label>
+                                    <select asp-for="ScheduleDay" class="form-select" required>
+                                        <option value="">-- Select Day --</option>
+                                        <option value="0">Sunday</option>
+                                        <option value="1">Monday</option>
+                                        <option value="2">Tuesday</option>
+                                        <option value="3">Wednesday</option>
+                                        <option value="4">Thursday</option>
+                                        <option value="5">Friday</option>
+                                        <option value="6">Saturday</option>
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Select which day of the week this schedule will run.
+                                    </div>
+                                    <span asp-validation-for="ScheduleDay" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
                                 <!-- Start Time -->
                                 <div class="form-group mb-3">
                                     <label asp-for="ScheduleStartTime" class="form-label">
                                         <i class="fas fa-clock"></i> Start Time
                                     </label>
-                                    <input asp-for="ScheduleStartTime" class="form-control" type="datetime-local" required />
+                                    <input asp-for="ScheduleStartTime" class="form-control" type="time" required />
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Time when collection should start.
+                                    </div>
                                     <span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
                                 </div>
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <!-- End Time -->
                                 <div class="form-group mb-3">
                                     <label asp-for="ScheduleEndTime" class="form-label">
                                         <i class="fas fa-clock"></i> End Time
                                     </label>
-                                    <input asp-for="ScheduleEndTime" class="form-control" type="datetime-local" required />
+                                    <input asp-for="ScheduleEndTime" class="form-control" type="time" required />
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Expected completion time.
+                                    </div>
                                     <span asp-validation-for="ScheduleEndTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule Preview -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="alert alert-info" id="schedulePreview" style="display: none;">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <strong>Schedule Preview:</strong>
+                                    <span id="previewText"></span>
                                 </div>
                             </div>
                         </div>
@@ -224,6 +265,50 @@
                 } else {
                     $('#routeWarningAlert').hide();
                     $('#routeBinsSection').hide();
+                }
+
+                updateSchedulePreview();
+            });
+
+            // Handle day, start time, and end time changes
+            $('#ScheduleDay, #ScheduleStartTime, #ScheduleEndTime').change(function() {
+                updateSchedulePreview();
+            });
+
+            // Update schedule preview
+            function updateSchedulePreview() {
+                var day = $('#ScheduleDay option:selected').text();
+                var startTime = $('#ScheduleStartTime').val();
+                var endTime = $('#ScheduleEndTime').val();
+                var route = $('#routeSelect option:selected').text();
+
+                if (day && day !== '-- Select Day --' && startTime && endTime) {
+                    var previewText = `This schedule will run every ${day} from ${formatTime(startTime)} to ${formatTime(endTime)}`;
+                    if (route && route !== '-- Select Route --') {
+                        previewText += ` for route: ${route.split(' - ')[0]}`;
+                    }
+                    $('#previewText').text(previewText);
+                    $('#schedulePreview').show();
+                } else {
+                    $('#schedulePreview').hide();
+                }
+            }
+
+            // Format time for display
+            function formatTime(timeString) {
+                if (!timeString) return '';
+                var time = new Date('1970-01-01T' + timeString + ':00');
+                return time.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+
+            // Validate time range
+            $('#ScheduleEndTime').change(function() {
+                var startTime = $('#ScheduleStartTime').val();
+                var endTime = $(this).val();
+
+                if (startTime && endTime && endTime <= startTime) {
+                    alert('End time must be after start time.');
+                    $(this).focus();
                 }
             });
 

@@ -46,7 +46,7 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: Schedule/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("TruckId,CollectorId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes")] Schedule schedule)
+    public async Task<IActionResult> Create([Bind("TruckId,CollectorId,RouteId,ScheduleDay,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes")] Schedule schedule)
     {
       // Remove validation for auto-generated fields
       ModelState.Remove("ActualStartTime");

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AspnetCoreMvcFull.Migrations
 {
     [DbContext(typeof(KUTIPDbContext))]
-    [Migration("20250627094615_createDb")]
+    [Migration("20250630055009_createDb")]
     partial class createDb
     {
         /// <inheritdoc />
@@ -453,11 +453,14 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<Guid>("RouteId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("ScheduleEndTime")
-                        .HasColumnType("datetime2");
+                    b.Property<int>("ScheduleDay")
+                        .HasColumnType("int");
 
-                    b.Property<DateTime>("ScheduleStartTime")
-                        .HasColumnType("datetime2");
+                    b.Property<TimeSpan>("ScheduleEndTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("ScheduleStartTime")
+                        .HasColumnType("time");
 
                     b.Property<string>("Status")
                         .IsRequired()

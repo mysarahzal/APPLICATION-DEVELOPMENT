@@ -18,9 +18,17 @@ namespace AspnetCoreMvcFull.Models
     public Guid RouteId { get; set; }  // Guid to match RoutePlan.Id
 
     [Required]
-    public DateTime ScheduleStartTime { get; set; }
+    [Display(Name = "Schedule Day")]
+    public DayOfWeek ScheduleDay { get; set; }
 
-    public DateTime ScheduleEndTime { get; set; }
+    [Required]
+    [Display(Name = "Start Time")]
+    public TimeSpan ScheduleStartTime { get; set; }
+
+    [Required]
+    [Display(Name = "End Time")]
+    public TimeSpan ScheduleEndTime { get; set; }
+
     public DateTime? ActualStartTime { get; set; }
     public DateTime? ActualEndTime { get; set; }
 
