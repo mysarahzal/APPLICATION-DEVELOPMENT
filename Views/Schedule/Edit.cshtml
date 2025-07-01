@@ -54,10 +54,8 @@
 
                     <form asp-action="Edit" method="post" id="scheduleEditForm">
                         <div asp-validation-summary="All" class="alert alert-danger"></div>
-
                         <input type="hidden" asp-for="Id" />
                         <input type="hidden" asp-for="CreatedAt" />
-
                         <div class="row">
                             <div class="col-md-6">
                                 <!-- Route Dropdown with availability status -->
@@ -173,9 +171,6 @@
                                     <span asp-validation-for="TruckId" class="text-danger"></span>
                                 </div>
 
-                                @* <!-- Hidden Truck ID field (auto-populated based on driver selection) -->
-                                <input asp-for="TruckId" type="hidden" id="hiddenTruckId" /> *@
-
                                 <!-- Display selected truck info -->
                                 <div id="selectedTruckInfo" class="alert alert-info" style="display: none;">
                                     <i class="fas fa-truck"></i>
@@ -195,7 +190,6 @@
                                     <span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
                                 </div>
                             </div>
-
                             <div class="col-md-6">
                                 <!-- End Time -->
                                 <div class="form-group mb-3">
@@ -321,7 +315,7 @@
                             </div>
                         }
 
-                        <!-- Debug Information (remove this in production) -->
+                        <!-- Debug Information (commented out in production) -->
                         @* <div class="alert alert-secondary">
                             <strong>Debug Info:</strong>
                             <div>Selected Route ID: <span id="debugRouteId">@Model.RouteId</span></div>
@@ -353,20 +347,17 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-
     <script>
         $(document).ready(function() {
             // Initialize with current values
-            var currentDriverId = '@Model.CollectorId';
+            var currentCollectorId = '@Model.CollectorId';
             var currentTruckId = '@Model.TruckId';
             var currentRouteId = '@Model.RouteId';
 
-            // Set initial truck ID and show truck info if driver is selected
-            if (currentDriverId) {
-                var selectedOption = $('#driverSelect option:selected');
-                var truckId = selectedOption.data('truck-id');
-                if (truckId) {
-                    $('#hiddenTruckId').val(truckId);
+            // Show truck info if truck is selected
+            if (currentTruckId) {
+                var selectedOption = $('#truckSelect option[value="' + currentTruckId + '"]');
+                if (selectedOption.length) {
                     $('#truckDetails').text(selectedOption.text());
                     $('#selectedTruckInfo').show();
                 }
@@ -375,30 +366,52 @@
             // Load route bins if route is selected
             if (currentRouteId) {
                 loadRouteBins(currentRouteId);
+
+                // Show route info
+                var selectedRouteOption = $('#routeSelect option[value="' + currentRouteId + '"]');
+                if (selectedRouteOption.length) {
+                    var routeInfo = `
+                        <strong>Selected Route:</strong> ${selectedRouteOption.text()}<br>
+                        <small class="text-muted">Route details loaded</small>
+                    `;
+                    $('#routeInfoDetails').html(routeInfo);
+                    $('#routeInfoAlert').show();
+                }
             }
 
-            // Handle driver selection change
-            $('#driverSelect').change(function() {
+            // Handle collector selection change
+            $('#collectorSelect').change(function() {
+                var collectorId = $(this).val();
+                var collectorName = $(this).find('option:selected').text();
+
+                // Update debug info
+                $('#debugCollectorId').text(collectorId || 'None');
+
+                if (collectorId) {
+                    console.log('Collector selected:', collectorName);
+                }
+            });
+
+            // Handle truck selection change
+            $('#truckSelect').change(function() {
                 var selectedOption = $(this).find('option:selected');
-                var truckId = selectedOption.data('truck-id');
-                var driverName = selectedOption.text();
-                var driverId = $(this).val();
+                var truckId = $(this).val();
+                var truckText = selectedOption.text();
+                var driverName = selectedOption.data('driver');
 
-                if (truckId && driverId) {
-                    // Set the hidden truck ID
-                    $('#hiddenTruckId').val(truckId);
-
+                if (truckId) {
                     // Show truck info
-                    $('#truckDetails').text(driverName);
+                    var truckInfo = truckText;
+                    if (driverName && driverName.trim() !== '') {
+                        truckInfo += ` (Driver: ${driverName})`;
+                    }
+                    $('#truckDetails').text(truckInfo);
                     $('#selectedTruckInfo').show();
 
                     // Update debug info
-                    $('#debugDriverId').text(driverId);
                     $('#debugTruckId').text(truckId);
                 } else {
-                    $('#hiddenTruckId').val('');
                     $('#selectedTruckInfo').hide();
-                    $('#debugDriverId').text('None');
                     $('#debugTruckId').text('None');
                 }
             });
@@ -438,15 +451,15 @@
                 console.log('Form submission started');
 
                 var routeId = $('#routeSelect').val();
-                var driverId = $('#driverSelect').val();
-                var truckId = $('#hiddenTruckId').val();
+                var collectorId = $('#collectorSelect').val();
+                var truckId = $('#truckSelect').val();
                 var startTime = $('#ScheduleStartTime').val();
                 var endTime = $('#ScheduleEndTime').val();
                 var status = $('#Status').val();
 
                 console.log('Form data:', {
                     routeId: routeId,
-                    driverId: driverId,
+                    collectorId: collectorId,
                     truckId: truckId,
                     startTime: startTime,
                     endTime: endTime,
@@ -460,14 +473,14 @@
                     return false;
                 }
 
-                if (!driverId) {
-                    alert('Please select a driver');
+                if (!collectorId) {
+                    alert('Please select a collector');
                     e.preventDefault();
                     return false;
                 }
 
                 if (!truckId) {
-                    alert('Truck ID is missing. Please reselect the driver.');
+                    alert('Please select a truck');
                     e.preventDefault();
                     return false;
                 }
@@ -491,25 +504,25 @@
                     routeId: routeId,
                     excludeScheduleId: excludeScheduleId
                 })
-                    .done(function(data) {
-                        if (data.isScheduled) {
-                            var warningHtml = `
-                                <strong>Schedule #${data.scheduleId}</strong><br>
-                                <strong>Route:</strong> ${data.routeName}<br>
-                                <strong>Driver:</strong> ${data.collectorName}<br>
-                                <strong>Status:</strong> <span class="badge bg-warning">${data.status}</span><br>
-                                <strong>Start Time:</strong> ${data.startTime}
-                            `;
-                            $('#routeWarningDetails').html(warningHtml);
-                            $('#routeWarningAlert').show();
-                        } else {
-                            $('#routeWarningAlert').hide();
-                        }
-                    })
-                    .fail(function(xhr, status, error) {
-                        console.error('Error checking route availability:', error);
+                .done(function(data) {
+                    if (data.isScheduled) {
+                        var warningHtml = `
+                            <strong>Schedule #${data.scheduleId}</strong><br>
+                            <strong>Route:</strong> ${data.routeName}<br>
+                            <strong>Driver:</strong> ${data.collectorName}<br>
+                            <strong>Status:</strong> <span class="badge bg-warning">${data.status}</span><br>
+                            <strong>Start Time:</strong> ${data.startTime}
+                        `;
+                        $('#routeWarningDetails').html(warningHtml);
+                        $('#routeWarningAlert').show();
+                    } else {
                         $('#routeWarningAlert').hide();
-                    });
+                    }
+                })
+                .fail(function(xhr, status, error) {
+                    console.error('Error checking route availability:', error);
+                    $('#routeWarningAlert').hide();
+                });
             }
 
             // Load bins for selected route
@@ -518,86 +531,87 @@
                 $('#routeBinsList').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading bins...</div>');
 
                 $.get('@Url.Action("GetRouteBins", "Schedule")', { routeId: routeId })
-                    .done(function(data) {
-                        console.log('Route bins loaded:', data);
+                .done(function(data) {
+                    console.log('Route bins loaded:', data);
 
-                        if (data.error) {
-                            $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + data.error + '</div>');
-                            return;
-                        }
+                    if (data.error) {
+                        $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + data.error + '</div>');
+                        return;
+                    }
 
-                        if (data.length === 0) {
-                            $('#routeBinsList').html('<div class="alert alert-info">No bins found in this route.</div>');
-                            $('#binsCount').text('0 bins');
-                            return;
-                        }
+                    if (data.length === 0) {
+                        $('#routeBinsList').html('<div class="alert alert-info">No bins found in this route.</div>');
+                        $('#binsCount').text('0 bins');
+                        return;
+                    }
 
-                        var tableHtml = `
-                            <table class="table table-sm table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Order</th>
-                                        <th>Bin ID</th>
-                                        <th>Location</th>
-                                        <th>Zone</th>
-                                        <th>Fill Level</th>
-                                        <th>Client</th>
-                                        <th>Coordinates</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                        `;
-
-                        data.forEach(function(bin) {
-                            var coordinates = '';
-                            if (bin.latitude && bin.longitude) {
-                                coordinates = `<small class="text-success">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    ${parseFloat(bin.latitude).toFixed(4)}, ${parseFloat(bin.longitude).toFixed(4)}
-                                </small>`;
-                            } else {
-                                coordinates = '<small class="text-warning"><i class="fas fa-exclamation-triangle"></i> No GPS</small>';
-                            }
-
-                            var fillLevelClass = bin.fillLevel > 80 ? 'bg-danger' :
-                                               bin.fillLevel > 60 ? 'bg-warning' : 'bg-success';
-
-                            tableHtml += `
+                    var tableHtml = `
+                        <table class="table table-sm table-striped">
+                            <thead>
                                 <tr>
-                                    <td><span class="badge bg-primary">${bin.orderInRoute}</span></td>
-                                    <td><strong>${bin.binPlateId}</strong></td>
-                                    <td>${bin.location}</td>
-                                    <td><span class="badge bg-info">${bin.zone}</span></td>
-                                    <td>
-                                        <div class="progress" style="width: 60px; height: 20px;">
-                                            <div class="progress-bar ${fillLevelClass}" style="width: ${bin.fillLevel}%"></div>
-                                        </div>
-                                        <small>${bin.fillLevel}%</small>
-                                    </td>
-                                    <td>${bin.clientName}</td>
-                                    <td>${coordinates}</td>
+                                    <th>Order</th>
+                                    <th>Bin ID</th>
+                                    <th>Location</th>
+                                    <th>Zone</th>
+                                    <th>Fill Level</th>
+                                    <th>Client</th>
+                                    <th>Coordinates</th>
                                 </tr>
-                            `;
-                        });
+                            </thead>
+                            <tbody>
+                    `;
 
-                        tableHtml += '</tbody></table>';
-                        $('#routeBinsList').html(tableHtml);
-                        $('#binsCount').text(data.length + ' bins');
-
-                        var binsWithGPS = data.filter(b => b.latitude && b.longitude).length;
-                        if (binsWithGPS < data.length) {
-                            $('#routeBinsList').append(
-                                `<div class="alert alert-warning mt-2">
-                                    <i class="fas fa-exclamation-triangle"></i>
-                                    <strong>Warning:</strong> ${data.length - binsWithGPS} bins are missing GPS coordinates.
-                                </div>`
-                            );
+                    data.forEach(function(bin) {
+                        var coordinates = '';
+                        if (bin.latitude && bin.longitude) {
+                            coordinates = `<small class="text-success">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${parseFloat(bin.latitude).toFixed(4)}, ${parseFloat(bin.longitude).toFixed(4)}
+                            </small>`;
+                        } else {
+                            coordinates = '<small class="text-warning"><i class="fas fa-exclamation-triangle"></i> No GPS</small>';
                         }
-                    })
-                    .fail(function(xhr, status, error) {
-                        console.error('Error loading route bins:', error);
-                        $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + error + '</div>');
+
+                        var fillLevelClass = bin.fillLevel > 80 ? 'bg-danger' :
+                                           bin.fillLevel > 60 ? 'bg-warning' : 'bg-success';
+
+                        tableHtml += `
+                            <tr>
+                                <td><span class="badge bg-primary">${bin.orderInRoute}</span></td>
+                                <td><strong>${bin.binPlateId}</strong></td>
+                                <td>${bin.location}</td>
+                                <td><span class="badge bg-info">${bin.zone}</span></td>
+                                <td>
+                                    <div class="progress" style="width: 60px; height: 20px;">
+                                        <div class="progress-bar ${fillLevelClass}" style="width: ${bin.fillLevel}%"></div>
+                                    </div>
+                                    <small>${bin.fillLevel}%</small>
+                                </td>
+                                <td>${bin.clientName}</td>
+                                <td>${coordinates}</td>
+                            </tr>
+                        `;
                     });
+
+                    tableHtml += '</tbody></table>';
+
+                    $('#routeBinsList').html(tableHtml);
+                    $('#binsCount').text(data.length + ' bins');
+
+                    var binsWithGPS = data.filter(b => b.latitude && b.longitude).length;
+                    if (binsWithGPS < data.length) {
+                        $('#routeBinsList').append(
+                            `<div class="alert alert-warning mt-2">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Warning:</strong> ${data.length - binsWithGPS} bins are missing GPS coordinates.
+                            </div>`
+                        );
+                    }
+                })
+                .fail(function(xhr, status, error) {
+                    console.error('Error loading route bins:', error);
+                    $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + error + '</div>');
+                });
             }
         });
     </script>
