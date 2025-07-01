@@ -101,32 +101,57 @@
                             </div>
 
                             <div class="col-md-6">
-                                <!-- Driver Dropdown (replaces separate truck and collector selection) -->
+                                <!-- Collector Dropdown -->
                                 <div class="form-group mb-3">
                                     <label asp-for="CollectorId" class="form-label">
-                                        <i class="fas fa-user"></i> Select Driver
+                                        <i class="fas fa-user"></i> Select Collector
                                     </label>
-                                    <select asp-for="CollectorId" class="form-select" required id="driverSelect">
-                                        <option value="">-- Select Driver --</option>
-                                        @if (ViewBag.DriversWithTrucks != null)
+                                    <select asp-for="CollectorId" class="form-select" required id="collectorSelect">
+                                        <option value="">-- Select Collector --</option>
+                                        @if (ViewBag.Collectors != null)
                                         {
-                                            @foreach (var driverTruck in ViewBag.DriversWithTrucks)
+                                            @foreach (var collector in ViewBag.Collectors)
                                             {
-                                                <option value="@driverTruck.Driver.Id" data-truck-id="@driverTruck.Truck.Id">
-                                                    @driverTruck.Driver.FirstName @driverTruck.Driver.LastName
-                                                    - Truck: @driverTruck.Truck.LicensePlate (@driverTruck.Truck.Model)
+                                                <option value="@collector.Id">
+                                                    @collector.FirstName @collector.LastName (@collector.Email)
                                                 </option>
                                             }
                                         }
                                     </select>
                                     <div class="form-text">
-                                        <i class="fas fa-info-circle"></i> Each driver is assigned to a specific truck.
+                                        <i class="fas fa-info-circle"></i> Select the collector who will handle this route.
                                     </div>
                                     <span asp-validation-for="CollectorId" class="text-danger"></span>
                                 </div>
+                            </div>
 
-                                <!-- Hidden Truck ID field (auto-populated based on driver selection) -->
-                                <input asp-for="TruckId" type="hidden" id="hiddenTruckId" />
+                            <div class="col-md-6">
+                                <!-- Truck Dropdown -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="TruckId" class="form-label">
+                                        <i class="fas fa-truck"></i> Select Truck
+                                    </label>
+                                    <select asp-for="TruckId" class="form-select" required id="truckSelect">
+                                        <option value="">-- Select Truck --</option>
+                                        @if (ViewBag.AvailableTrucks != null)
+                                        {
+                                            @foreach (var truck in ViewBag.AvailableTrucks)
+                                            {
+                                                <option value="@truck.Id" data-driver="@truck.Driver?.FirstName @truck.Driver?.LastName">
+                                                    @truck.LicensePlate (@truck.Model)
+                                                    @if (truck.Driver != null)
+                                                    {
+                                                        <span>- Driver: @truck.Driver.FirstName @truck.Driver.LastName</span>
+                                                    }
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Select the truck to be used for this schedule.
+                                    </div>
+                                    <span asp-validation-for="TruckId" class="text-danger"></span>
+                                </div>
 
                                 <!-- Display selected truck info -->
                                 <div id="selectedTruckInfo" class="alert alert-info" style="display: none;">
@@ -208,7 +233,7 @@
                         <div class="alert alert-info">
                             <strong>Debug Info:</strong>
                             <div>Selected Route ID: <span id="debugRouteId">None</span></div>
-                            <div>Selected Driver ID: <span id="debugDriverId">None</span></div>
+                            <div>Selected Collector ID: <span id="debugCollectorId">None</span></div>
                             <div>Selected Truck ID: <span id="debugTruckId">None</span></div>
                         </div>
 
@@ -235,28 +260,39 @@
 
     <script>
         $(document).ready(function() {
-            // Handle driver selection change
-            $('#driverSelect').change(function() {
+            // Handle collector selection change
+            $('#collectorSelect').change(function() {
+                var collectorId = $(this).val();
+                var collectorName = $(this).find('option:selected').text();
+
+                // Update debug info
+                $('#debugCollectorId').text(collectorId || 'None');
+
+                if (collectorId) {
+                    console.log('Collector selected:', collectorName);
+                }
+            });
+
+            // Handle truck selection change
+            $('#truckSelect').change(function() {
                 var selectedOption = $(this).find('option:selected');
-                var truckId = selectedOption.data('truck-id');
-                var driverName = selectedOption.text();
-                var driverId = $(this).val();
+                var truckId = $(this).val();
+                var truckText = selectedOption.text();
+                var driverName = selectedOption.data('driver');
 
-                if (truckId && driverId) {
-                    // Set the hidden truck ID
-                    $('#hiddenTruckId').val(truckId);
-
+                if (truckId) {
                     // Show truck info
-                    $('#truckDetails').text(driverName);
+                    var truckInfo = truckText;
+                    if (driverName && driverName.trim() !== '') {
+                        truckInfo += ` (Driver: ${driverName})`;
+                    }
+                    $('#truckDetails').text(truckInfo);
                     $('#selectedTruckInfo').show();
 
                     // Update debug info
-                    $('#debugDriverId').text(driverId);
                     $('#debugTruckId').text(truckId);
                 } else {
-                    $('#hiddenTruckId').val('');
                     $('#selectedTruckInfo').hide();
-                    $('#debugDriverId').text('None');
                     $('#debugTruckId').text('None');
                 }
             });
@@ -296,15 +332,15 @@
                 console.log('Form submission started');
 
                 var routeId = $('#routeSelect').val();
-                var driverId = $('#driverSelect').val();
-                var truckId = $('#hiddenTruckId').val();
+                var collectorId = $('#collectorSelect').val();
+                var truckId = $('#truckSelect').val();
                 var startTime = $('#ScheduleStartTime').val();
                 var endTime = $('#ScheduleEndTime').val();
                 var status = $('#Status').val();
 
                 console.log('Form data:', {
                     routeId: routeId,
-                    driverId: driverId,
+                    collectorId: collectorId,
                     truckId: truckId,
                     startTime: startTime,
                     endTime: endTime,
@@ -318,14 +354,14 @@
                     return false;
                 }
 
-                if (!driverId) {
-                    alert('Please select a driver');
+                if (!collectorId) {
+                    alert('Please select a collector');
                     e.preventDefault();
                     return false;
                 }
 
                 if (!truckId) {
-                    alert('Truck ID is missing. Please reselect the driver.');
+                    alert('Please select a truck');
                     e.preventDefault();
                     return false;
                 }

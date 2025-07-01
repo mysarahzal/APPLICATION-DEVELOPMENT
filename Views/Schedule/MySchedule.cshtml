@@ -1,57 +1,435 @@
-@* @model IEnumerable<AspnetCoreMvcFull.Models.Schedule> *@
-
-@* <h2>Your Schedule</h2> *@
-
-@* <table class="table"> *@
-@* 	<thead> *@
-@* 		<tr> *@
-@* 			<th>Truck ID</th> *@
-@* 			<th>Route</th> *@
-@* 			<th>Scheduled Start</th> *@
-@* 			<th>Status</th> *@
-@* 		</tr> *@
-@* 	</thead> *@
-@* 	<tbody> *@
-@* 		@foreach (var item in Model) *@
-@* 		{ *@
-@* 			<tr> *@
-@* 				<td>@item.TruckId</td> *@
-@* 				@* <td>@item.Road?.Name</td> *@ 
-@* 				<td>@item.ScheduleStartTime.ToString("g")</td> *@
-@* 				<td>@item.Status</td> *@
-@* 			</tr> *@
-@* 		} *@
-@* 	</tbody> *@
-@* </table> *@
-
 @model IEnumerable<AspnetCoreMvcFull.Models.Schedule>
 
 @{
-	ViewData["Title"] = "My Schedule";
+    ViewData["Title"] = "All Schedules";
+    var currentUser = ViewBag.CurrentUser as AspnetCoreMvcFull.Models.User;
+    var allTrucks = ViewBag.AllTrucks as List<AspnetCoreMvcFull.Models.Truck>;
+    var allCollectors = ViewBag.AllCollectors as List<AspnetCoreMvcFull.Models.User>;
 }
 
-<h1>My Schedule</h1>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-calendar-alt"></i> All Schedules
+                        </h4>
+                        <div class="text-end">
+                            <small class="text-muted">Welcome, @currentUser?.FirstName @currentUser?.LastName (Driver)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <i class="fas fa-check-circle"></i> @TempData["Success"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
 
-<table class="table">
-	<thead>
-		<tr>
-			<th>Route</th>
-			<th>Start Time</th>
-			<th>End Time</th>
-			<th>Status</th>
-			<th>Notes</th>
-		</tr>
-	</thead>
-	<tbody>
-		@foreach (var item in Model)
-		{
-			<tr>
-				@* <td>@Html.DisplayFor(modelItem => item.Road.Name)</td> *@
-				<td>@Html.DisplayFor(modelItem => item.ScheduleStartTime)</td>
-				<td>@Html.DisplayFor(modelItem => item.ScheduleEndTime)</td>
-				<td>@Html.DisplayFor(modelItem => item.Status)</td>
-				<td>@Html.DisplayFor(modelItem => item.AdminNotes)</td>
-			</tr>
-		}
-	</tbody>
-</table>
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show">
+                            <i class="fas fa-exclamation-triangle"></i> @TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (ViewBag.ErrorMessage != null)
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i> @ViewBag.ErrorMessage
+                        </div>
+                    }
+
+                    @if (ViewBag.AccessDenied != null)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fas fa-lock"></i> @ViewBag.AccessDenied
+                            <div class="mt-2">
+                                <a href="@Url.Action("Login", "Account")" class="btn btn-primary">
+                                    <i class="fas fa-sign-in-alt"></i> Login
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Filters Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-filter"></i> Filter Schedules
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Filter by Truck</label>
+                                            <select id="truckFilter" class="form-select">
+                                                <option value="">All Trucks</option>
+                                                @if (allTrucks != null)
+                                                {
+                                                    @foreach (var truck in allTrucks)
+                                                    {
+                                                        <option value="@truck.Id">
+                                                            @truck.LicensePlate (@truck.Model)
+                                                            @if (truck.Driver != null)
+                                                            {
+                                                                <span>- @truck.Driver.FirstName @truck.Driver.LastName</span>
+                                                            }
+                                                        </option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Filter by Collector</label>
+                                            <select id="collectorFilter" class="form-select">
+                                                <option value="">All Collectors</option>
+                                                @if (allCollectors != null)
+                                                {
+                                                    @foreach (var collector in allCollectors)
+                                                    {
+                                                        <option value="@collector.Id">
+                                                            @collector.FirstName @collector.LastName (@collector.Role)
+                                                        </option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 d-flex align-items-end">
+                                            <div class="btn-group me-2" role="group">
+                                                <button type="button" id="searchFilters" class="btn btn-primary">
+                                                    <i class="fas fa-search"></i> Search
+                                                </button>
+                                                <button type="button" id="clearFilters" class="btn btn-secondary">
+                                                    <i class="fas fa-times"></i> Clear
+                                                </button>
+                                            </div>
+                                            <div class="ms-auto">
+                                                <span class="badge bg-info" id="scheduleCount">@Model.Count() schedules</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Schedules Table (Same as Admin View but without Actions column) -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="schedulesTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Schedule #</th>
+                                    <th>Date & Time</th>
+                                    <th>Route</th>
+                                    <th>Collector</th>
+                                    <th>Truck</th>
+                                    <th>Driver</th>
+                                    <th>Status</th>
+                                    <th>Collection Points</th>
+                                    <th>Progress</th>
+                                    <th>Duration</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var schedule in Model)
+                                {
+                                    <tr data-truck-id="@schedule.TruckId"
+                                        data-collector-id="@schedule.CollectorId">
+                                        <td>
+                                            <strong>#@schedule.Id</strong>
+                                            @if (!string.IsNullOrEmpty(schedule.AdminNotes))
+                                            {
+                                                <i class="fas fa-sticky-note text-warning ms-1" title="@schedule.AdminNotes"></i>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>@schedule.ScheduleStartTime.ToString("dd/MM/yyyy")</strong>
+                                            </div>
+                                            <small class="text-muted">
+                                                @schedule.ScheduleStartTime.ToString("HH:mm") - @schedule.ScheduleEndTime.ToString("HH:mm")
+                                                (@schedule.DayOfWeek)
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>@schedule.Route?.Name</strong>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(schedule.Route?.Description))
+                                            {
+                                                <small class="text-muted">@schedule.Route.Description</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div>
+                                                @schedule.Collector?.FirstName @schedule.Collector?.LastName
+                                            </div>
+                                            <small class="text-muted">@schedule.Collector?.Email</small>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>@schedule.Truck?.LicensePlate</strong>
+                                            </div>
+                                            <small class="text-muted">@schedule.Truck?.Model</small>
+                                        </td>
+                                        <td>
+                                            @if (schedule.Truck?.Driver != null)
+                                            {
+                                                <div>
+                                                    @schedule.Truck.Driver.FirstName @schedule.Truck.Driver.LastName
+                                                </div>
+                                                <small class="text-muted">@schedule.Truck.Driver.Email</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No driver assigned</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-@(schedule.Status == "Completed" ? "success" : schedule.Status == "In Progress" ? "warning" : schedule.Status == "Cancelled" ? "danger" : schedule.Status == "Missed" ? "secondary" : "primary")">
+                                                @schedule.Status
+                                            </span>
+                                            @if (schedule.ActualStartTime.HasValue)
+                                            {
+                                                <div class="mt-1">
+                                                    <small class="text-success">
+                                                        <i class="fas fa-play"></i> @schedule.ActualStartTime.Value.ToString("HH:mm")
+                                                    </small>
+                                                </div>
+                                            }
+                                            @if (schedule.ActualEndTime.HasValue)
+                                            {
+                                                <div>
+                                                    <small class="text-danger">
+                                                        <i class="fas fa-stop"></i> @schedule.ActualEndTime.Value.ToString("HH:mm")
+                                                    </small>
+                                                </div>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (schedule.CollectionPoints != null && schedule.CollectionPoints.Any())
+                                            {
+                                                var total = schedule.CollectionPoints.Count();
+                                                var completed = schedule.CollectionPoints.Count(cp => cp.IsCollected);
+                                                <div>
+                                                    <span class="badge bg-info">@total bins</span>
+                                                </div>
+                                                <small class="text-muted">@completed collected</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">No bins</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (schedule.CollectionPoints != null && schedule.CollectionPoints.Any())
+                                            {
+                                                var total = schedule.CollectionPoints.Count();
+                                                var completed = schedule.CollectionPoints.Count(cp => cp.IsCollected);
+                                                var progress = total > 0 ? (completed * 100 / total) : 0;
+                                                <div class="progress" style="width: 80px; height: 20px;">
+                                                    <div class="progress-bar bg-@(progress == 100 ? "success" : progress > 0 ? "warning" : "secondary")"
+                                                         style="width: @progress%"></div>
+                                                </div>
+                                                <small class="text-muted">@progress%</small>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">N/A</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (schedule.ActualStartTime.HasValue && schedule.ActualEndTime.HasValue)
+                                            {
+                                                var duration = schedule.ActualEndTime.Value - schedule.ActualStartTime.Value;
+                                                <span class="text-success">
+                                                    @duration.Hours h @duration.Minutes m
+                                                </span>
+                                            }
+                                            else if (schedule.ActualStartTime.HasValue)
+                                            {
+                                                var elapsed = DateTime.Now - schedule.ActualStartTime.Value;
+                                                <span class="text-warning">
+                                                    @elapsed.Hours h @elapsed.Minutes m
+                                                    <small class="d-block">ongoing</small>
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                var planned = schedule.ScheduleEndTime - schedule.ScheduleStartTime;
+                                                <span class="text-muted">
+                                                    @planned.Hours h @planned.Minutes m
+                                                    <small class="d-block">planned</small>
+                                                </span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                @schedule.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                                            </small>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (!Model.Any())
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No schedules found</h5>
+                            <p class="text-muted">No schedules have been created yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Filter functionality - only triggered by Search button
+            function filterSchedules() {
+                var truckFilter = $('#truckFilter').val();
+                var collectorFilter = $('#collectorFilter').val();
+
+                var visibleCount = 0;
+
+                console.log('Applying filters:', {
+                    truck: truckFilter,
+                    collector: collectorFilter
+                });
+
+                $('#schedulesTable tbody tr').each(function() {
+                    var row = $(this);
+                    var show = true;
+
+                    // Filter by truck
+                    if (truckFilter && row.data('truck-id') != truckFilter) {
+                        show = false;
+                    }
+
+                    // Filter by collector
+                    if (collectorFilter && row.data('collector-id') != collectorFilter) {
+                        show = false;
+                    }
+
+                    if (show) {
+                        row.show();
+                        visibleCount++;
+                    } else {
+                        row.hide();
+                    }
+                });
+
+                // Update count
+                $('#scheduleCount').text(visibleCount + ' schedules');
+
+                // Show feedback message
+                if (truckFilter || collectorFilter) {
+                    var filterMessage = 'Filtered by: ';
+                    var filters = [];
+
+                    if (truckFilter) {
+                        var truckText = $('#truckFilter option:selected').text();
+                        filters.push('Truck: ' + truckText);
+                    }
+
+                    if (collectorFilter) {
+                        var collectorText = $('#collectorFilter option:selected').text();
+                        filters.push('Collector: ' + collectorText);
+                    }
+
+                    filterMessage += filters.join(', ');
+
+                    // Show temporary success message
+                    showFilterMessage(filterMessage, 'success');
+                } else {
+                    showFilterMessage('Showing all schedules', 'info');
+                }
+            }
+
+            // Show filter feedback message
+            function showFilterMessage(message, type) {
+                // Remove existing filter messages
+                $('.filter-message').remove();
+
+                // Add new message
+                var alertClass = type === 'success' ? 'alert-success' : 'alert-info';
+                var icon = type === 'success' ? 'fa-check' : 'fa-info-circle';
+
+                var messageHtml = `
+                    <div class="alert ${alertClass} alert-dismissible fade show filter-message">
+                        <i class="fas ${icon}"></i> ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+                $('.card-body').prepend(messageHtml);
+
+                // Auto-hide after 3 seconds
+                setTimeout(function() {
+                    $('.filter-message').fadeOut();
+                }, 3000);
+            }
+
+            // Search button click event
+            $('#searchFilters').click(function() {
+                console.log('Search button clicked');
+                $(this).html('<i class="fas fa-spinner fa-spin"></i> Searching...');
+
+                // Add small delay for better UX
+                setTimeout(function() {
+                    filterSchedules();
+                    $('#searchFilters').html('<i class="fas fa-search"></i> Search');
+                }, 300);
+            });
+
+            // Clear filters button
+            $('#clearFilters').click(function() {
+                console.log('Clear filters clicked');
+                $('#truckFilter, #collectorFilter').val('');
+
+                // Show all rows
+                $('#schedulesTable tbody tr').show();
+
+                // Update count to show all schedules
+                var totalSchedules = $('#schedulesTable tbody tr').length;
+                $('#scheduleCount').text(totalSchedules + ' schedules');
+
+                // Show feedback message
+                showFilterMessage('All filters cleared', 'info');
+            });
+
+            // Allow Enter key to trigger search
+            $('#truckFilter, #collectorFilter').keypress(function(e) {
+                if (e.which == 13) { // Enter key
+                    $('#searchFilters').click();
+                }
+            });
+
+            // Initialize tooltips for admin notes
+            $('[title]').tooltip();
+
+            // Auto-refresh page every 5 minutes to show updated schedules
+            setTimeout(function() {
+                location.reload();
+            }, 300000); // 5 minutes
+
+            console.log('MySchedule page initialized');
+            console.log('Total schedules loaded:', $('#schedulesTable tbody tr').length);
+        });
+    </script>
+}

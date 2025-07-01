@@ -8,10 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace AspnetCoreMvcFull.Controllers
 {
-  [Authorize(Roles = "Admin")]
   public class ScheduleController : Controller
   {
     private readonly KUTIPDbContext _context;
@@ -21,7 +21,237 @@ namespace AspnetCoreMvcFull.Controllers
       _context = context;
     }
 
+    // GET: Schedule/MySchedule - For drivers to view their schedules
+    [Authorize(Roles = "Driver")]
+    public async Task<IActionResult> MySchedule()
+    {
+      try
+      {
+        // Try multiple ways to get current user ID
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+                     User.FindFirst("sub")?.Value ??
+                     User.FindFirst("id")?.Value ??
+                     User.Identity?.Name;
+
+        Console.WriteLine($"User claims debug:");
+        foreach (var claim in User.Claims)
+        {
+          Console.WriteLine($"  {claim.Type}: {claim.Value}");
+        }
+
+        int currentUserId = 0;
+
+        // Try to parse the user ID
+        if (!string.IsNullOrEmpty(userIdClaim))
+        {
+          if (!int.TryParse(userIdClaim, out currentUserId))
+          {
+            // If parsing fails, try to find user by email or username
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.Identity?.Name;
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+              var userByEmail = await _context.Users.FirstOrDefaultAsync(u => u.Email == userEmail);
+              if (userByEmail != null)
+              {
+                currentUserId = userByEmail.Id;
+                Console.WriteLine($"Found user by email: {userEmail}, ID: {currentUserId}");
+              }
+            }
+          }
+          else
+          {
+            Console.WriteLine($"Successfully parsed user ID: {currentUserId}");
+          }
+        }
+
+        if (currentUserId == 0)
+        {
+          Console.WriteLine("Failed to identify user, trying alternative approach...");
+          // Last resort - get user by identity name
+          var identityName = User.Identity?.Name;
+          if (!string.IsNullOrEmpty(identityName))
+          {
+            var userByName = await _context.Users.FirstOrDefaultAsync(u => u.Email == identityName || u.FirstName + " " + u.LastName == identityName);
+            if (userByName != null)
+            {
+              currentUserId = userByName.Id;
+              Console.WriteLine($"Found user by identity name: {identityName}, ID: {currentUserId}");
+            }
+          }
+        }
+
+        if (currentUserId == 0)
+        {
+          ViewBag.ErrorMessage = $"Unable to identify current user. Identity: {User.Identity?.Name}, Claims: {User.Claims.Count()}";
+          return View(new List<Schedule>());
+        }
+
+        // Get current user details
+        var currentUser = await _context.Users.FindAsync(currentUserId);
+        if (currentUser == null)
+        {
+          ViewBag.ErrorMessage = "User account not found. Please contact your administrator.";
+          return View(new List<Schedule>());
+        }
+
+        if (currentUser.Role != "Driver")
+        {
+          ViewBag.AccessDenied = "Access denied. Driver role required to view this page.";
+          return View(new List<Schedule>());
+        }
+
+        Console.WriteLine($"Loading schedules for driver: {currentUser.FirstName} {currentUser.LastName} (ID: {currentUserId})");
+
+        // Get ALL schedules with full details (same as admin view)
+        var allSchedules = await _context.Schedules
+            .Include(s => s.Collector)
+            .Include(s => s.Truck)
+            .ThenInclude(t => t.Driver)
+            .Include(s => s.Route)
+            .Include(s => s.CollectionPoints)
+            .ThenInclude(cp => cp.Bin)
+            .ThenInclude(b => b.Client)
+            .OrderByDescending(s => s.ScheduleStartTime)
+            .ToListAsync();
+
+        Console.WriteLine($"Total schedules found: {allSchedules.Count}");
+
+        // Get all trucks for filtering
+        var allTrucks = await _context.Trucks
+            .Include(t => t.Driver)
+            .OrderBy(t => t.LicensePlate)
+            .ToListAsync();
+
+        Console.WriteLine($"Total trucks found: {allTrucks.Count}");
+
+        // Get all collectors for filtering (both Collector and Driver roles)
+        var allCollectors = await _context.Users
+            .Where(u => u.Role == "Collector" || u.Role == "Driver")
+            .OrderBy(u => u.FirstName)
+            .ToListAsync();
+
+        Console.WriteLine($"Total collectors found: {allCollectors.Count}");
+
+        // Pass data to view
+        ViewBag.CurrentUser = currentUser;
+        ViewBag.AllTrucks = allTrucks;
+        ViewBag.AllCollectors = allCollectors;
+
+        return View(allSchedules);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error in MySchedule: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        ViewBag.ErrorMessage = $"An error occurred while loading schedules: {ex.Message}";
+        return View(new List<Schedule>());
+      }
+    }
+
+    // GET: Schedule/MyScheduleDetails/5 - For drivers to view specific schedule details
+    [Authorize(Roles = "Driver")]
+    public async Task<IActionResult> MyScheduleDetails(int? id)
+    {
+      if (id == null)
+      {
+        TempData["Error"] = "Schedule ID is required.";
+        return RedirectToAction("MySchedule");
+      }
+
+      try
+      {
+        // Get current user ID
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out int currentUserId))
+        {
+          TempData["Error"] = "Unable to identify current user. Please log in again.";
+          return RedirectToAction("MySchedule");
+        }
+
+        var schedule = await _context.Schedules
+            .Include(s => s.Collector)
+            .Include(s => s.Truck)
+            .Include(s => s.Route)
+            .Include(s => s.CollectionPoints)
+            .ThenInclude(cp => cp.Bin)
+            .ThenInclude(b => b.Client)
+            .FirstOrDefaultAsync(m => m.Id == id && m.CollectorId == currentUserId);
+
+        if (schedule == null)
+        {
+          TempData["Error"] = "Schedule not found or you don't have permission to view it.";
+          return RedirectToAction("MySchedule");
+        }
+
+        return View(schedule);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error in MyScheduleDetails: {ex.Message}");
+        TempData["Error"] = "An error occurred while loading the schedule details.";
+        return RedirectToAction("MySchedule");
+      }
+    }
+
+    // POST: Schedule/UpdateStatus - For drivers to update schedule status
+    [HttpPost]
+    [Authorize(Roles = "Driver")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateStatus(int scheduleId, string newStatus)
+    {
+      try
+      {
+        // Get current user ID
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out int currentUserId))
+        {
+          return Json(new { success = false, message = "Unable to identify current user." });
+        }
+
+        var schedule = await _context.Schedules
+            .FirstOrDefaultAsync(s => s.Id == scheduleId && s.CollectorId == currentUserId);
+
+        if (schedule == null)
+        {
+          return Json(new { success = false, message = "Schedule not found or access denied." });
+        }
+
+        // Update status and actual times
+        schedule.Status = newStatus;
+        schedule.UpdatedAt = DateTime.Now;
+
+        if (newStatus == "In Progress" && !schedule.ActualStartTime.HasValue)
+        {
+          schedule.ActualStartTime = DateTime.Now;
+        }
+        else if (newStatus == "Completed" && !schedule.ActualEndTime.HasValue)
+        {
+          schedule.ActualEndTime = DateTime.Now;
+          if (!schedule.ActualStartTime.HasValue)
+          {
+            schedule.ActualStartTime = schedule.ScheduleStartTime;
+          }
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Json(new
+        {
+          success = true,
+          message = $"Schedule status updated to {newStatus}",
+          actualStartTime = schedule.ActualStartTime?.ToString("dd/MM/yyyy HH:mm"),
+          actualEndTime = schedule.ActualEndTime?.ToString("dd/MM/yyyy HH:mm")
+        });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error updating schedule status: {ex.Message}");
+        return Json(new { success = false, message = "An error occurred while updating the schedule." });
+      }
+    }
+
     // GET: Schedule
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Index()
     {
       var schedules = await _context.Schedules
@@ -37,6 +267,7 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // GET: Schedule/Details/5
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Details(int? id)
     {
       if (id == null)
@@ -63,6 +294,7 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // GET: Schedule/Create
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Create()
     {
       try
@@ -82,15 +314,22 @@ namespace AspnetCoreMvcFull.Controllers
     {
       try
       {
-        // Get drivers who have trucks assigned to them and trucks are available
-        var driversWithTrucks = await _context.Trucks
-            .Include(t => t.Driver)
-            .Where(t => t.Status == "Available" && t.Driver != null && t.Driver.Role == "Driver")
-            .Select(t => new { Driver = t.Driver, Truck = t })
-            .OrderBy(dt => dt.Driver.FirstName)
+        // Get all collectors (users with role "Collector" only)
+        var collectors = await _context.Users
+            .Where(u => u.Role == "Collector")
+            .OrderBy(u => u.FirstName)
             .ToListAsync();
 
-        ViewBag.DriversWithTrucks = driversWithTrucks;
+        ViewBag.Collectors = collectors;
+
+        // Get all available trucks
+        var availableTrucks = await _context.Trucks
+            .Include(t => t.Driver)
+            .Where(t => t.Status == "Available")
+            .OrderBy(t => t.LicensePlate)
+            .ToListAsync();
+
+        ViewBag.AvailableTrucks = availableTrucks;
 
         // Get routes from Route Management - include bin count for better display
         var allRoutes = await _context.RoutePlans
@@ -120,7 +359,8 @@ namespace AspnetCoreMvcFull.Controllers
         Console.WriteLine($"Total routes: {allRoutes.Count}");
         Console.WriteLine($"Available routes: {availableRoutes.Count}");
         Console.WriteLine($"Scheduled routes: {scheduledRoutes.Count}");
-        Console.WriteLine($"Drivers with trucks: {driversWithTrucks.Count()}");
+        Console.WriteLine($"Collectors: {collectors.Count}");
+        Console.WriteLine($"Available trucks: {availableTrucks.Count}");
       }
       catch (Exception ex)
       {
@@ -130,18 +370,21 @@ namespace AspnetCoreMvcFull.Controllers
         // Set empty lists to prevent null reference errors
         ViewBag.Routes = new List<RoutePlan>();
         ViewBag.ScheduledRoutes = new List<RoutePlan>();
-        ViewBag.DriversWithTrucks = new List<object>();
+        ViewBag.Collectors = new List<User>();
+        ViewBag.AvailableTrucks = new List<Truck>();
       }
     }
 
     // POST: Schedule/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("CollectorId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes")] Schedule schedule)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([Bind("CollectorId,TruckId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes")] Schedule schedule)
     {
       // Log the incoming data
       Console.WriteLine($"=== SCHEDULE CREATE DEBUG ===");
       Console.WriteLine($"CollectorId: {schedule.CollectorId}");
+      Console.WriteLine($"TruckId: {schedule.TruckId}");
       Console.WriteLine($"RouteId: {schedule.RouteId}");
       Console.WriteLine($"ScheduleStartTime: {schedule.ScheduleStartTime}");
       Console.WriteLine($"ScheduleEndTime: {schedule.ScheduleEndTime}");
@@ -160,9 +403,9 @@ namespace AspnetCoreMvcFull.Controllers
       ModelState.Remove("CollectionPoints");
       ModelState.Remove("RouteCenterLatitude");
       ModelState.Remove("RouteCenterLongitude");
-      ModelState.Remove("TruckId"); // Remove TruckId validation since it's auto-assigned
-      ModelState.Remove("DayOfWeek"); // Remove DayOfWeek validation since it's auto-generated
-      ModelState.Remove("MissedPickups"); // Remove MissedPickups validation
+      ModelState.Remove("DayOfWeek");
+      ModelState.Remove("MissedPickups");
+      ModelState.Remove("AdminNotes");
 
       // Log ModelState errors
       if (!ModelState.IsValid)
@@ -183,41 +426,24 @@ namespace AspnetCoreMvcFull.Controllers
         {
           Console.WriteLine("ModelState is valid, proceeding with creation...");
 
-          // Get the driver and their assigned truck
-          var driverTruck = await _context.Trucks
-              .Include(t => t.Driver)
-              .FirstOrDefaultAsync(t => t.DriverId == schedule.CollectorId && t.Status == "Available");
-
-          Console.WriteLine($"Driver truck found: {driverTruck != null}");
-          if (driverTruck != null)
-          {
-            Console.WriteLine($"Driver: {driverTruck.Driver?.FirstName} {driverTruck.Driver?.LastName}");
-            Console.WriteLine($"Truck: {driverTruck.LicensePlate} ({driverTruck.Model})");
-          }
-
-          if (driverTruck == null)
-          {
-            Console.WriteLine("ERROR: Driver truck not found");
-            ModelState.AddModelError("CollectorId", "Selected driver does not have an available truck assigned.");
-          }
-          else
-          {
-            // Auto-assign the truck based on the selected driver
-            schedule.TruckId = driverTruck.Id;
-            Console.WriteLine($"Assigned TruckId: {schedule.TruckId}");
-          }
-
           // Validate that the selected entities exist
-          var collectorExists = await _context.Users.AnyAsync(u => u.Id == schedule.CollectorId && u.Role == "Driver");
+          var collectorExists = await _context.Users.AnyAsync(u => u.Id == schedule.CollectorId && u.Role == "Collector");
+          var truckExists = await _context.Trucks.AnyAsync(t => t.Id == schedule.TruckId && t.Status == "Available");
           var routeExists = await _context.RoutePlans.AnyAsync(r => r.Id == schedule.RouteId);
 
           Console.WriteLine($"Collector exists: {collectorExists}");
+          Console.WriteLine($"Truck exists: {truckExists}");
           Console.WriteLine($"Route exists: {routeExists}");
 
           if (!collectorExists)
           {
             Console.WriteLine("ERROR: Collector does not exist");
-            ModelState.AddModelError("CollectorId", "Selected driver does not exist.");
+            ModelState.AddModelError("CollectorId", "Selected collector does not exist or is not a valid collector.");
+          }
+          if (!truckExists)
+          {
+            Console.WriteLine("ERROR: Truck does not exist or is not available");
+            ModelState.AddModelError("TruckId", "Selected truck does not exist or is not available.");
           }
           if (!routeExists)
           {
@@ -225,16 +451,31 @@ namespace AspnetCoreMvcFull.Controllers
             ModelState.AddModelError("RouteId", "Selected route does not exist.");
           }
 
+          // Check if truck is already assigned to another active schedule
+          var truckInUse = await _context.Schedules
+              .AnyAsync(s => s.TruckId == schedule.TruckId &&
+                       s.Status != "Completed" && s.Status != "Cancelled" &&
+                       s.ScheduleStartTime.Date == schedule.ScheduleStartTime.Date);
+
+          if (truckInUse)
+          {
+            Console.WriteLine("ERROR: Truck is already scheduled");
+            ModelState.AddModelError("TruckId", "This truck is already scheduled for another route on the same date.");
+          }
+
           if (ModelState.IsValid)
           {
             Console.WriteLine("All validations passed, creating schedule...");
+
+            // Get truck and collector details for success message
+            var truck = await _context.Trucks.Include(t => t.Driver).FirstOrDefaultAsync(t => t.Id == schedule.TruckId);
+            var collector = await _context.Users.FirstOrDefaultAsync(u => u.Id == schedule.CollectorId);
 
             // Set automatic fields
             schedule.CreatedAt = DateTime.Now;
             schedule.UpdatedAt = DateTime.Now;
             schedule.ActualStartTime = null;
             schedule.ActualEndTime = null;
-            // Auto-generate DayOfWeek from ScheduleStartTime
             schedule.DayOfWeek = schedule.ScheduleStartTime.DayOfWeek.ToString();
 
             Console.WriteLine($"DayOfWeek set to: {schedule.DayOfWeek}");
@@ -280,7 +521,6 @@ namespace AspnetCoreMvcFull.Controllers
                 OrderInSchedule = routeBin.OrderInRoute,
                 IsCollected = false,
                 CollectedAt = null,
-                // Copy coordinates from bin
                 Latitude = routeBin.Bin.Latitude,
                 Longitude = routeBin.Bin.Longitude
               };
@@ -295,7 +535,7 @@ namespace AspnetCoreMvcFull.Controllers
               Console.WriteLine("Collection points saved successfully");
             }
 
-            TempData["Success"] = $"Schedule created successfully! Driver: {driverTruck.Driver.FirstName} {driverTruck.Driver.LastName}, Truck: {driverTruck.LicensePlate}, Route with {collectionPoints.Count} collection points.";
+            TempData["Success"] = $"Schedule created successfully! Collector: {collector?.FirstName} {collector?.LastName}, Truck: {truck?.LicensePlate} ({truck?.Model}), Route with {collectionPoints.Count} collection points.";
             Console.WriteLine("=== SCHEDULE CREATION SUCCESSFUL ===");
             return RedirectToAction(nameof(Index));
           }
@@ -328,6 +568,7 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // GET: Schedule/Edit/5
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Edit(int? id)
     {
       if (id == null)
@@ -355,6 +596,7 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: Schedule/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Edit(int id, [Bind("Id,TruckId,CollectorId,RouteId,ScheduleStartTime,ScheduleEndTime,Status,AdminNotes,CreatedAt,ActualStartTime,ActualEndTime")] Schedule schedule)
     {
       if (id != schedule.Id)
@@ -372,6 +614,7 @@ namespace AspnetCoreMvcFull.Controllers
       ModelState.Remove("RouteCenterLongitude");
       ModelState.Remove("DayOfWeek");
       ModelState.Remove("MissedPickups");
+      ModelState.Remove("AdminNotes"); // Remove AdminNotes validation since it's optional
 
       if (ModelState.IsValid)
       {
@@ -482,6 +725,7 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // GET: Schedule/Delete/5
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int? id)
     {
       if (id == null)
@@ -508,6 +752,7 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: Schedule/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
       var schedule = await _context.Schedules
@@ -532,6 +777,7 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // AJAX method to get route bins - ADDED
+    [Authorize(Roles = "Admin,Driver")]
     [HttpGet]
     public async Task<IActionResult> GetRouteBins(Guid routeId)
     {
@@ -566,6 +812,7 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // Add method to check if route is already scheduled - ADDED
+    [Authorize(Roles = "Admin,Driver")]
     [HttpGet]
     public async Task<IActionResult> CheckRouteAvailability(Guid routeId)
     {
@@ -599,6 +846,7 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // AJAX method to get route information - UPDATED
+    [Authorize(Roles = "Admin,Driver")]
     [HttpGet]
     public async Task<IActionResult> GetRouteInfo(Guid routeId)
     {

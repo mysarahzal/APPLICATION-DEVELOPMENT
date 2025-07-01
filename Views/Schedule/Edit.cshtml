@@ -1,258 +1,576 @@
 @model AspnetCoreMvcFull.Models.Schedule
 
 @{
-	ViewData["Title"] = "Edit Schedule";
+    ViewData["Title"] = "Edit Schedule";
 }
 
 <div class="container-fluid">
-	<div class="row justify-content-center">
-		<div class="col-md-8">
-			<div class="card">
-				<div class="card-header">
-					<h4 class="card-title mb-0">
-						<i class="fas fa-calendar-edit"></i> Edit Schedule
-					</h4>
-				</div>
-				<div class="card-body">
-					@if (ViewBag.ErrorMessage != null)
-					{
-						<div class="alert alert-danger">
-							@ViewBag.ErrorMessage
-						</div>
-					}
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-calendar-edit"></i> Edit Schedule
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.ErrorMessage != null)
+                    {
+                        <div class="alert alert-danger">
+                            @ViewBag.ErrorMessage
+                        </div>
+                    }
 
-					<!-- Debug Info -->
-					<div class="alert alert-info">
-						<strong>Debug Info:</strong><br>
-						Schedule ID: @Model.Id<br>
-						Current RouteId: @Model.RouteId<br>
-						Trucks loaded: @((ViewBag.Trucks as List<AspnetCoreMvcFull.Models.Truck>)?.Count ?? 0)<br>
-						Collectors loaded: @((ViewBag.Collectors as List<AspnetCoreMvcFull.Models.User>)?.Count ?? 0)<br>
-						Routes loaded: @((ViewBag.Routes as List<AspnetCoreMvcFull.Models.RoutePlan>)?.Count ?? 0)
-					</div>
+                    <!-- Add this section to show all validation errors -->
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <h6>Please fix the following errors:</h6>
+                            <ul class="mb-0">
+                                @foreach (var modelError in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@modelError.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
 
-					<form asp-action="Edit" method="post">
-						<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <!-- Current Schedule Info -->
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Current Schedule Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Schedule ID:</strong> @Model.Id<br>
+                                <strong>Status:</strong> <span class="badge bg-@(Model.Status == "Completed" ? "success" : Model.Status == "Cancelled" ? "danger" : Model.Status == "In Progress" ? "warning" : "primary")">@Model.Status</span><br>
+                                <strong>Created:</strong> @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Current Driver:</strong> @Model.Collector?.FirstName @Model.Collector?.LastName<br>
+                                <strong>Current Truck:</strong> @Model.Truck?.LicensePlate (@Model.Truck?.Model)<br>
+                                <strong>Current Route:</strong> @Model.Route?.Name
+                            </div>
+                        </div>
+                    </div>
 
-						<input type="hidden" asp-for="Id" />
-						<input type="hidden" asp-for="CreatedAt" />
+                    <form asp-action="Edit" method="post" id="scheduleEditForm">
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
 
-						<div class="row">
-							<div class="col-md-6">
-								<!-- Truck Dropdown -->
-								<div class="form-group mb-3">
-									<label asp-for="TruckId" class="form-label">
-										<i class="fas fa-truck"></i> Select Truck
-									</label>
-									<select asp-for="TruckId" class="form-select" required>
-										<option value="">-- Select Truck --</option>
-										@if (ViewBag.Trucks != null)
-										{
-											@foreach (var truck in ViewBag.Trucks)
-											{
-												<option value="@truck.Id" selected="@(truck.Id == Model.TruckId)">
-													@truck.LicensePlate - @truck.Model (@truck.Status)
-												</option>
-											}
-										}
-									</select>
-									<span asp-validation-for="TruckId" class="text-danger"></span>
-								</div>
-							</div>
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="CreatedAt" />
 
-							<div class="col-md-6">
-								<!-- Collector Dropdown -->
-								<div class="form-group mb-3">
-									<label asp-for="CollectorId" class="form-label">
-										<i class="fas fa-user"></i> Select Collector
-									</label>
-									<select asp-for="CollectorId" class="form-select" required>
-										<option value="">-- Select Collector --</option>
-										@if (ViewBag.Collectors != null)
-										{
-											@foreach (var collector in ViewBag.Collectors)
-											{
-												<option value="@collector.Id" selected="@(collector.Id == Model.CollectorId)">
-													@collector.FirstName @collector.LastName (@collector.Role)
-												</option>
-											}
-										}
-									</select>
-									<span asp-validation-for="CollectorId" class="text-danger"></span>
-								</div>
-							</div>
-						</div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Route Dropdown with availability status -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="RouteId" class="form-label">
+                                        <i class="fas fa-route"></i> Select Route
+                                    </label>
+                                    <select asp-for="RouteId" class="form-select" required id="routeSelect">
+                                        <option value="">-- Select Route --</option>
+                                        @if (ViewBag.Routes != null)
+                                        {
+                                            <optgroup label="✅ Available Routes">
+                                                @foreach (var route in ViewBag.Routes)
+                                                {
+                                                    <option value="@route.Id.ToString()" selected="@(route.Id == Model.RouteId)">
+                                                        @route.Name
+                                                        @if (!string.IsNullOrEmpty(route.Description))
+                                                        {
+                                                            <span>- @route.Description</span>
+                                                        }
+                                                        (@route.ExpectedDurationMinutes min, @route.RouteBins.Count bins)
+                                                    </option>
+                                                }
+                                            </optgroup>
+                                        }
+                                        @if (ViewBag.ScheduledRoutes != null && ((List<AspnetCoreMvcFull.Models.RoutePlan>)ViewBag.ScheduledRoutes).Any())
+                                        {
+                                            <optgroup label="⚠️ Already Scheduled Routes">
+                                                @foreach (var route in ViewBag.ScheduledRoutes)
+                                                {
+                                                    <option value="@route.Id.ToString()" class="text-warning" selected="@(route.Id == Model.RouteId)">
+                                                        @route.Name - ⚠️ ALREADY SCHEDULED
+                                                        (@route.ExpectedDurationMinutes min, @route.RouteBins.Count bins)
+                                                    </option>
+                                                }
+                                            </optgroup>
+                                        }
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Routes are loaded from Route Management.
+                                        <span class="text-success">Available routes are shown first.</span>
+                                        <span class="text-warning">Already scheduled routes are marked with warning.</span>
+                                    </div>
+                                    <span asp-validation-for="RouteId" class="text-danger"></span>
+                                </div>
 
-						<!-- Route Dropdown -->
-						<div class="form-group mb-3">
-							<label asp-for="RouteId" class="form-label">
-								<i class="fas fa-route"></i> Select Route
-							</label>
-							<select asp-for="RouteId" class="form-select" required>
-								<option value="">-- Select Route --</option>
-								@if (ViewBag.Routes != null)
-								{
-									@foreach (var route in ViewBag.Routes)
-									{
-										<option value="@route.Id.ToString()" selected="@(route.Id == Model.RouteId)">
-											@route.Name
-											@if (!string.IsNullOrEmpty(route.Description))
-											{
-												<span>- @route.Description</span>
-											}
-											(@route.ExpectedDurationMinutes min)
-										</option>
-									}
-								}
-							</select>
-							<span asp-validation-for="RouteId" class="text-danger"></span>
-						</div>
+                                <!-- Route Warning Alert (hidden by default) -->
+                                <div id="routeWarningAlert" class="alert alert-warning" style="display: none;">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Route Already Scheduled!</strong>
+                                    <div id="routeWarningDetails"></div>
+                                    <small>You can still proceed, but make sure this doesn't conflict with the existing schedule.</small>
+                                </div>
 
-						<div class="row">
-							<div class="col-md-6">
-								<!-- Start Time -->
-								<div class="form-group mb-3">
-									<label asp-for="ScheduleStartTime" class="form-label">
-										<i class="fas fa-clock"></i> Start Time
-									</label>
-									<input asp-for="ScheduleStartTime" class="form-control" type="datetime-local" required />
-									<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
-								</div>
-							</div>
+                                <!-- Route Info Display (shown when route is selected) -->
+                                <div id="routeInfoAlert" class="alert alert-info" style="display: none;">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Route Information:</strong>
+                                    <div id="routeInfoDetails"></div>
+                                </div>
+                            </div>
 
-							<div class="col-md-6">
-								<!-- End Time -->
-								<div class="form-group mb-3">
-									<label asp-for="ScheduleEndTime" class="form-label">
-										<i class="fas fa-clock"></i> End Time
-									</label>
-									<input asp-for="ScheduleEndTime" class="form-control" type="datetime-local" required />
-									<span asp-validation-for="ScheduleEndTime" class="text-danger"></span>
-								</div>
-							</div>
-						</div>
+                            <div class="col-md-6">
+                                <!-- Driver Dropdown (replaces separate truck and collector selection) -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="CollectorId" class="form-label">
+                                        <i class="fas fa-user"></i> Select Driver
+                                    </label>
+                                    <select asp-for="CollectorId" class="form-select" required id="driverSelect">
+                                        <option value="">-- Select Driver --</option>
+                                        @if (ViewBag.DriversWithTrucks != null)
+                                        {
+                                            @foreach (var driverTruck in ViewBag.DriversWithTrucks)
+                                            {
+                                                <option value="@driverTruck.Driver.Id" data-truck-id="@driverTruck.Truck.Id" selected="@(driverTruck.Driver.Id == Model.CollectorId)">
+                                                    @driverTruck.Driver.FirstName @driverTruck.Driver.LastName
+                                                    - Truck: @driverTruck.Truck.LicensePlate (@driverTruck.Truck.Model)
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Each driver is assigned to a specific truck.
+                                    </div>
+                                    <span asp-validation-for="CollectorId" class="text-danger"></span>
+                                </div>
 
-						<!-- Status Dropdown -->
-						<div class="form-group mb-3">
-							<label asp-for="Status" class="form-label">
-								<i class="fas fa-flag"></i> Status
-							</label>
-							<select asp-for="Status" class="form-select" required>
-								<option value="">-- Select Status --</option>
-								<option value="Scheduled" selected="@(Model.Status == "Scheduled")">Scheduled</option>
-								<option value="In Progress" selected="@(Model.Status == "In Progress")">In Progress</option>
-								<option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
-								<option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
-							</select>
-							<span asp-validation-for="Status" class="text-danger"></span>
-						</div>
+                                <!-- Hidden Truck ID field (auto-populated based on driver selection) -->
+                                <input asp-for="TruckId" type="hidden" id="hiddenTruckId" />
 
-						<!-- Notes -->
-						<div class="form-group mb-4">
-							<label asp-for="AdminNotes" class="form-label">
-								<i class="fas fa-sticky-note"></i> Admin Notes
-							</label>
-							<textarea asp-for="AdminNotes" class="form-control" rows="3" placeholder="Optional notes about this schedule..."></textarea>
-							<span asp-validation-for="AdminNotes" class="text-danger"></span>
-						</div>
+                                <!-- Display selected truck info -->
+                                <div id="selectedTruckInfo" class="alert alert-info" style="display: none;">
+                                    <i class="fas fa-truck"></i>
+                                    <strong>Selected Truck:</strong> <span id="truckDetails"></span>
+                                </div>
+                            </div>
+                        </div>
 
-						<!-- Submit Buttons -->
-						<div class="form-group d-flex gap-2">
-							<button type="submit" class="btn btn-primary">
-								<i class="fas fa-save"></i> Update Schedule
-							</button>
-							<a asp-action="Index" class="btn btn-secondary">
-								<i class="fas fa-arrow-left"></i> Back to List
-							</a>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Start Time -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="ScheduleStartTime" class="form-label">
+                                        <i class="fas fa-clock"></i> Start Time
+                                    </label>
+                                    <input asp-for="ScheduleStartTime" class="form-control" type="datetime-local" required />
+                                    <span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <!-- End Time -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="ScheduleEndTime" class="form-label">
+                                        <i class="fas fa-clock"></i> End Time
+                                    </label>
+                                    <input asp-for="ScheduleEndTime" class="form-control" type="datetime-local" required />
+                                    <span asp-validation-for="ScheduleEndTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status and Notes -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Status" class="form-label">
+                                        <i class="fas fa-flag"></i> Status
+                                    </label>
+                                    <select asp-for="Status" class="form-select" required>
+                                        <option value="Scheduled" selected="@(Model.Status == "Scheduled")">Scheduled</option>
+                                        <option value="In Progress" selected="@(Model.Status == "In Progress")">In Progress</option>
+                                        <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+                                        <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
+                                        <option value="Missed" selected="@(Model.Status == "Missed")">Missed</option>
+                                    </select>
+                                    <span asp-validation-for="Status" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="AdminNotes" class="form-label">
+                                        <i class="fas fa-sticky-note"></i> Admin Notes
+                                    </label>
+                                    <textarea asp-for="AdminNotes" class="form-control" rows="3" placeholder="Required..."></textarea>
+                                    <span asp-validation-for="AdminNotes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actual Times (for completed/in-progress schedules) -->
+                        @if (Model.Status == "In Progress" || Model.Status == "Completed")
+                        {
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="ActualStartTime" class="form-label">
+                                            <i class="fas fa-play"></i> Actual Start Time
+                                        </label>
+                                        <input asp-for="ActualStartTime" class="form-control" type="datetime-local" />
+                                        <span asp-validation-for="ActualStartTime" class="text-danger"></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="ActualEndTime" class="form-label">
+                                            <i class="fas fa-stop"></i> Actual End Time
+                                        </label>
+                                        <input asp-for="ActualEndTime" class="form-control" type="datetime-local" />
+                                        <span asp-validation-for="ActualEndTime" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Route Bins Display (shown when route is selected) -->
+                        <div id="routeBinsSection" class="mb-4" style="display: none;">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-trash-alt"></i> Bins in Selected Route
+                                        <span id="binsCount" class="badge bg-info ms-2"></span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="routeBinsList" class="table-responsive">
+                                        <!-- Bins will be loaded here via AJAX -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Collection Points Status (if schedule has collection points) -->
+                        @if (Model.CollectionPoints != null && Model.CollectionPoints.Any())
+                        {
+                            <div class="mb-4">
+                                <div class="card bg-light">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-list-check"></i> Collection Points Status
+                                            <span class="badge bg-info ms-2">@Model.CollectionPoints.Count() points</span>
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="text-center">
+                                                    <div class="h4 text-success">@Model.CollectionPoints.Count(cp => cp.IsCollected)</div>
+                                                    <small class="text-muted">Collected</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="text-center">
+                                                    <div class="h4 text-warning">@Model.CollectionPoints.Count(cp => !cp.IsCollected)</div>
+                                                    <small class="text-muted">Pending</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="text-center">
+                                                    <div class="h4 text-info">@(Math.Round((double)Model.CollectionPoints.Count(cp => cp.IsCollected) / Model.CollectionPoints.Count() * 100, 1))%</div>
+                                                    <small class="text-muted">Progress</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="text-center">
+                                                    <div class="h4 text-primary">@Model.CollectionPoints.Count()</div>
+                                                    <small class="text-muted">Total</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Debug Information (remove this in production) -->
+                        <div class="alert alert-secondary">
+                            <strong>Debug Info:</strong>
+                            <div>Selected Route ID: <span id="debugRouteId">@Model.RouteId</span></div>
+                            <div>Selected Driver ID: <span id="debugDriverId">@Model.CollectorId</span></div>
+                            <div>Selected Truck ID: <span id="debugTruckId">@Model.TruckId</span></div>
+                            <div>Collection Points: @(Model.CollectionPoints?.Count() ?? 0)</div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="form-group d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-save"></i> Update Schedule
+                            </button>
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-info">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
-	@{
-		await Html.RenderPartialAsync("_ValidationScriptsPartial");
-	}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // Initialize with current values
+            var currentDriverId = '@Model.CollectorId';
+            var currentTruckId = '@Model.TruckId';
+            var currentRouteId = '@Model.RouteId';
+
+            // Set initial truck ID and show truck info if driver is selected
+            if (currentDriverId) {
+                var selectedOption = $('#driverSelect option:selected');
+                var truckId = selectedOption.data('truck-id');
+                if (truckId) {
+                    $('#hiddenTruckId').val(truckId);
+                    $('#truckDetails').text(selectedOption.text());
+                    $('#selectedTruckInfo').show();
+                }
+            }
+
+            // Load route bins if route is selected
+            if (currentRouteId) {
+                loadRouteBins(currentRouteId);
+            }
+
+            // Handle driver selection change
+            $('#driverSelect').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                var truckId = selectedOption.data('truck-id');
+                var driverName = selectedOption.text();
+                var driverId = $(this).val();
+
+                if (truckId && driverId) {
+                    // Set the hidden truck ID
+                    $('#hiddenTruckId').val(truckId);
+
+                    // Show truck info
+                    $('#truckDetails').text(driverName);
+                    $('#selectedTruckInfo').show();
+
+                    // Update debug info
+                    $('#debugDriverId').text(driverId);
+                    $('#debugTruckId').text(truckId);
+                } else {
+                    $('#hiddenTruckId').val('');
+                    $('#selectedTruckInfo').hide();
+                    $('#debugDriverId').text('None');
+                    $('#debugTruckId').text('None');
+                }
+            });
+
+            // Handle route selection change
+            $('#routeSelect').change(function() {
+                var routeId = $(this).val();
+                var selectedOption = $(this).find('option:selected');
+                var routeText = selectedOption.text();
+
+                // Update debug info
+                $('#debugRouteId').text(routeId || 'None');
+
+                if (routeId) {
+                    // Show route information
+                    var routeInfo = `
+                        <strong>Selected Route:</strong> ${routeText}<br>
+                        <small class="text-muted">Loading route details...</small>
+                    `;
+                    $('#routeInfoDetails').html(routeInfo);
+                    $('#routeInfoAlert').show();
+
+                    // Check if route is already scheduled (excluding current schedule)
+                    checkRouteAvailability(routeId, @Model.Id);
+
+                    // Load route bins
+                    loadRouteBins(routeId);
+                } else {
+                    $('#routeWarningAlert').hide();
+                    $('#routeInfoAlert').hide();
+                    $('#routeBinsSection').hide();
+                }
+            });
+
+            // Form submission with detailed logging
+            $('#scheduleEditForm').submit(function(e) {
+                console.log('Form submission started');
+
+                var routeId = $('#routeSelect').val();
+                var driverId = $('#driverSelect').val();
+                var truckId = $('#hiddenTruckId').val();
+                var startTime = $('#ScheduleStartTime').val();
+                var endTime = $('#ScheduleEndTime').val();
+                var status = $('#Status').val();
+
+                console.log('Form data:', {
+                    routeId: routeId,
+                    driverId: driverId,
+                    truckId: truckId,
+                    startTime: startTime,
+                    endTime: endTime,
+                    status: status
+                });
+
+                // Basic validation
+                if (!routeId) {
+                    alert('Please select a route');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!driverId) {
+                    alert('Please select a driver');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!truckId) {
+                    alert('Truck ID is missing. Please reselect the driver.');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!startTime || !endTime) {
+                    alert('Please fill in both start and end times');
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable submit button to prevent double submission
+                $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
+                console.log('Form validation passed, submitting...');
+                return true;
+            });
+
+            // Check if route is already scheduled (excluding current schedule)
+            function checkRouteAvailability(routeId, excludeScheduleId) {
+                $.get('@Url.Action("CheckRouteAvailability", "Schedule")', {
+                    routeId: routeId,
+                    excludeScheduleId: excludeScheduleId
+                })
+                    .done(function(data) {
+                        if (data.isScheduled) {
+                            var warningHtml = `
+                                <strong>Schedule #${data.scheduleId}</strong><br>
+                                <strong>Route:</strong> ${data.routeName}<br>
+                                <strong>Driver:</strong> ${data.collectorName}<br>
+                                <strong>Status:</strong> <span class="badge bg-warning">${data.status}</span><br>
+                                <strong>Start Time:</strong> ${data.startTime}
+                            `;
+                            $('#routeWarningDetails').html(warningHtml);
+                            $('#routeWarningAlert').show();
+                        } else {
+                            $('#routeWarningAlert').hide();
+                        }
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error checking route availability:', error);
+                        $('#routeWarningAlert').hide();
+                    });
+            }
+
+            // Load bins for selected route
+            function loadRouteBins(routeId) {
+                $('#routeBinsSection').show();
+                $('#routeBinsList').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading bins...</div>');
+
+                $.get('@Url.Action("GetRouteBins", "Schedule")', { routeId: routeId })
+                    .done(function(data) {
+                        console.log('Route bins loaded:', data);
+
+                        if (data.error) {
+                            $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + data.error + '</div>');
+                            return;
+                        }
+
+                        if (data.length === 0) {
+                            $('#routeBinsList').html('<div class="alert alert-info">No bins found in this route.</div>');
+                            $('#binsCount').text('0 bins');
+                            return;
+                        }
+
+                        var tableHtml = `
+                            <table class="table table-sm table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Order</th>
+                                        <th>Bin ID</th>
+                                        <th>Location</th>
+                                        <th>Zone</th>
+                                        <th>Fill Level</th>
+                                        <th>Client</th>
+                                        <th>Coordinates</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+
+                        data.forEach(function(bin) {
+                            var coordinates = '';
+                            if (bin.latitude && bin.longitude) {
+                                coordinates = `<small class="text-success">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    ${parseFloat(bin.latitude).toFixed(4)}, ${parseFloat(bin.longitude).toFixed(4)}
+                                </small>`;
+                            } else {
+                                coordinates = '<small class="text-warning"><i class="fas fa-exclamation-triangle"></i> No GPS</small>';
+                            }
+
+                            var fillLevelClass = bin.fillLevel > 80 ? 'bg-danger' :
+                                               bin.fillLevel > 60 ? 'bg-warning' : 'bg-success';
+
+                            tableHtml += `
+                                <tr>
+                                    <td><span class="badge bg-primary">${bin.orderInRoute}</span></td>
+                                    <td><strong>${bin.binPlateId}</strong></td>
+                                    <td>${bin.location}</td>
+                                    <td><span class="badge bg-info">${bin.zone}</span></td>
+                                    <td>
+                                        <div class="progress" style="width: 60px; height: 20px;">
+                                            <div class="progress-bar ${fillLevelClass}" style="width: ${bin.fillLevel}%"></div>
+                                        </div>
+                                        <small>${bin.fillLevel}%</small>
+                                    </td>
+                                    <td>${bin.clientName}</td>
+                                    <td>${coordinates}</td>
+                                </tr>
+                            `;
+                        });
+
+                        tableHtml += '</tbody></table>';
+                        $('#routeBinsList').html(tableHtml);
+                        $('#binsCount').text(data.length + ' bins');
+
+                        var binsWithGPS = data.filter(b => b.latitude && b.longitude).length;
+                        if (binsWithGPS < data.length) {
+                            $('#routeBinsList').append(
+                                `<div class="alert alert-warning mt-2">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Warning:</strong> ${data.length - binsWithGPS} bins are missing GPS coordinates.
+                                </div>`
+                            );
+                        }
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error loading route bins:', error);
+                        $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + error + '</div>');
+                    });
+            }
+        });
+    </script>
 }
-
-@* @model AspnetCoreMvcFull.Models.Schedule *@
-
-@* @{ *@
-@* 	ViewData["Title"] = "Edit Schedule"; *@
-@* } *@
-
-@* <h2>Edit Schedule</h2> *@
-
-@* <form asp-action="Edit" method="post"> *@
-@* 	<input type="hidden" asp-for="Id" /> *@
-
-@* 	<!-- Collector Dropdown --> *@
-@* 	<div class="form-group mb-3"> *@
-@* 		<label asp-for="CollectorId">Collector / Driver *</label> *@
-@* 		@{ *@
-@* 			var collectors = ViewBag.Collectors as List<User>; *@
-@* 		} *@
-@* 		<select asp-for="CollectorId" *@
-@* 				class="form-control" *@
-@* 				asp-items="@(new SelectList(collectors ?? new List<User>(), "Id", "FullName"))"> *@
-@* 			<option value="">-- Select Collector --</option> *@
-@* 		</select> *@
-@* 		<span asp-validation-for="CollectorId" class="text-danger"></span> *@
-@* 	</div> *@
-
-@* 	<!-- Route Dropdown --> *@
-@* 	<div class="form-group mb-3"> *@
-@* 		<label asp-for="RouteId">Route *</label> *@
-@* 		@{ *@
-@* 			var routes = ViewBag.Routes as List<Road>; *@
-@* 		} *@
-@* 		<select asp-for="RouteId" *@
-@* 				class="form-control" *@
-@* 				asp-items="@(new SelectList(routes ?? new List<Road>(), "Id", "Name"))"> *@
-@* 			<option value="">-- Select Route --</option> *@
-@* 		</select> *@
-@* 		<span asp-validation-for="RouteId" class="text-danger"></span> *@
-@* 	</div> *@
-
-@* 	<!-- Start Time --> *@
-@* 	<div class="form-group mb-3"> *@
-@* 		<label asp-for="ScheduleStartTime">Start Time *</label> *@
-@* 		<input asp-for="ScheduleStartTime" type="datetime-local" class="form-control" /> *@
-@* 		<span asp-validation-for="ScheduleStartTime" class="text-danger"></span> *@
-@* 	</div> *@
-
-@* 	<!-- End Time --> *@
-@* 	<div class="form-group mb-3"> *@
-@* 		<label asp-for="ScheduleEndTime">End Time</label> *@
-@* 		<input asp-for="ScheduleEndTime" type="datetime-local" class="form-control" /> *@
-@* 		<span asp-validation-for="ScheduleEndTime" class="text-danger"></span> *@
-@* 	</div> *@
-
-@* 	<!-- Status --> *@
-@* 	<div class="form-group mb-3"> *@
-@* 		<label asp-for="Status">Status</label> *@
-@* 		<select asp-for="Status" class="form-control"> *@
-@* 			<option value="Scheduled">Scheduled</option> *@
-@* 			<option value="In Progress">In Progress</option> *@
-@* 			<option value="Completed">Completed</option> *@
-@* 			<option value="Cancelled">Cancelled</option> *@
-@* 		</select> *@
-@* 		<span asp-validation-for="Status" class="text-danger"></span> *@
-@* 	</div> *@
-
-@* 	<!-- Admin Notes --> *@
-@* 	<div class="form-group mb-3"> *@
-@* 		<label asp-for="AdminNotes">Admin Notes</label> *@
-@* 		<textarea asp-for="AdminNotes" class="form-control"></textarea> *@
-@* 		<span asp-validation-for="AdminNotes" class="text-danger"></span> *@
-@* 	</div> *@
-
-@* 	<!-- Submit Button --> *@
-@* 	<div class="form-group mt-3"> *@
-@* 		<button type="submit" class="btn btn-primary">Update</button> *@
-@* 		<a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a> *@
-@* 	</div> *@
-@* </form> *@
