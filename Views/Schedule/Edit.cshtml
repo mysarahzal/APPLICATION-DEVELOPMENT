@@ -121,32 +121,60 @@
                             </div>
 
                             <div class="col-md-6">
-                                <!-- Driver Dropdown (replaces separate truck and collector selection) -->
+                                <!-- Collector Dropdown -->
                                 <div class="form-group mb-3">
                                     <label asp-for="CollectorId" class="form-label">
-                                        <i class="fas fa-user"></i> Select Driver
+                                        <i class="fas fa-user"></i> Select Collector
                                     </label>
-                                    <select asp-for="CollectorId" class="form-select" required id="driverSelect">
-                                        <option value="">-- Select Driver --</option>
-                                        @if (ViewBag.DriversWithTrucks != null)
+                                    <select asp-for="CollectorId" class="form-select" required id="collectorSelect">
+                                        <option value="">-- Select Collector --</option>
+                                        @if (ViewBag.Collectors != null)
                                         {
-                                            @foreach (var driverTruck in ViewBag.DriversWithTrucks)
+                                            @foreach (var collector in ViewBag.Collectors)
                                             {
-                                                <option value="@driverTruck.Driver.Id" data-truck-id="@driverTruck.Truck.Id" selected="@(driverTruck.Driver.Id == Model.CollectorId)">
-                                                    @driverTruck.Driver.FirstName @driverTruck.Driver.LastName
-                                                    - Truck: @driverTruck.Truck.LicensePlate (@driverTruck.Truck.Model)
+                                                <option value="@collector.Id">
+                                                    @collector.FirstName @collector.LastName (@collector.Email)
                                                 </option>
                                             }
                                         }
                                     </select>
                                     <div class="form-text">
-                                        <i class="fas fa-info-circle"></i> Each driver is assigned to a specific truck.
+                                        <i class="fas fa-info-circle"></i> Select the collector who will handle this route.
                                     </div>
                                     <span asp-validation-for="CollectorId" class="text-danger"></span>
                                 </div>
+                            </div>
 
-                                <!-- Hidden Truck ID field (auto-populated based on driver selection) -->
-                                <input asp-for="TruckId" type="hidden" id="hiddenTruckId" />
+                            <div class="col-md-6">
+                                <!-- Truck Dropdown -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="TruckId" class="form-label">
+                                        <i class="fas fa-truck"></i> Select Truck
+                                    </label>
+                                    <select asp-for="TruckId" class="form-select" required id="truckSelect">
+                                        <option value="">-- Select Truck --</option>
+                                        @if (ViewBag.AvailableTrucks != null)
+                                        {
+                                            @foreach (var truck in ViewBag.AvailableTrucks)
+                                            {
+                                                <option value="@truck.Id" data-driver="@truck.Driver?.FirstName @truck.Driver?.LastName">
+                                                    @truck.LicensePlate (@truck.Model)
+                                                    @if (truck.Driver != null)
+                                                    {
+                                                        <span>- Driver: @truck.Driver.FirstName @truck.Driver.LastName</span>
+                                                    }
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Select the truck to be used for this schedule.
+                                    </div>
+                                    <span asp-validation-for="TruckId" class="text-danger"></span>
+                                </div>
+
+                                @* <!-- Hidden Truck ID field (auto-populated based on driver selection) -->
+                                <input asp-for="TruckId" type="hidden" id="hiddenTruckId" /> *@
 
                                 <!-- Display selected truck info -->
                                 <div id="selectedTruckInfo" class="alert alert-info" style="display: none;">
@@ -294,13 +322,13 @@
                         }
 
                         <!-- Debug Information (remove this in production) -->
-                        <div class="alert alert-secondary">
+                        @* <div class="alert alert-secondary">
                             <strong>Debug Info:</strong>
                             <div>Selected Route ID: <span id="debugRouteId">@Model.RouteId</span></div>
                             <div>Selected Driver ID: <span id="debugDriverId">@Model.CollectorId</span></div>
                             <div>Selected Truck ID: <span id="debugTruckId">@Model.TruckId</span></div>
                             <div>Collection Points: @(Model.CollectionPoints?.Count() ?? 0)</div>
-                        </div>
+                        </div> *@
 
                         <!-- Submit Buttons -->
                         <div class="form-group d-flex gap-2">
