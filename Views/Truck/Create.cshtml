@@ -1,47 +1,97 @@
 @model AspnetCoreMvcFull.Models.Truck
 
 @{
-	ViewData["Title"] = "Create";
+	ViewData["Title"] = "Create Truck";
 }
 
-<h1>Create</h1>
+<div class="container-fluid">
+	<div class="row justify-content-center">
+		<div class="col-md-8">
+			<div class="card">
+				<div class="card-header">
+					<h4 class="card-title mb-0">
+						<i class="ri-truck-line me-2"></i>Create New Truck
+					</h4>
+				</div>
+				<div class="card-body">
+					@if (ViewBag.ErrorMessage != null)
+					{
+						<div class="alert alert-danger">
+							@ViewBag.ErrorMessage
+						</div>
+					}
 
-<h4>Truck</h4>
-<hr />
-<div class="row">
-	<div class="col-md-4">
-		<form asp-action="Create" method="post">
-			<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+					<form asp-action="Create" method="post">
+						<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+						
+						<div class="row">
+							<div class="col-md-6">
+								<div class="form-group mb-3">
+									<label asp-for="LicensePlate" class="form-label">
+										<i class="ri-hashtag me-1"></i>License Plate
+									</label>
+									<input asp-for="LicensePlate" class="form-control" required placeholder="Enter license plate number" />
+									<span asp-validation-for="LicensePlate" class="text-danger"></span>
+								</div>
+							</div>
+							
+							<div class="col-md-6">
+								<div class="form-group mb-3">
+									<label asp-for="Model" class="form-label">
+										<i class="ri-truck-line me-1"></i>Truck Model
+									</label>
+									<input asp-for="Model" class="form-control" required placeholder="Enter truck model" />
+									<span asp-validation-for="Model" class="text-danger"></span>
+								</div>
+							</div>
+						</div>
 
-			<div class="form-group mb-3">
-				<label asp-for="LicensePlate" class="control-label"></label>
-				<input asp-for="LicensePlate" class="form-control" required />
-				<span asp-validation-for="LicensePlate" class="text-danger"></span>
-			</div>
+						<div class="row">
+							<div class="col-md-6">
+								<div class="form-group mb-3">
+									<label asp-for="DriverId" class="form-label">
+										<i class="ri-user-line me-1"></i>Assigned Driver
+									</label>
+									<select asp-for="DriverId" class="form-select" required>
+										<option value="">-- Select Driver --</option>
+										@if (ViewBag.Drivers != null)
+										{
+											@foreach (var driver in ViewBag.Drivers)
+											{
+												<option value="@driver.Id">@driver.FirstName @driver.LastName (@driver.Email)</option>
+											}
+										}
+									</select>
+									<span asp-validation-for="DriverId" class="text-danger"></span>
+								</div>
+							</div>
+							
+							<div class="col-md-6">
+								<div class="form-group mb-3">
+									<label class="form-label">
+										<i class="ri-checkbox-circle-line me-1"></i>Status
+									</label>
+									<div class="form-control-plaintext">
+										<span class="badge bg-success">Available</span>
+										<small class="text-muted d-block mt-1">New trucks are automatically set to Available status</small>
+									</div>
+								</div>
+							</div>
+						</div>
 
-			<div class="form-group mb-3">
-				<label asp-for="Model" class="control-label"></label>
-				<input asp-for="Model" class="form-control" required />
-				<span asp-validation-for="Model" class="text-danger"></span>
-			</div>
-
-			<div class="form-group mb-3">
-				<label class="control-label">Status</label>
-				<div class="form-control-plaintext">
-					<span class="badge bg-success">Available</span>
-					<small class="text-muted d-block mt-1">New trucks are automatically set to Available status</small>
+						<div class="form-group d-flex gap-2">
+							<button type="submit" class="btn btn-primary">
+								<i class="ri-save-line me-1"></i>Create Truck
+							</button>
+							<a asp-action="Index" class="btn btn-secondary">
+								<i class="ri-arrow-left-line me-1"></i>Back to List
+							</a>
+						</div>
+					</form>
 				</div>
 			</div>
-
-			<div class="form-group">
-				<input type="submit" value="Create" class="btn btn-primary" />
-			</div>
-		</form>
+		</div>
 	</div>
-</div>
-
-<div>
-	<a asp-action="Index">Back to List</a>
 </div>
 
 @section Scripts {
