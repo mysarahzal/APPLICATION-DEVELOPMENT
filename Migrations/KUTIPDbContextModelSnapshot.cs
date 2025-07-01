@@ -499,6 +499,11 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DayOfWeek")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<decimal?>("RouteCenterLatitude")
                         .HasColumnType("decimal(10,8)");
 
@@ -547,6 +552,9 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("DriverId")
+                        .HasColumnType("int");
+
                     b.Property<string>("LicensePlate")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -563,6 +571,8 @@ namespace AspnetCoreMvcFull.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DriverId");
 
                     b.ToTable("Trucks");
                 });
@@ -708,7 +718,7 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.MissedPickup", b =>
                 {
                     b.HasOne("AspnetCoreMvcFull.Models.Schedule", "Schedule")
-                        .WithMany()
+                        .WithMany("MissedPickups")
                         .HasForeignKey("ScheduleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -762,6 +772,17 @@ namespace AspnetCoreMvcFull.Migrations
                     b.Navigation("Truck");
                 });
 
+            modelBuilder.Entity("AspnetCoreMvcFull.Models.Truck", b =>
+                {
+                    b.HasOne("AspnetCoreMvcFull.Models.User", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+                });
+
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Bin", b =>
                 {
                     b.Navigation("BinReports");
@@ -802,6 +823,8 @@ namespace AspnetCoreMvcFull.Migrations
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Schedule", b =>
                 {
                     b.Navigation("CollectionPoints");
+
+                    b.Navigation("MissedPickups");
                 });
 
             modelBuilder.Entity("AspnetCoreMvcFull.Models.Truck", b =>

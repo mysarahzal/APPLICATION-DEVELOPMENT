@@ -19,42 +19,97 @@ namespace AspnetCoreMvcFull.Controllers
     // GET: Truck
     public async Task<IActionResult> Index()
     {
-      var trucks = await _context.Trucks.ToListAsync();
+      var trucks = await _context.Trucks
+          .Include(t => t.Driver)
+          .OrderBy(t => t.LicensePlate)
+          .ToListAsync();
       return View(trucks);
     }
 
     // GET: Truck/Create
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
-      return View();
+      try
+      {
+        // Get available drivers (users with role "Driver" who don't have a truck assigned)
+        var assignedDriverIds = await _context.Trucks
+            .Select(t => t.DriverId)
+            .ToListAsync();
+
+        var availableDrivers = await _context.Users
+            .Where(u => u.Role == "Driver" && !assignedDriverIds.Contains(u.Id))
+            .OrderBy(u => u.FirstName)
+            .ToListAsync();
+
+        ViewBag.Drivers = availableDrivers;
+
+        if (!availableDrivers.Any())
+        {
+          ViewBag.ErrorMessage = "No available drivers found. Please create drivers first or check if all drivers are already assigned to trucks.";
+        }
+
+        return View();
+      }
+      catch (Exception ex)
+      {
+        ViewBag.ErrorMessage = "Error loading drivers: " + ex.Message;
+        ViewBag.Drivers = new List<User>();
+        return View();
+      }
     }
 
     // POST: Truck/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("LicensePlate,Model")] Truck truck)
+    public async Task<IActionResult> Create([Bind("LicensePlate,Model,DriverId")] Truck truck)
     {
       // Remove validation errors for fields we don't want to validate during creation
       ModelState.Remove("Status");
       ModelState.Remove("CollectionRecords");
       ModelState.Remove("CreatedAt");
       ModelState.Remove("UpdatedAt");
-      ModelState.Remove("Id"); // Remove Id validation since it's auto-generated
+      ModelState.Remove("Id");
+      ModelState.Remove("Driver");
 
       if (ModelState.IsValid)
       {
         try
         {
-          // Don't set truck.Id - let the database auto-generate it
-          truck.Status = "Available";
-          truck.CreatedAt = DateTime.Now;
-          truck.UpdatedAt = DateTime.Now;
+          // Check if driver exists and has role "Driver"
+          var driver = await _context.Users.FindAsync(truck.DriverId);
+          if (driver == null || driver.Role != "Driver")
+          {
+            ModelState.AddModelError("DriverId", "Selected driver does not exist or is not a driver.");
+          }
 
-          _context.Add(truck);
-          await _context.SaveChangesAsync();
+          // Check if driver is already assigned to another truck
+          var existingTruck = await _context.Trucks
+              .FirstOrDefaultAsync(t => t.DriverId == truck.DriverId);
+          if (existingTruck != null)
+          {
+            ModelState.AddModelError("DriverId", "This driver is already assigned to another truck.");
+          }
 
-          TempData["Success"] = "Truck created successfully!";
-          return RedirectToAction(nameof(Index));
+          // Check if license plate already exists
+          var existingPlate = await _context.Trucks
+              .FirstOrDefaultAsync(t => t.LicensePlate.ToLower() == truck.LicensePlate.ToLower());
+          if (existingPlate != null)
+          {
+            ModelState.AddModelError("LicensePlate", "A truck with this license plate already exists.");
+          }
+
+          if (ModelState.IsValid)
+          {
+            truck.Status = "Available";
+            truck.CreatedAt = DateTime.Now;
+            truck.UpdatedAt = DateTime.Now;
+
+            _context.Add(truck);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = $"Truck created successfully and assigned to {driver.FirstName} {driver.LastName}!";
+            return RedirectToAction(nameof(Index));
+          }
         }
         catch (Exception ex)
         {
@@ -62,11 +117,31 @@ namespace AspnetCoreMvcFull.Controllers
         }
       }
 
+      // Reload drivers if validation fails
+      try
+      {
+        var assignedDriverIds = await _context.Trucks
+            .Where(t => t.Id != truck.Id) // Exclude current truck if editing
+            .Select(t => t.DriverId)
+            .ToListAsync();
+
+        var availableDrivers = await _context.Users
+            .Where(u => u.Role == "Driver" && !assignedDriverIds.Contains(u.Id))
+            .OrderBy(u => u.FirstName)
+            .ToListAsync();
+
+        ViewBag.Drivers = availableDrivers;
+      }
+      catch
+      {
+        ViewBag.Drivers = new List<User>();
+      }
+
       return View(truck);
     }
 
     // GET: Truck/Details/5
-    public async Task<IActionResult> Details(int? id)  // Changed from Guid? to int?
+    public async Task<IActionResult> Details(int? id)
     {
       if (id == null)
       {
@@ -74,6 +149,7 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var truck = await _context.Trucks
+          .Include(t => t.Driver)
           .FirstOrDefaultAsync(m => m.Id == id);
 
       if (truck == null)
@@ -85,25 +161,49 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // GET: Truck/Edit/5
-    public async Task<IActionResult> Edit(int? id)  // Changed from Guid? to int?
+    public async Task<IActionResult> Edit(int? id)
     {
       if (id == null)
       {
         return NotFound();
       }
 
-      var truck = await _context.Trucks.FindAsync(id);
+      var truck = await _context.Trucks
+          .Include(t => t.Driver)
+          .FirstOrDefaultAsync(t => t.Id == id);
+
       if (truck == null)
       {
         return NotFound();
       }
+
+      try
+      {
+        // Get available drivers (excluding current driver)
+        var assignedDriverIds = await _context.Trucks
+            .Where(t => t.Id != id)
+            .Select(t => t.DriverId)
+            .ToListAsync();
+
+        var availableDrivers = await _context.Users
+            .Where(u => u.Role == "Driver" && !assignedDriverIds.Contains(u.Id))
+            .OrderBy(u => u.FirstName)
+            .ToListAsync();
+
+        ViewBag.Drivers = availableDrivers;
+      }
+      catch
+      {
+        ViewBag.Drivers = new List<User>();
+      }
+
       return View(truck);
     }
 
     // POST: Truck/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("Id,LicensePlate,Model,Status,CreatedAt")] Truck truck)  // Changed from Guid to int
+    public async Task<IActionResult> Edit(int id, [Bind("Id,LicensePlate,Model,Status,DriverId,CreatedAt")] Truck truck)
     {
       if (id != truck.Id)
       {
@@ -113,17 +213,36 @@ namespace AspnetCoreMvcFull.Controllers
       // Remove validation errors for fields we don't want to validate during editing
       ModelState.Remove("CollectionRecords");
       ModelState.Remove("UpdatedAt");
+      ModelState.Remove("Driver");
 
       if (ModelState.IsValid)
       {
         try
         {
-          truck.UpdatedAt = DateTime.Now;
-          _context.Update(truck);
-          await _context.SaveChangesAsync();
+          // Check if driver exists and has role "Driver"
+          var driver = await _context.Users.FindAsync(truck.DriverId);
+          if (driver == null || driver.Role != "Driver")
+          {
+            ModelState.AddModelError("DriverId", "Selected driver does not exist or is not a driver.");
+          }
 
-          TempData["Success"] = "Truck updated successfully!";
-          return RedirectToAction(nameof(Index));
+          // Check if driver is already assigned to another truck (excluding current truck)
+          var existingTruck = await _context.Trucks
+              .FirstOrDefaultAsync(t => t.DriverId == truck.DriverId && t.Id != truck.Id);
+          if (existingTruck != null)
+          {
+            ModelState.AddModelError("DriverId", "This driver is already assigned to another truck.");
+          }
+
+          if (ModelState.IsValid)
+          {
+            truck.UpdatedAt = DateTime.Now;
+            _context.Update(truck);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Truck updated successfully!";
+            return RedirectToAction(nameof(Index));
+          }
         }
         catch (DbUpdateConcurrencyException)
         {
@@ -141,11 +260,32 @@ namespace AspnetCoreMvcFull.Controllers
           ModelState.AddModelError("", "An error occurred while updating the truck: " + ex.Message);
         }
       }
+
+      // Reload drivers if validation fails
+      try
+      {
+        var assignedDriverIds = await _context.Trucks
+            .Where(t => t.Id != id)
+            .Select(t => t.DriverId)
+            .ToListAsync();
+
+        var availableDrivers = await _context.Users
+            .Where(u => u.Role == "Driver" && !assignedDriverIds.Contains(u.Id))
+            .OrderBy(u => u.FirstName)
+            .ToListAsync();
+
+        ViewBag.Drivers = availableDrivers;
+      }
+      catch
+      {
+        ViewBag.Drivers = new List<User>();
+      }
+
       return View(truck);
     }
 
     // GET: Truck/Delete/5
-    public async Task<IActionResult> Delete(int? id)  // Changed from Guid? to int?
+    public async Task<IActionResult> Delete(int? id)
     {
       if (id == null)
       {
@@ -153,6 +293,7 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       var truck = await _context.Trucks
+          .Include(t => t.Driver)
           .FirstOrDefaultAsync(m => m.Id == id);
 
       if (truck == null)
@@ -166,7 +307,7 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: Truck/Delete/5
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id)  // Changed from Guid to int
+    public async Task<IActionResult> DeleteConfirmed(int id)
     {
       var truck = await _context.Trucks.FindAsync(id);
       if (truck != null)
@@ -179,7 +320,7 @@ namespace AspnetCoreMvcFull.Controllers
       return RedirectToAction(nameof(Index));
     }
 
-    private bool TruckExists(int id)  // Changed from Guid to int
+    private bool TruckExists(int id)
     {
       return _context.Trucks.Any(e => e.Id == id);
     }

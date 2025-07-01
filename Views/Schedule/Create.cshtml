@@ -21,8 +21,22 @@
                         </div>
                     }
 
+                    <!-- Add this section to show all validation errors -->
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger">
+                            <h6>Please fix the following errors:</h6>
+                            <ul class="mb-0">
+                                @foreach (var modelError in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@modelError.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
                     <form asp-action="Create" method="post" id="scheduleForm">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
 
                         <div class="row">
                             <div class="col-md-6">
@@ -35,7 +49,7 @@
                                         <option value="">-- Select Route --</option>
                                         @if (ViewBag.Routes != null)
                                         {
-                                            <optgroup label="Available Routes">
+                                            <optgroup label="✅ Available Routes">
                                                 @foreach (var route in ViewBag.Routes)
                                                 {
                                                     <option value="@route.Id.ToString()">
@@ -44,7 +58,7 @@
                                                         {
                                                             <span>- @route.Description</span>
                                                         }
-                                                        (@route.ExpectedDurationMinutes min)
+                                                        (@route.ExpectedDurationMinutes min, @route.RouteBins.Count bins)
                                                     </option>
                                                 }
                                             </optgroup>
@@ -56,13 +70,15 @@
                                                 {
                                                     <option value="@route.Id.ToString()" class="text-warning">
                                                         @route.Name - ⚠️ ALREADY SCHEDULED
+                                                        (@route.ExpectedDurationMinutes min, @route.RouteBins.Count bins)
                                                     </option>
                                                 }
                                             </optgroup>
                                         }
                                     </select>
                                     <div class="form-text">
-                                        <i class="fas fa-info-circle"></i> Available routes are shown first.
+                                        <i class="fas fa-info-circle"></i> Routes are loaded from Route Management.
+                                        <span class="text-success">Available routes are shown first.</span>
                                         <span class="text-warning">Already scheduled routes are marked with warning.</span>
                                     </div>
                                     <span asp-validation-for="RouteId" class="text-danger"></span>
@@ -75,46 +91,47 @@
                                     <div id="routeWarningDetails"></div>
                                     <small>You can still proceed, but make sure this doesn't conflict with the existing schedule.</small>
                                 </div>
+
+                                <!-- Route Info Display (shown when route is selected) -->
+                                <div id="routeInfoAlert" class="alert alert-info" style="display: none;">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Route Information:</strong>
+                                    <div id="routeInfoDetails"></div>
+                                </div>
                             </div>
 
                             <div class="col-md-6">
-                                <!-- Truck Dropdown -->
+                                <!-- Driver Dropdown (replaces separate truck and collector selection) -->
                                 <div class="form-group mb-3">
-                                    <label asp-for="TruckId" class="form-label">
-                                        <i class="fas fa-truck"></i> Select Truck
+                                    <label asp-for="CollectorId" class="form-label">
+                                        <i class="fas fa-user"></i> Select Driver
                                     </label>
-                                    <select asp-for="TruckId" class="form-select" required>
-                                        <option value="">-- Select Truck --</option>
-                                        @if (ViewBag.Trucks != null)
+                                    <select asp-for="CollectorId" class="form-select" required id="driverSelect">
+                                        <option value="">-- Select Driver --</option>
+                                        @if (ViewBag.DriversWithTrucks != null)
                                         {
-                                            @foreach (var truck in ViewBag.Trucks)
+                                            @foreach (var driverTruck in ViewBag.DriversWithTrucks)
                                             {
-                                                <option value="@truck.Id">
-                                                    @truck.LicensePlate - @truck.Model
-                                                    <span class="badge bg-success">@truck.Status</span>
+                                                <option value="@driverTruck.Driver.Id" data-truck-id="@driverTruck.Truck.Id">
+                                                    @driverTruck.Driver.FirstName @driverTruck.Driver.LastName
+                                                    - Truck: @driverTruck.Truck.LicensePlate (@driverTruck.Truck.Model)
                                                 </option>
                                             }
                                         }
                                     </select>
-                                    <span asp-validation-for="TruckId" class="text-danger"></span>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Each driver is assigned to a specific truck.
+                                    </div>
+                                    <span asp-validation-for="CollectorId" class="text-danger"></span>
                                 </div>
 
-                                <!-- Collector Dropdown -->
-                                <div class="form-group mb-3">
-                                    <label asp-for="CollectorId" class="form-label">
-                                        <i class="fas fa-user"></i> Select Collector
-                                    </label>
-                                    <select asp-for="CollectorId" class="form-select" required>
-                                        <option value="">-- Select Collector --</option>
-                                        @if (ViewBag.Collectors != null)
-                                        {
-                                            @foreach (var collector in ViewBag.Collectors)
-                                            {
-                                                <option value="@collector.Id">@collector.FirstName @collector.LastName (@collector.Role)</option>
-                                            }
-                                        }
-                                    </select>
-                                    <span asp-validation-for="CollectorId" class="text-danger"></span>
+                                <!-- Hidden Truck ID field (auto-populated based on driver selection) -->
+                                <input asp-for="TruckId" type="hidden" id="hiddenTruckId" />
+
+                                <!-- Display selected truck info -->
+                                <div id="selectedTruckInfo" class="alert alert-info" style="display: none;">
+                                    <i class="fas fa-truck"></i>
+                                    <strong>Selected Truck:</strong> <span id="truckDetails"></span>
                                 </div>
                             </div>
                         </div>
@@ -187,9 +204,17 @@
                             </div>
                         </div>
 
+                        <!-- Debug Information (remove this in production) -->
+                        <div class="alert alert-info">
+                            <strong>Debug Info:</strong>
+                            <div>Selected Route ID: <span id="debugRouteId">None</span></div>
+                            <div>Selected Driver ID: <span id="debugDriverId">None</span></div>
+                            <div>Selected Truck ID: <span id="debugTruckId">None</span></div>
+                        </div>
+
                         <!-- Submit Buttons -->
                         <div class="form-group d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
                                 <i class="fas fa-save"></i> Create Schedule
                             </button>
                             <a asp-action="Index" class="btn btn-secondary">
@@ -210,12 +235,50 @@
 
     <script>
         $(document).ready(function() {
+            // Handle driver selection change
+            $('#driverSelect').change(function() {
+                var selectedOption = $(this).find('option:selected');
+                var truckId = selectedOption.data('truck-id');
+                var driverName = selectedOption.text();
+                var driverId = $(this).val();
+
+                if (truckId && driverId) {
+                    // Set the hidden truck ID
+                    $('#hiddenTruckId').val(truckId);
+
+                    // Show truck info
+                    $('#truckDetails').text(driverName);
+                    $('#selectedTruckInfo').show();
+
+                    // Update debug info
+                    $('#debugDriverId').text(driverId);
+                    $('#debugTruckId').text(truckId);
+                } else {
+                    $('#hiddenTruckId').val('');
+                    $('#selectedTruckInfo').hide();
+                    $('#debugDriverId').text('None');
+                    $('#debugTruckId').text('None');
+                }
+            });
+
             // Handle route selection change
             $('#routeSelect').change(function() {
                 var routeId = $(this).val();
-                var selectedText = $(this).find('option:selected').text();
+                var selectedOption = $(this).find('option:selected');
+                var routeText = selectedOption.text();
+
+                // Update debug info
+                $('#debugRouteId').text(routeId || 'None');
 
                 if (routeId) {
+                    // Show route information
+                    var routeInfo = `
+                        <strong>Selected Route:</strong> ${routeText}<br>
+                        <small class="text-muted">Loading route details...</small>
+                    `;
+                    $('#routeInfoDetails').html(routeInfo);
+                    $('#routeInfoAlert').show();
+
                     // Check if route is already scheduled
                     checkRouteAvailability(routeId);
 
@@ -223,8 +286,61 @@
                     loadRouteBins(routeId);
                 } else {
                     $('#routeWarningAlert').hide();
+                    $('#routeInfoAlert').hide();
                     $('#routeBinsSection').hide();
                 }
+            });
+
+            // Form submission with detailed logging
+            $('#scheduleForm').submit(function(e) {
+                console.log('Form submission started');
+
+                var routeId = $('#routeSelect').val();
+                var driverId = $('#driverSelect').val();
+                var truckId = $('#hiddenTruckId').val();
+                var startTime = $('#ScheduleStartTime').val();
+                var endTime = $('#ScheduleEndTime').val();
+                var status = $('#Status').val();
+
+                console.log('Form data:', {
+                    routeId: routeId,
+                    driverId: driverId,
+                    truckId: truckId,
+                    startTime: startTime,
+                    endTime: endTime,
+                    status: status
+                });
+
+                // Basic validation
+                if (!routeId) {
+                    alert('Please select a route');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!driverId) {
+                    alert('Please select a driver');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!truckId) {
+                    alert('Truck ID is missing. Please reselect the driver.');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!startTime || !endTime) {
+                    alert('Please fill in both start and end times');
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable submit button to prevent double submission
+                $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+
+                console.log('Form validation passed, submitting...');
+                return true;
             });
 
             // Check if route is already scheduled
@@ -235,7 +351,7 @@
                             var warningHtml = `
                                 <strong>Schedule #${data.scheduleId}</strong><br>
                                 <strong>Route:</strong> ${data.routeName}<br>
-                                <strong>Collector:</strong> ${data.collectorName}<br>
+                                <strong>Driver:</strong> ${data.collectorName}<br>
                                 <strong>Status:</strong> <span class="badge bg-warning">${data.status}</span><br>
                                 <strong>Start Time:</strong> ${data.startTime}
                             `;
@@ -245,7 +361,8 @@
                             $('#routeWarningAlert').hide();
                         }
                     })
-                    .fail(function() {
+                    .fail(function(xhr, status, error) {
+                        console.error('Error checking route availability:', error);
                         $('#routeWarningAlert').hide();
                     });
             }
@@ -257,6 +374,8 @@
 
                 $.get('@Url.Action("GetRouteBins", "Schedule")', { routeId: routeId })
                     .done(function(data) {
+                        console.log('Route bins loaded:', data);
+
                         if (data.error) {
                             $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + data.error + '</div>');
                             return;
@@ -330,8 +449,9 @@
                             );
                         }
                     })
-                    .fail(function() {
-                        $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins.</div>');
+                    .fail(function(xhr, status, error) {
+                        console.error('Error loading route bins:', error);
+                        $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + error + '</div>');
                     });
             }
         });
