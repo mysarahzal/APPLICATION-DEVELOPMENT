@@ -18,15 +18,28 @@ namespace AspnetCoreMvcFull.Models
     public Guid RouteId { get; set; }  // Guid to match RoutePlan.Id
 
     [Required]
+    [Display(Name = "Start Time")]
     public DateTime ScheduleStartTime { get; set; }
 
+    [Required]
+    [Display(Name = "End Time")]
     public DateTime ScheduleEndTime { get; set; }
+
+    [Required]
+    [StringLength(20)]
+    [Display(Name = "Day of Week")]
+    public string DayOfWeek { get; set; } // Sunday, Monday, Tuesday, etc.
+
+    [Display(Name = "Actual Start Time")]
     public DateTime? ActualStartTime { get; set; }
+
+    [Display(Name = "Actual End Time")]
     public DateTime? ActualEndTime { get; set; }
 
     [StringLength(50)]
-    public string Status { get; set; } = "Scheduled";
+    public string Status { get; set; } = "Scheduled"; // Scheduled, In Progress, Completed, Cancelled, Missed
 
+    [Display(Name = "Admin Notes")]
     public string AdminNotes { get; set; }
 
     [Required]
@@ -55,5 +68,6 @@ namespace AspnetCoreMvcFull.Models
     public virtual RoutePlan Route { get; set; }
 
     public virtual ICollection<CollectionPoint> CollectionPoints { get; set; }
+    public virtual ICollection<MissedPickup> MissedPickups { get; set; }
   }
 }
