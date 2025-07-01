@@ -206,7 +206,7 @@
                                     <label asp-for="AdminNotes" class="form-label">
                                         <i class="fas fa-sticky-note"></i> Admin Notes
                                     </label>
-                                    <textarea asp-for="AdminNotes" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
+                                    <textarea asp-for="AdminNotes" class="form-control" rows="3" placeholder="Required..."></textarea>
                                     <span asp-validation-for="AdminNotes" class="text-danger"></span>
                                 </div>
                             </div>
@@ -230,12 +230,12 @@
                         </div>
 
                         <!-- Debug Information (remove this in production) -->
-                        <div class="alert alert-info">
+                        @* <div class="alert alert-info">
                             <strong>Debug Info:</strong>
                             <div>Selected Route ID: <span id="debugRouteId">None</span></div>
                             <div>Selected Collector ID: <span id="debugCollectorId">None</span></div>
                             <div>Selected Truck ID: <span id="debugTruckId">None</span></div>
-                        </div>
+                        </div> *@
 
                         <!-- Submit Buttons -->
                         <div class="form-group d-flex gap-2">
