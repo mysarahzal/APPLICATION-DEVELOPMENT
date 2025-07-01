@@ -1,3 +1,4 @@
+@using System.Text.Json
 @{
     ViewData["Title"] = "Dashboard - Analytics";
 	Layout = "~/Views/Shared/_ContentNavbarLayout.cshtml";
@@ -50,6 +51,14 @@
     <script>
         // Pass route data to JavaScript
         window.allRoutesData = @Html.Raw(Json.Serialize(Model.AllRoutes));
+        // Pass pickup chart data to JavaScript
+        window.totalPickupsByDay = @Html.Raw(JsonSerializer.Serialize(Model.WeeklyPickupCounts));
+        window.missedPickupsByDay = @Html.Raw(JsonSerializer.Serialize(Model.WeeklyMissedCounts));
+        window.pickupDays = @Html.Raw(JsonSerializer.Serialize(Model.WeekDays));
+//Pass collector pickup data to JavaScript
+        window.collectorCategories  = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CollectorNames));
+        window.collectedSeries      = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CollectedByCollector));
+        window.missedSeries         = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MissedByCollector));
     </script>
     <script src="~/js/dashboards-analytics.js"></script>
 }
@@ -71,10 +80,7 @@
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1">Total Pickups</p>
-                        <h4 class="text-info fw-bold mb-1">30</h4>
-                        <p class="text-sm text-info mb-0">
-                            <i class="ri-arrow-up-line me-1"></i> 0.5% from last period
-                        </p>
+                        <h4 class="text-info fw-bold mb-1">@Model.TotalPickups</h4>
                     </div>
                     <div class="avatar bg-info bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
                         <i class="ri-truck-line text-info ri-36px"></i>
@@ -89,10 +95,7 @@
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1">Missed Pickups</p>
-                        <h4 class="text-danger fw-bold mb-1">2</h4>
-                        <p class="text-sm text-danger mb-0">
-                            <i class="ri-arrow-up-line me-1"></i> 3% from last period
-                        </p>
+                        <h4 class="text-danger fw-bold mb-1">@Model.MissedPickups</h4>
                     </div>
                     <div class="avatar bg-danger bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
                         <i class="ri-delete-bin-line text-danger ri-36px"></i>
@@ -107,10 +110,7 @@
                 <div class="card-body d-flex justify-content-between align-items-center">
                     <div>
                         <p class="text-muted mb-1">Successful Rate</p>
-                        <h4 class="text-success fw-bold mb-1">96%</h4>
-                        <p class="text-sm text-success mb-0">
-                            <i class="ri-arrow-up-line me-1"></i> 1.2% from last period
-                        </p>
+                        <h4 class="text-success fw-bold mb-1">@Model.SuccessRate%</h4>
                     </div>
                     <div class="avatar bg-success bg-opacity-10 rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
                         <i class="ri-delete-bin-fill text-success ri-36px"></i>
@@ -144,11 +144,11 @@
             <div class="card">
                 <div class="card-body text-nowrap">
                     <h5 class="card-title mb-0 flex-wrap text-nowrap"> Alerts </h5>
-                    <p class="mb-2">Total Active: <strong class="text-primary">7</strong></p>
-                    <h4 class="mb-0"><span class="text-danger fw-bold">3</span> <span class="text-danger">Critical</span></h4>
+                    <p class="mb-2">Total Active: <strong class="text-primary">@Model.TotalActiveAlerts</strong></p>
+                    <h4 class="mb-0"><span class="text-danger fw-bold">@Model.CriticalAlerts</span> <span class="text-danger">Critical</span></h4>
                     <p class="mb-2">
-                        <span class="text-warning fw-bold">4</span> High
-                        <span class="text-success fw-bold">0</span> Medium
+                        <span class="text-warning fw-bold">@Model.HighAlerts</span> High
+                        <span class="text-success fw-bold">@Model.MediumAlerts</span> Medium
                     </p>
                     <a href="/alerts" class="btn btn-sm btn-primary">View All Alerts</a>
                 </div>
@@ -162,16 +162,6 @@
                 <div class="card-header">
                     <div class="d-flex align-items-center justify-content-between">
                         <h5 class="card-title m-0 me-2">Operational Resources</h5>
-                        <div class="dropdown">
-                            <button class="btn text-muted p-0" type="button" id="resourceID" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="ri-more-2-line ri-24px"></i>
-                            </button>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="resourceID">
-                                <a class="dropdown-item" href="javascript:void(0);">Refresh</a>
-                                <a class="dropdown-item" href="javascript:void(0);">View All</a>
-                                <a class="dropdown-item" href="javascript:void(0);">Download Report</a>
-                            </div>
-                        </div>
                     </div>
                     <p class="small mb-0">Total Number</p>
                 </div>

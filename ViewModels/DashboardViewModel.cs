@@ -15,7 +15,22 @@ namespace AspnetCoreMvcFull.ViewModels
     public double SuccessRate => TotalPickups + MissedPickups > 0
         ? Math.Round(((double)TotalPickups / (TotalPickups + MissedPickups)) * 100, 1)
         : 0;
-    // New properties for all routes
+
+    public int TotalActiveAlerts { get; set; }
+    public int CriticalAlerts { get; set; }
+    public int HighAlerts { get; set; }
+    public int MediumAlerts { get; set; }
+
+    public List<int> WeeklyPickupCounts { get; set; } = new();
+    public List<int> WeeklyMissedCounts { get; set; } = new();
+    public List<string> WeekDays { get; set; } = new();
+
+    public List<string> CollectorNames { get; set; } = new();
+    public List<int> CollectedByCollector { get; set; } = new();
+    public List<int> MissedByCollector { get; set; } = new();
+
+
+    // properties for all routes
     public List<DashboardRoute> AllRoutes { get; set; } = new List<DashboardRoute>();
     public int TotalActiveRoutes { get; set; }
     public int TotalCollectionPoints { get; set; }

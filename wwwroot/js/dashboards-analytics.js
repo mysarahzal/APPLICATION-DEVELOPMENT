@@ -17,129 +17,75 @@ html2canvas = window.html2canvas // Assuming html2canvas is available globally
 
     // Pickup over Time - Area Chart (Total Bin Pickup with Missed Pickup)
     document.addEventListener("DOMContentLoaded", () => {
-      var totalMissedPickupsAreaOptions = {
+      const totalMissedPickupsAreaOptions = {
         series: [
           {
             name: "Total Bin Pickups",
-            data: [10, 15, 12, 18, 22, 19, 25], // Calculated total pickups
+            data: window.totalPickupsByDay, // from Razor
           },
           {
             name: "Missed Pickups",
-            data: [1, 1, 1, 1, 1, 1, 2], // Missed pickups data
+            data: window.missedPickupsByDay,
           },
         ],
         chart: {
           height: 300,
-          type: "area", // Changed to area chart
+          type: "area",
           toolbar: {
             show: true,
-            tools: {
-              download: true,
-            },
+            tools: { download: true },
           },
         },
-        dataLabels: {
-          enabled: false,
-        },
-        stroke: {
-          curve: "smooth",
-        },
+        dataLabels: { enabled: false },
+        stroke: { curve: "smooth" },
         xaxis: {
-          categories: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+          categories: window.pickupDays, // ["Mon", ..., "Sat"]
         },
-        colors: ["#00cfe8", "#EA5455"], // Example colors for Total and Missed
-        tooltip: {
-          x: {},
-        },
+        colors: ["#00cfe8", "#EA5455"],
+        tooltip: { x: {} },
         legend: {
           position: "top",
           horizontalAlign: "left",
         },
-      }
+      };
 
-      if (document.querySelector("#totalMissedPickupsAreaChart")) {
-        var totalMissedPickupsAreaChart = new ApexCharts(
-          document.querySelector("#totalMissedPickupsAreaChart"),
-          totalMissedPickupsAreaOptions,
-        )
-        totalMissedPickupsAreaChart.render()
-      }
-    })
+      new ApexCharts(document.querySelector("#pickupAreaChart"), totalMissedPickupsAreaOptions).render();
+    });
 
     // Pickup by Collector - Bar Chart (Total Bins Collected and Missed Bins)
     document.addEventListener("DOMContentLoaded", () => {
-      var pickupByCollectorBarOptions = {
+      // --------------------------------------------------------
+      // Bar: Pickups vs Missed per Collector
+      // --------------------------------------------------------
+      const pickupByCollectorBarOptions = {
         series: [
-          {
-            name: "Total Bins Collected",
-            data: [120, 98, 135, 110],
-          },
-          {
-            name: "Missed Bins",
-            data: [5, 3, 7, 4], // Sample missed bins data
-          },
+          { name: "Total Bins Collected", data: window.collectedSeries },
+          { name: "Missed Bins", data: window.missedSeries },
         ],
         chart: {
           type: "bar",
           height: 300,
-          toolbar: {
-            show: true,
-            tools: {
-              download: true,
-            },
-          },
+          toolbar: { show: true, tools: { download: true } },
         },
         plotOptions: {
-          bar: {
-            horizontal: false,
-            columnWidth: "55%",
-            endingShape: "rounded",
-          },
+          bar: { horizontal: false, columnWidth: "55%", endingShape: "rounded" },
         },
-        dataLabels: {
-          enabled: false,
-        },
-        stroke: {
-          show: true,
-          width: 2,
-          colors: ["transparent"],
-        },
-        xaxis: {
-          categories: ["Ahmad", "Ravi", "Nina", "Fahmi"],
-        },
+        dataLabels: { enabled: false },
+        stroke: { show: true, width: 2, colors: ["transparent"] },
+        xaxis: { categories: window.collectorCategories },
         yaxis: {
-          title: {
-            text: "Number of Bins",
-            style: {
-              fontWeight: "bold",
-              fontSize: "14px",
-              color: "#000",
-            },
-          },
+          title: { text: "Number of Bins", style: { fontWeight: "bold", fontSize: "14px", color: "#000" } },
         },
-        fill: {
-          opacity: 1,
-        },
-        colors: ["#7367f0", "#ff9f43"], // Example colors for Total and Missed
-        tooltip: {
-          y: {
-            formatter: (val) => val + " bins",
-          },
-        },
-        legend: {
-          position: "top",
-          horizontalAlign: "left",
-        },
-      }
+        fill: { opacity: 1 },
+        colors: ["#7367f0", "#ff9f43"],
+        tooltip: { y: { formatter: (val) => `${val} bins` } },
+        legend: { position: "top", horizontalAlign: "left" },
+      };
 
-      if (document.querySelector("#pickupByCollectorBarChart")) {
-        var pickupByCollectorBarChart = new ApexCharts(
-          document.querySelector("#pickupByCollectorBarChart"),
-          pickupByCollectorBarOptions,
-        )
-        pickupByCollectorBarChart.render()
-      }
-    })
+      const target = document.querySelector("#pickupByCollectorBarChart");
+      if (target) new ApexCharts(target, pickupByCollectorBarOptions).render();
+    });
+
 
     // ALL ROUTES MAP - Enhanced with Real Database Data
     document.addEventListener("DOMContentLoaded", () => {
