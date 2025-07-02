@@ -57,7 +57,7 @@ function displayRecords(records) {
         <td>${r.binLocation}<br>
             <small class="text-muted">Fill: ${r.fillLevel}%</small></td>
 
-        <td><span class="badge badge-info">${r.clientName}</span></td>
+        <td class="text-muted">${r.clientName}</td>
         <td><i class="fas fa-user text-muted"></i> ${r.collectorName}</td>
         <td><i class="fas fa-truck text-muted"></i> ${r.truckLicensePlate}</td>
 
@@ -71,10 +71,12 @@ function displayRecords(records) {
         : "<span class='text-muted'>No GPS</span>"
       }</td>
 
-        <td>${r.hasImage
-        ? '<span class="badge badge-info"><i class="fas fa-camera"></i> Available</span>'
-        : '<span class="badge badge-secondary"><i class="fas fa-times"></i> No Image</span>'
-      }</td>
+        <td class="text-muted">
+  ${r.hasImage
+        ? '<i class="fas fa-camera text-success"></i> Available'
+        : '<i class="fas fa-times text-danger"></i> No Image'
+  }
+</td>
 
 
         <td>${r.hasImage
