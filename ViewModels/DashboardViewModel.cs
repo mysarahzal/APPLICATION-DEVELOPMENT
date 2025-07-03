@@ -4,6 +4,10 @@ namespace AspnetCoreMvcFull.ViewModels
 {
   public class DashboardViewModel
   {
+    // ── Date Filter Fields ────────────────
+    public string SelectedPeriod { get; set; } = "day";   // "day", "week", "month", "specific", "custom"
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
     public int FleetCount { get; set; }
     public int CollectorCount { get; set; }
     public int DriverCount { get; set; }
@@ -34,6 +38,8 @@ namespace AspnetCoreMvcFull.ViewModels
     public List<DashboardRoute> AllRoutes { get; set; } = new List<DashboardRoute>();
     public int TotalActiveRoutes { get; set; }
     public int TotalCollectionPoints { get; set; }
+
+
   }
 
   public class DashboardRoute
@@ -59,7 +65,7 @@ namespace AspnetCoreMvcFull.ViewModels
     public bool IsCollected { get; set; }
     public DateTime? CollectedAt { get; set; }
     public decimal FillLevel { get; set; }
-    public string Status => IsCollected ? "collected" : "pending";
+    public string Status => IsCollected ? "collected" : "pending";                 // Optional for custom range
   }
 }
 

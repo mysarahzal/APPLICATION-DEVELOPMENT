@@ -1,12 +1,15 @@
-using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using AspnetCoreMvcFull.Models;
-using AspnetCoreMvcFull.ViewModels;
 using Microsoft.EntityFrameworkCore;
 using AspnetCoreMvcFull.Data;
-using Microsoft.AspNetCore.Authorization;
+using AspnetCoreMvcFull.Models;
+using AspnetCoreMvcFull.ViewModels;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AspnetCoreMvcFull.Controllers;
+
 [Authorize(Roles = "Admin,Driver")]
 public class DashboardsController : Controller
 {
@@ -17,106 +20,139 @@ public class DashboardsController : Controller
     _context = context;
   }
 
-  public async Task<IActionResult> Index()
+  // ───────────────────────────────────────────────────────────────
+  // Index  ‑ accepts date filter via query string
+  // ───────────────────────────────────────────────────────────────
+  public async Task<IActionResult> Index(
+      string period = "day",         // "day" | "week" | "month" | "specific" | "custom"
+      DateTime? start = null,          // used by specific & custom
+      DateTime? end = null)          // used by custom
   {
-    var viewModel = new DashboardViewModel();
+    // ---------------- 1. determine date window -----------------
+    DateTime today = DateTime.Today;
+    DateTime from, to;                // inclusive lower‑bound, exclusive upper‑bound
 
-    viewModel.TotalPickups = await _context.CollectionRecords.CountAsync();
-    viewModel.MissedPickups = await _context.MissedPickups.CountAsync();
-    viewModel.FleetCount = await _context.Trucks.CountAsync();
-    viewModel.DriverCount = await _context.Users.Where(u => u.Role == "Driver").CountAsync();
-    viewModel.CollectorCount = await _context.Users.Where(u => u.Role == "Collector").CountAsync();
-    viewModel.ClientCount = await _context.Clients.CountAsync();
+    switch (period)
+    {
+      case "week":
+        from = today.AddDays(-(int)today.DayOfWeek + 1);   // Monday
+        to = from.AddDays(7);
+        break;
 
+      case "month":
+        from = new DateTime(today.Year, today.Month, 1);
+        to = from.AddMonths(1);
+        break;
+
+      case "specific" when start.HasValue:
+        from = start.Value.Date;
+        to = from.AddDays(1);
+        break;
+
+      case "custom" when start.HasValue && end.HasValue:
+        from = start.Value.Date;
+        to = end.Value.Date.AddDays(1);                  // include end day
+        break;
+
+      default:                                              // "day"
+        from = today;
+        to = today.AddDays(1);
+        period = "day";                                   // normalise
+        break;
+    }
+
+    // ---------------- 2. create view‑model ---------------------
+    var vm = new DashboardViewModel
+    {
+      SelectedPeriod = period,
+      StartDate = from,
+      EndDate = to.AddDays(-1)                        // inclusive end for display
+};
+
+    // ---------------- 3. filtered queries ----------------------
+    // 3a. pickups & missed (main filter everywhere)
+    var pickupsQry = _context.CollectionRecords
+                     .Where(r => r.PickupTimestamp >= from && r.PickupTimestamp < to);
+
+    var missedQry = _context.MissedPickups
+                     .Where(m => m.DetectedAt >= from && m.DetectedAt < to);
+
+    vm.TotalPickups = await pickupsQry.CountAsync();
+    vm.MissedPickups = await missedQry.CountAsync();
+
+    // 3b. fleet / driver / collector / client (not date‑bounded)
+    vm.FleetCount = await _context.Trucks.CountAsync();
+    vm.DriverCount = await _context.Users.CountAsync(u => u.Role == "Driver");
+    vm.CollectorCount = await _context.Users.CountAsync(u => u.Role == "Collector");
+    vm.ClientCount = await _context.Clients.CountAsync();
+
+    // 3c. alerts (open issues, no date filter)
     var activeAlerts = await _context.BinReports
-       .Where(r => r.IsIssueReported               
-                && r.Status == "pending"            
-                && r.AcknowledgedAt == null)       
-       .ToListAsync();
-
-    viewModel.TotalActiveAlerts = activeAlerts.Count;
-    viewModel.CriticalAlerts = activeAlerts.Count(r => r.Severity == "Critical");
-    viewModel.HighAlerts = activeAlerts.Count(r => r.Severity == "High");
-    viewModel.MediumAlerts = activeAlerts.Count(r => r.Severity == "Medium");
-
-    // Get weekly pickup counts
-    var weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + 1); // Monday
-    var weekEnd = weekStart.AddDays(6); // Sunday (but we will exclude it later)
-
-    var pickups = await _context.CollectionRecords
-        .Where(r => r.PickupTimestamp >= weekStart && r.PickupTimestamp < weekEnd)
+        .Where(r => r.IsIssueReported && r.Status == "pending" && r.AcknowledgedAt == null)
         .ToListAsync();
 
-    var missed = await _context.MissedPickups
-        .Where(r => r.DetectedAt >= weekStart && r.DetectedAt < weekEnd)
+    vm.TotalActiveAlerts = activeAlerts.Count;
+    vm.CriticalAlerts = activeAlerts.Count(r => r.Severity == "Critical");
+    vm.HighAlerts = activeAlerts.Count(r => r.Severity == "High");
+    vm.MediumAlerts = activeAlerts.Count(r => r.Severity == "Medium");
+
+    // ---------------- 4. charts (filtered) ---------------------
+    // 4a. day‑by‑day arrays for the selected range
+    int daysSpan = (int)(to - from).TotalDays;                 // 1‑31
+    var dayLabels = Enumerable.Range(0, daysSpan)
+                               .Select(d => from.AddDays(d))
+                               .ToList();
+
+    var dailyPickups = await pickupsQry
+        .GroupBy(r => r.PickupTimestamp.Date)
+        .Select(g => new { Day = g.Key, Cnt = g.Count() })
         .ToListAsync();
 
-    // Prepare Monday–Saturday chart data
-    var weekdays = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-    var pickupCounts = new int[6];
-    var missedCounts = new int[6];
+    var dailyMissed = await missedQry
+        .GroupBy(m => m.DetectedAt.Date)
+        .Select(g => new { Day = g.Key, Cnt = g.Count() })
+        .ToListAsync();
 
-    foreach (var p in pickups)
-    {
-      int day = ((int)p.PickupTimestamp.DayOfWeek + 6) % 7; // Monday = 0, Sunday = 6
-      if (day < 6) pickupCounts[day]++;
-    }
+    vm.WeekDays = dayLabels.Select(d => d.ToString("dd/MM")).ToList();
+    vm.WeeklyPickupCounts = dayLabels.Select(d => dailyPickups.FirstOrDefault(x => x.Day == d)?.Cnt ?? 0).ToList();
+    vm.WeeklyMissedCounts = dayLabels.Select(d => dailyMissed.FirstOrDefault(x => x.Day == d)?.Cnt ?? 0).ToList();
 
-    foreach (var m in missed)
-    {
-      int day = ((int)m.DetectedAt.DayOfWeek + 6) % 7;
-      if (day < 6) missedCounts[day]++;
-    }
-
-    viewModel.WeeklyPickupCounts = pickupCounts.ToList();
-    viewModel.WeeklyMissedCounts = missedCounts.ToList();
-    viewModel.WeekDays = weekdays.ToList();
-
-    // -------------------------------------------
-    //  Pickup & missed counts grouped by collector
-    // -------------------------------------------
-
-    // 1. Get all collectors (stable ordering for chart)
+    // 4b. bar ‑ pickups per collector
     var collectors = await _context.Users
         .Where(u => u.Role == "Collector")
         .OrderBy(u => u.FirstName)
-        .Select(u => new { u.Id, u.FirstName })
+        .Select(u => new { u.Id, Name = u.FirstName })
         .ToListAsync();
 
-    // 2. Count total pickups per collector (from CollectionRecord)
-    var collectedGroups = await _context.CollectionRecords
+    var collCollected = await pickupsQry
         .GroupBy(r => r.CollectorId)
-        .Select(g => new { CollectorId = g.Key, Count = g.Count() })
-        .ToDictionaryAsync(g => g.CollectorId, g => g.Count);
+        .Select(g => new { g.Key, Cnt = g.Count() })
+        .ToDictionaryAsync(g => g.Key, g => g.Cnt);
 
-    // 3. Count missed pickups per collector (direct from Schedule.CollectorId)
-    var missedGroups = await _context.MissedPickups
-        .GroupBy(mp => mp.Schedule.CollectorId)
-        .Select(g => new { CollectorId = g.Key, Count = g.Count() })
-        .ToDictionaryAsync(g => g.CollectorId, g => g.Count);
+    var collMissed = await missedQry
+        .GroupBy(m => m.Schedule.CollectorId)
+        .Select(g => new { g.Key, Cnt = g.Count() })
+        .ToDictionaryAsync(g => g.Key, g => g.Cnt);
 
-    // 4. Add to view model
     foreach (var c in collectors)
     {
-      viewModel.CollectorNames.Add(c.FirstName);
-      viewModel.CollectedByCollector.Add(collectedGroups.TryGetValue(c.Id, out var col) ? col : 0);
-      viewModel.MissedByCollector.Add(missedGroups.TryGetValue(c.Id, out var mis) ? mis : 0);
+      vm.CollectorNames.Add(c.Name);
+      vm.CollectedByCollector.Add(collCollected.TryGetValue(c.Id, out var ok) ? ok : 0);
+      vm.MissedByCollector.Add(collMissed.TryGetValue(c.Id, out var ms) ? ms : 0);
     }
 
-
-    // Get all active routes with collection points
+    // ---------------- 5. active routes (no date filter) --------
     var allRoutes = await _context.Schedules
         .Include(s => s.Truck)
         .Include(s => s.Route)
-        .Include(s => s.CollectionPoints)
-            .ThenInclude(cp => cp.Bin)
+        .Include(s => s.CollectionPoints).ThenInclude(cp => cp.Bin)
         .Where(s => s.Status == "Scheduled" || s.Status == "In-Progress")
         .ToListAsync();
 
-    // Define colors for different routes
-    var routeColors = new[] { "#2ecc71", "#e74c3c", "#3498db", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#34495e" };
+    string[] routeColors = { "#2ecc71", "#e74c3c", "#3498db", "#f39c12", "#9b59b6",
+                                 "#1abc9c", "#e67e22", "#34495e" };
 
-    viewModel.AllRoutes = allRoutes.Select((schedule, index) => new DashboardRoute
+    vm.AllRoutes = allRoutes.Select((schedule, idx) => new DashboardRoute
     {
       ScheduleId = schedule.Id,
       TruckId = schedule.TruckId,
@@ -124,7 +160,8 @@ public class DashboardsController : Controller
       RouteName = schedule.Route?.Name ?? $"Route {schedule.RouteId}",
       Status = schedule.Status,
       ScheduleStartTime = schedule.ScheduleStartTime,
-      RouteColor = routeColors[index % routeColors.Length],
+      RouteColor = routeColors[idx % routeColors.Length],
+
       CollectionPoints = schedule.CollectionPoints
             .OrderBy(cp => cp.OrderInSchedule)
             .Select(cp => new RouteCollectionPoint
@@ -138,14 +175,16 @@ public class DashboardsController : Controller
               IsCollected = cp.IsCollected,
               CollectedAt = cp.CollectedAt,
               FillLevel = cp.Bin.FillLevel
-            }).ToList()
+            })
+            .ToList()
     }).ToList();
 
-    viewModel.TotalActiveRoutes = viewModel.AllRoutes.Count;
-    viewModel.TotalCollectionPoints = viewModel.AllRoutes.Sum(r => r.CollectionPoints.Count);
+    vm.TotalActiveRoutes = vm.AllRoutes.Count;
+    vm.TotalCollectionPoints = vm.AllRoutes.Sum(r => r.CollectionPoints.Count);
 
-    return View(viewModel);
+    return View(vm);
   }
+
 
   [HttpGet]
   public async Task<IActionResult> GetAllRoutesData()
@@ -153,14 +192,14 @@ public class DashboardsController : Controller
     var allRoutes = await _context.Schedules
         .Include(s => s.Truck)
         .Include(s => s.Route)
-        .Include(s => s.CollectionPoints)
-            .ThenInclude(cp => cp.Bin)
+        .Include(s => s.CollectionPoints).ThenInclude(cp => cp.Bin)
         .Where(s => s.Status == "Scheduled" || s.Status == "In-Progress")
         .ToListAsync();
 
-    var routeColors = new[] { "#2ecc71", "#e74c3c", "#3498db", "#f39c12", "#9b59b6", "#1abc9c", "#e67e22", "#34495e" };
+    string[] routeColors = { "#2ecc71", "#e74c3c", "#3498db", "#f39c12", "#9b59b6",
+                                 "#1abc9c", "#e67e22", "#34495e" };
 
-    var result = allRoutes.Select((schedule, index) => new DashboardRoute
+    var result = allRoutes.Select((schedule, idx) => new DashboardRoute
     {
       ScheduleId = schedule.Id,
       TruckId = schedule.TruckId,
@@ -168,7 +207,8 @@ public class DashboardsController : Controller
       RouteName = schedule.Route?.Name ?? $"Route {schedule.RouteId}",
       Status = schedule.Status,
       ScheduleStartTime = schedule.ScheduleStartTime,
-      RouteColor = routeColors[index % routeColors.Length],
+      RouteColor = routeColors[idx % routeColors.Length],
+
       CollectionPoints = schedule.CollectionPoints
             .OrderBy(cp => cp.OrderInSchedule)
             .Select(cp => new RouteCollectionPoint
@@ -182,10 +222,10 @@ public class DashboardsController : Controller
               IsCollected = cp.IsCollected,
               CollectedAt = cp.CollectedAt,
               FillLevel = cp.Bin.FillLevel
-            }).ToList()
-    }).ToList();
+            })
+            .ToList()
+    });
 
     return Json(result);
   }
 }
-

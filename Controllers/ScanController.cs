@@ -135,7 +135,8 @@ namespace AspnetCoreMvcFull.Controllers
           imageId = image.Id,
           collectorName = $"{schedule.Collector?.FirstName} {schedule.Collector?.LastName}".Trim(),
           truckLicensePlate = schedule.Truck?.LicensePlate ?? "Unknown",
-          gpsLocation = $"{request.Latitude}, {request.Longitude}"
+          gpsLocation = $"{request.Latitude}, {request.Longitude}",
+          detectionMethod = request.IsManual ? "Manual Entry" : "Auto Detection"
         });
       }
       catch (Exception ex)
@@ -145,10 +146,108 @@ namespace AspnetCoreMvcFull.Controllers
       }
     }
 
+    // NEW: Manual form submission endpoint
+    [HttpPost]
+    public async Task<IActionResult> ProcessManualEntry([FromBody] ManualEntryRequest request)
+    {
+      try
+      {
+        // Convert manual entry to detection request format
+        var detectionRequest = new DetectionRequest
+        {
+          BinPlateId = request.BinPlateId,
+          ImageData = request.ImageData,
+          Latitude = request.Latitude,
+          Longitude = request.Longitude,
+          IsManual = true
+        };
+
+        // Use the same processing logic
+        var result = await ProcessDetection(detectionRequest);
+        return result;
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error processing manual entry");
+        return Json(new { success = false, message = $"Manual entry error: {ex.Message}" });
+      }
+    }
+
+    // NEW: Validate bin plate endpoint for real-time feedback
+    [HttpPost]
+    public async Task<IActionResult> ValidateBinPlate([FromBody] ValidatePlateRequest request)
+    {
+      try
+      {
+        var plateId = request.BinPlateId?.Trim().ToUpper();
+
+        if (!IsValidBinPlateFormat(plateId))
+        {
+          return Json(new
+          {
+            valid = false,
+            message = "Invalid format. Use ABC1234 format (3 letters + 4 numbers)"
+          });
+        }
+
+        var bin = await _context.Bins
+            .Include(b => b.Client)
+            .FirstOrDefaultAsync(b => b.BinPlateId == plateId);
+
+        if (bin == null)
+        {
+          return Json(new
+          {
+            valid = false,
+            message = $"Bin {plateId} not found in database"
+          });
+        }
+
+        // Check if already collected
+        var collectionPoint = await _context.CollectionPoints
+            .FirstOrDefaultAsync(cp => cp.BinId == bin.Id);
+
+        if (collectionPoint != null)
+        {
+          var existingRecord = await _context.CollectionRecords
+              .FirstOrDefaultAsync(cr => cr.CollectionPointId == collectionPoint.Id);
+
+          if (existingRecord != null)
+          {
+            return Json(new
+            {
+              valid = false,
+              message = $"Bin {plateId} already collected on {existingRecord.PickupTimestamp:dd/MM/yyyy HH:mm}",
+              alreadyCollected = true
+            });
+          }
+        }
+
+        return Json(new
+        {
+          valid = true,
+          message = $"✅ Bin {plateId} found - Ready to collect",
+          binInfo = new
+          {
+            plateId = bin.BinPlateId,
+            location = bin.Location,
+            zone = bin.Zone,
+            clientName = bin.Client?.ClientName ?? "Unknown"
+          }
+        });
+      }
+      catch (Exception ex)
+      {
+        _logger.LogError(ex, "Error validating bin plate");
+        return Json(new { valid = false, message = $"Validation error: {ex.Message}" });
+      }
+    }
+
     private bool IsValidBinPlateFormat(string plateId)
     {
       if (string.IsNullOrEmpty(plateId) || plateId.Length != 7)
         return false;
+
       return new Regex(@"^[A-Z]{3}\d{4}$").IsMatch(plateId);
     }
 
@@ -170,6 +269,7 @@ namespace AspnetCoreMvcFull.Controllers
         base64Data = base64Data.Replace(" ", "").Replace("\n", "").Replace("\r", "");
 
         var imageBytes = Convert.FromBase64String(base64Data);
+
         _logger.LogInformation($"Converted base64 to {imageBytes.Length} bytes");
 
         return imageBytes;
@@ -215,5 +315,19 @@ namespace AspnetCoreMvcFull.Controllers
     public string ImageData { get; set; } = string.Empty;
     public decimal Latitude { get; set; }
     public decimal Longitude { get; set; }
+    public bool IsManual { get; set; } = false;
+  }
+
+  public class ManualEntryRequest
+  {
+    public string BinPlateId { get; set; } = string.Empty;
+    public string ImageData { get; set; } = string.Empty;
+    public decimal Latitude { get; set; }
+    public decimal Longitude { get; set; }
+  }
+
+  public class ValidatePlateRequest
+  {
+    public string BinPlateId { get; set; } = string.Empty;
   }
 }

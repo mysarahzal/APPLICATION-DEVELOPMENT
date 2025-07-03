@@ -15,6 +15,38 @@ html2canvas = window.html2canvas // Assuming html2canvas is available globally
     chartBgColor = config.colors.chartBgColor
     bodyColor = config.colors.bodyColor
 
+      document.addEventListener("DOMContentLoaded", function () {
+        const periodSelect = document.getElementById("periodSelect");
+        const startDate = document.getElementById("startDate");
+        const endDate = document.getElementById("endDate");
+        const form = document.getElementById("rangeFilterForm");
+
+        function toggleDateInputs() {
+          const val = periodSelect.value;
+
+          startDate.hidden = !(val === "specific" || val === "custom");
+          endDate.hidden = val !== "custom";
+        }
+
+        periodSelect.addEventListener("change", function () {
+          toggleDateInputs();
+          if (periodSelect.value !== "specific" && periodSelect.value !== "custom") {
+            form.submit();
+          }
+        });
+
+        startDate.addEventListener("change", () => {
+          if (periodSelect.value === "specific") form.submit();
+        });
+
+        endDate.addEventListener("change", () => {
+          if (periodSelect.value === "custom") form.submit();
+        });
+
+        toggleDateInputs(); // Initial toggle on page load
+      });
+
+
     // Pickup over Time - Area Chart (Total Bin Pickup with Missed Pickup)
     document.addEventListener("DOMContentLoaded", () => {
       const totalMissedPickupsAreaOptions = {
