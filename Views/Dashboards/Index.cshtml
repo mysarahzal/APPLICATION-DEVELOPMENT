@@ -65,6 +65,32 @@
 
 @* ************** Content ************** *@
 
+<form asp-action="Index" method="get" id="rangeFilterForm"
+      class="d-flex flex-wrap align-items-center gap-2 mb-3">
+    <label class="form-label mb-0" for="periodSelect">Show:</label>
+
+    <select id="periodSelect" name="period" class="form-select w-auto">
+        <option value="day" selected="@(Model.SelectedPeriod == "day")">Today</option>
+        <option value="week" selected="@(Model.SelectedPeriod == "week")">This Week</option>
+        <option value="month" selected="@(Model.SelectedPeriod == "month")">This Month</option>
+        <option value="specific" selected="@(Model.SelectedPeriod == "specific")">Specific Date</option>
+        <option value="custom" selected="@(Model.SelectedPeriod == "custom")">Custom Range</option>
+    </select>
+
+    <input type="date" name="start" id="startDate"
+           class="form-control"
+           value="@(Model.StartDate?.ToString("yyyy-MM-dd"))"
+           @(Model.SelectedPeriod is "specific" or "custom" ? "" : "hidden") />
+
+    <input type="date" name="end" id="endDate"
+           class="form-control"
+           value="@(Model.EndDate?.ToString("yyyy-MM-dd"))"
+           @(Model.SelectedPeriod == "custom" ? "" : "hidden") />
+
+    <button type="submit" class="btn btn-primary d-none">Apply</button>
+</form>
+
+
 <div class="d-flex justify-content-end mb-4">
     <button id="downloadDashboardPdf" class="btn btn-info mt-3">
         <i class="ri-file-pdf-line me-1"></i> Download PDF
@@ -150,7 +176,7 @@
                         <span class="text-warning fw-bold">@Model.HighAlerts</span> High
                         <span class="text-success fw-bold">@Model.MediumAlerts</span> Medium
                     </p>
-                    <a href="/alerts" class="btn btn-sm btn-primary">View All Alerts</a>
+                    <a href="/BinReport/SubmittedReports" class="btn btn-sm btn-primary">View All Alerts</a>
                 </div>
                 <img src="/img/elements/alertalarm.gif" class="position-absolute bottom-0 end-0 me-1 mb-1" width="150" alt="Blinking Alert">
             </div>
