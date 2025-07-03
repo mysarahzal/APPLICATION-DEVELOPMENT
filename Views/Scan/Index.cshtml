@@ -1,38 +1,131 @@
 @{
-    ViewData["Title"] = "Auto Bin Detection";
+    ViewData["Title"] = "Bin Detection System";
 }
 
 <div class="container mt-4">
-    <<h2 class="text-center mb-4">🎯 Auto Bin Detection</h2>
+    <h2 class="text-center mb-4">🎯 Bin Detection System</h2>
 
-    <div id="status" class="alert alert-info text-center">
-        📦 Loading auto-detection system... Please wait.
+    <!-- Mode Toggle -->
+    <div class="text-center mb-4">
+        <div class="btn-group" role="group" aria-label="Detection Mode">
+            <button type="button" id="autoModeBtn" class="btn btn-primary active">
+                📱 Auto Detection
+            </button>
+            <button type="button" id="manualModeBtn" class="btn btn-outline-primary">
+                ✏️ Manual Entry
+            </button>
+        </div>
     </div>
 
-    <div id="cameraSection" style="display:none;" class="text-center">
-        <div class="position-relative d-inline-block mb-3">
-            <video id="video" width="640" height="480" autoplay playsinline muted class="border rounded"></video>
-            <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+    <!-- Auto Detection Section -->
+    <div id="autoDetectionSection">
+        <div id="status" class="alert alert-info text-center">
+            📦 Loading auto-detection system... Please wait.
         </div>
-        <br>
 
-        <!-- Live Detection Display -->
-        <div id="liveDetection" class="mb-3" style="display:none;">
-            <div class="card border-success">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">📱 Auto-Detected Bin Plate</h5>
-                </div>
-                <div class="card-body">
-                    <h3 id="detectedPlateId" class="text-success font-weight-bold">-</h3>
-                    <p class="mb-0">Detected from: <span id="detectionSource">-</span></p>
-                    <p class="mb-0">GPS Location: <span id="gpsLocation" class="text-muted">Getting location...</span></p>
-                    <small class="text-muted">Confidence: <span id="detectionConfidence">-</span>% | Count: <span id="liveDetectionCount">0</span></small>
+        <div id="cameraSection" style="display:none;" class="text-center">
+            <div class="position-relative d-inline-block mb-3">
+                <video id="video" width="640" height="480" autoplay playsinline muted class="border rounded"></video>
+                <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+            </div>
+            <br>
+            <!-- Live Detection Display -->
+            <div id="liveDetection" class="mb-3" style="display:none;">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">📱 Auto-Detected Bin Plate</h5>
+                    </div>
+                    <div class="card-body">
+                        <h3 id="detectedPlateId" class="text-success font-weight-bold">-</h3>
+                        <p class="mb-0">Detected from: <span id="detectionSource">-</span></p>
+                        <p class="mb-0">GPS Location: <span id="gpsLocation" class="text-muted">Getting location...</span></p>
+                        <small class="text-muted">Confidence: <span id="detectionConfidence">-</span>% | Count: <span id="liveDetectionCount">0</span></small>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div id="result" class="mt-3"></div>
     </div>
+
+    <!-- Manual Entry Section -->
+    <div id="manualEntrySection" style="display:none;">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">✏️ Manual Bin Entry</h5>
+                        <small>Use when auto-detection fails</small>
+                    </div>
+                    <div class="card-body">
+                        <form id="manualEntryForm">
+                            <!-- Bin Plate ID Input -->
+                            <div class="form-group mb-3">
+                                <label for="manualPlateId" class="form-label">
+                                    <strong>Bin Plate ID</strong>
+                                    <small class="text-muted">(Format: ABC1234)</small>
+                                </label>
+                                <div class="input-group">
+                                    <input type="text"
+                                           id="manualPlateId"
+                                           class="form-control form-control-lg"
+                                           placeholder="Enter ABC1234"
+                                           maxlength="7"
+                                           style="text-transform: uppercase;"
+                                           required>
+                                    <button type="button" id="validatePlateBtn" class="btn btn-outline-secondary">
+                                        🔍 Validate
+                                    </button>
+                                </div>
+                                <div id="plateValidation" class="mt-2"></div>
+                            </div>
+
+                            <!-- Photo Upload (instead of camera capture) -->
+                            <div class="form-group mb-3">
+                                <label class="form-label">
+                                    <strong>Photo Evidence</strong>
+                                    <small class="text-muted">(Required - Upload from gallery/files)</small>
+                                </label>
+                                <div class="mb-2">
+                                    <input type="file"
+                                           id="photoUpload"
+                                           class="form-control"
+                                           accept="image/*"
+                                           required>
+                                </div>
+                                <div id="uploadedImagePreview" class="text-center mb-2" style="display:none;">
+                                    <img id="previewUploadedImage" class="border rounded" style="max-width: 400px; max-height: 300px;">
+                                    <br>
+                                    <small class="text-success">✅ Photo uploaded successfully</small>
+                                </div>
+                            </div>
+
+                            <!-- GPS Location -->
+                            <div class="form-group mb-3">
+                                <label class="form-label">
+                                    <strong>GPS Location</strong>
+                                </label>
+                                <div class="input-group">
+                                    <input type="text" id="manualGpsDisplay" class="form-control" readonly placeholder="Getting location...">
+                                    <button type="button" id="refreshLocationBtn" class="btn btn-outline-info">
+                                        📍 Refresh
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="text-center">
+                                <button type="submit" id="submitManualBtn" class="btn btn-primary btn-lg" disabled>
+                                    ✅ Submit Manual Entry
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="result" class="mt-3"></div>
 </div>
 
 @section Scripts {
