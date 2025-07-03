@@ -157,7 +157,8 @@
             <div class="col-md-4">
                 <select id="scheduleSelect" class="form-select">
                     <option value="">Select a truck schedule...</option>
-                    @foreach (var schedule in Model.AvailableSchedules)
+                    @foreach (var schedule in Model.AvailableSchedules
+                                        .Where(s => s.Status == "Scheduled" || s.Status == "In-Progress"))
                     {
                         <option value="@schedule.ScheduleId"
                                 data-truck="@schedule.TruckName"

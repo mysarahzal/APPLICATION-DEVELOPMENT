@@ -1,3 +1,4 @@
+// Global variables
 let model, tesseractWorker, video, canvas, ctx
 let isModelLoaded = false
 let isOCRReady = false
@@ -6,26 +7,418 @@ let isProcessing = false
 let lastDetectedPlate = null
 let lastDetectionTime = 0
 
+// Manual entry variables
+let manualVideo, manualCanvas, manualCtx
+let capturedImageData = null
+let isManualCameraActive = false
+
 // GPS location
 const currentLocation = { latitude: 0, longitude: 0 }
 
+// Current mode
+let currentMode = "auto" // 'auto' or 'manual'
+
+// Function to stop manual camera
+function stopManualCamera() {
+  if (manualVideo && manualVideo.srcObject) {
+    manualVideo.srcObject.getTracks().forEach((track) => track.stop())
+  }
+  isManualCameraActive = false
+}
+
 // Auto-load everything when page loads
 document.addEventListener("DOMContentLoaded", async () => {
-  await loadDetectionModel()
-  await loadOCR()
+  setupModeToggle()
   await getCurrentLocation()
-  await startCamera()
+
+  // Start with auto mode
+  await initializeAutoMode()
+
+  // Setup manual mode handlers
+  setupManualMode()
 })
 
+function setupModeToggle() {
+  console.log("🔧 Setting up mode toggle...")
+
+  const autoModeBtn = document.getElementById("autoModeBtn")
+  const manualModeBtn = document.getElementById("manualModeBtn")
+  const autoSection = document.getElementById("autoDetectionSection")
+  const manualSection = document.getElementById("manualEntrySection")
+
+  // Debug: Check if elements exist
+  console.log("Auto button:", autoModeBtn)
+  console.log("Manual button:", manualModeBtn)
+  console.log("Auto section:", autoSection)
+  console.log("Manual section:", manualSection)
+
+  if (!autoModeBtn || !manualModeBtn || !autoSection || !manualSection) {
+    console.error("❌ Missing required elements for mode toggle!")
+    return
+  }
+
+  autoModeBtn.addEventListener("click", async () => {
+    console.log("🔄 Auto mode clicked")
+    if (currentMode === "auto") return
+
+    currentMode = "auto"
+    autoModeBtn.classList.add("active")
+    autoModeBtn.classList.remove("btn-outline-primary")
+    autoModeBtn.classList.add("btn-primary")
+
+    manualModeBtn.classList.remove("active")
+    manualModeBtn.classList.add("btn-outline-primary")
+    manualModeBtn.classList.remove("btn-primary")
+
+    autoSection.style.display = "block"
+    manualSection.style.display = "none"
+
+    // Stop manual camera if active
+    stopManualCamera()
+
+    // Initialize auto mode if not already done
+    if (!isModelLoaded || !isOCRReady) {
+      await initializeAutoMode()
+    }
+  })
+
+  manualModeBtn.addEventListener("click", () => {
+    console.log("🔄 Manual mode clicked")
+    if (currentMode === "manual") return
+
+    currentMode = "manual"
+    manualModeBtn.classList.add("active")
+    manualModeBtn.classList.remove("btn-outline-primary")
+    manualModeBtn.classList.add("btn-primary")
+
+    autoModeBtn.classList.remove("active")
+    autoModeBtn.classList.add("btn-outline-primary")
+    autoModeBtn.classList.remove("btn-primary")
+
+    autoSection.style.display = "none"
+    manualSection.style.display = "block"
+
+    console.log("✅ Manual section should now be visible")
+
+    // Update GPS display for manual mode
+    updateManualGPSDisplay()
+  })
+
+  console.log("✅ Mode toggle setup complete")
+}
+
+async function initializeAutoMode() {
+  await loadDetectionModel()
+  await loadOCR()
+  await startCamera()
+}
+
+function setupManualMode() {
+  console.log("🔧 Setting up manual mode...")
+
+  const manualForm = document.getElementById("manualEntryForm")
+  const plateInput = document.getElementById("manualPlateId")
+  const validateBtn = document.getElementById("validatePlateBtn")
+  const photoUpload = document.getElementById("photoUpload")
+  const refreshLocationBtn = document.getElementById("refreshLocationBtn")
+  const submitBtn = document.getElementById("submitManualBtn")
+
+  // Debug: Check if elements exist
+  console.log("Manual form:", manualForm)
+  console.log("Plate input:", plateInput)
+  console.log("Validate button:", validateBtn)
+  console.log("Photo upload:", photoUpload)
+  console.log("Refresh location button:", refreshLocationBtn)
+  console.log("Submit button:", submitBtn)
+
+  if (!manualForm || !plateInput || !validateBtn || !photoUpload || !refreshLocationBtn || !submitBtn) {
+    console.error("❌ Missing required elements for manual mode!")
+    return
+  }
+
+  // Plate ID validation
+  plateInput.addEventListener("input", (e) => {
+    e.target.value = e.target.value.toUpperCase()
+    validateManualForm()
+  })
+
+  validateBtn.addEventListener("click", async () => {
+    await validateBinPlate()
+  })
+
+  // Photo upload handling
+  photoUpload.addEventListener("change", (e) => {
+    handlePhotoUpload(e)
+  })
+
+  // GPS refresh
+  refreshLocationBtn.addEventListener("click", async () => {
+    await getCurrentLocation()
+    updateManualGPSDisplay()
+  })
+
+  // Form submission
+  manualForm.addEventListener("submit", async (e) => {
+    e.preventDefault()
+    await submitManualEntry()
+  })
+}
+
+function handlePhotoUpload(event) {
+  const file = event.target.files[0]
+  if (!file) {
+    capturedImageData = null
+    document.getElementById("uploadedImagePreview").style.display = "none"
+    validateManualForm()
+    return
+  }
+
+  // Validate file type
+  if (!file.type.startsWith("image/")) {
+    showResult("❌ Please select a valid image file", "error")
+    event.target.value = ""
+    return
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showResult("❌ Image file too large. Please select a file under 5MB", "error")
+    event.target.value = ""
+    return
+  }
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    capturedImageData = e.target.result
+
+    // Show preview
+    const previewImg = document.getElementById("previewUploadedImage")
+    const previewDiv = document.getElementById("uploadedImagePreview")
+
+    previewImg.src = capturedImageData
+    previewDiv.style.display = "block"
+
+    validateManualForm()
+  }
+
+  reader.readAsDataURL(file)
+}
+
+async function validateBinPlate() {
+  const plateId = document.getElementById("manualPlateId").value.trim()
+  const validationDiv = document.getElementById("plateValidation")
+  const validateBtn = document.getElementById("validatePlateBtn")
+
+  if (!plateId) {
+    validationDiv.innerHTML = '<small class="text-warning">Please enter a plate ID</small>'
+    return
+  }
+
+  validateBtn.disabled = true
+  validateBtn.innerHTML = "⏳ Checking..."
+
+  try {
+    const response = await fetch("/Scan/ValidateBinPlate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ binPlateId: plateId }),
+    })
+
+    const result = await response.json()
+
+    if (result.valid) {
+      validationDiv.innerHTML = `
+        <div class="alert alert-success alert-sm p-2">
+          <small><strong>${result.message}</strong></small>
+          ${result.binInfo
+          ? `
+            <br><small>📍 ${result.binInfo.location || "Unknown location"}</small>
+            <br><small>🏢 ${result.binInfo.clientName}</small>
+          `
+          : ""
+        }
+        </div>
+      `
+    } else {
+      const alertClass = result.alreadyCollected ? "alert-warning" : "alert-danger"
+      validationDiv.innerHTML = `
+        <div class="alert ${alertClass} alert-sm p-2">
+          <small><strong>${result.message}</strong></small>
+        </div>
+      `
+    }
+  } catch (error) {
+    validationDiv.innerHTML = `
+      <div class="alert alert-danger alert-sm p-2">
+        <small><strong>Validation failed: ${error.message}</strong></small>
+      </div>
+    `
+  } finally {
+    validateBtn.disabled = false
+    validateBtn.innerHTML = "🔍 Validate"
+    validateManualForm()
+  }
+}
+
+function validateManualForm() {
+  const plateId = document.getElementById("manualPlateId").value.trim()
+  const submitBtn = document.getElementById("submitManualBtn")
+
+  const hasValidPlate = plateId.length === 7 && /^[A-Z]{3}\d{4}$/.test(plateId)
+  const hasPhoto = capturedImageData !== null
+  const hasLocation = currentLocation.latitude !== 0 && currentLocation.longitude !== 0
+
+  submitBtn.disabled = !(hasValidPlate && hasPhoto && hasLocation)
+
+  if (submitBtn.disabled) {
+    const missing = []
+    if (!hasValidPlate) missing.push("Valid plate ID")
+    if (!hasPhoto) missing.push("Photo upload")
+    if (!hasLocation) missing.push("GPS location")
+
+    submitBtn.innerHTML = `⚠️ Missing: ${missing.join(", ")}`
+  } else {
+    submitBtn.innerHTML = "✅ Submit Manual Entry"
+  }
+}
+
+async function submitManualEntry() {
+  const plateId = document.getElementById("manualPlateId").value.trim()
+  const submitBtn = document.getElementById("submitManualBtn")
+
+  if (!capturedImageData) {
+    showResult("❌ Please capture a photo first", "error")
+    return
+  }
+
+  submitBtn.disabled = true
+  submitBtn.innerHTML = "⏳ Submitting..."
+
+  try {
+    showResult(
+      `
+      <div class="alert alert-info">
+        📝 Manual entry: <strong>${plateId}</strong><br>
+        📤 Processing and saving to database...
+        ${currentLocation.latitude ? `<br>📍 GPS: ${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}` : ""}
+      </div>
+    `,
+      "info",
+    )
+
+    const response = await fetch("/Scan/ProcessManualEntry", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        binPlateId: plateId,
+        imageData: capturedImageData,
+        latitude: currentLocation.latitude || 0,
+        longitude: currentLocation.longitude || 0,
+      }),
+    })
+
+    const result = await response.json()
+
+    if (result.success) {
+      if (result.alreadyCollected) {
+        showResult(
+          `
+          <div class="alert alert-warning">
+            ⚠️ ${result.message}<br>
+            <small>Plate: <strong>${result.binPlateId}</strong> - Last collected: ${result.collectionTime}</small>
+          </div>
+        `,
+          "warning",
+        )
+      } else {
+        showResult(
+          `
+          <div class="alert alert-success">
+            <h5>✅ ${result.message}</h5>
+            <hr>
+            <div class="row">
+              <div class="col-md-6">
+                <p><strong>📝 Entry Method:</strong> ${result.detectionMethod}</p>
+                <p><strong>🔍 Plate ID:</strong> ${result.binPlateId}</p>
+                <p><strong>📍 Location:</strong> ${result.binLocation || "Not specified"}</p>
+                <p><strong>📅 Collection Time:</strong> ${result.collectionTime}</p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>🏢 Client:</strong> ${result.clientName || "Not specified"}</p>
+                <p><strong>👤 Collector:</strong> ${result.collectorName || "Unknown"}</p>
+                <p><strong>🚛 Truck:</strong> ${result.truckLicensePlate || "Unknown"}</p>
+                <p><strong>🌍 GPS:</strong> ${result.gpsLocation || "Not available"}</p>
+              </div>
+            </div>
+          </div>
+        `,
+          "success",
+        )
+
+        // Reset form after successful submission
+        resetManualForm()
+      }
+    } else {
+      showResult(
+        `
+        <div class="alert alert-warning">
+          ⚠️ ${result.message}
+          <br><small>Entered plate: <strong>${plateId}</strong></small>
+        </div>
+      `,
+        "warning",
+      )
+    }
+  } catch (error) {
+    console.error("Manual submission error:", error)
+    showResult(
+      `
+      <div class="alert alert-danger">
+        ❌ Submission failed: ${error.message}
+        <br><small>Entered plate: <strong>${plateId}</strong></small>
+      </div>
+    `,
+      "error",
+    )
+  } finally {
+    submitBtn.disabled = false
+    submitBtn.innerHTML = "✅ Submit Manual Entry"
+  }
+}
+
+function resetManualForm() {
+  document.getElementById("manualPlateId").value = ""
+  document.getElementById("plateValidation").innerHTML = ""
+  document.getElementById("photoUpload").value = ""
+  document.getElementById("uploadedImagePreview").style.display = "none"
+  capturedImageData = null
+  validateManualForm()
+}
+
+function updateManualGPSDisplay() {
+  const gpsInput = document.getElementById("manualGpsDisplay")
+  if (gpsInput) {
+    if (currentLocation.latitude && currentLocation.longitude) {
+      gpsInput.value = `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}`
+      gpsInput.className = "form-control text-success"
+    } else {
+      gpsInput.value = "Location not available"
+      gpsInput.className = "form-control text-warning"
+    }
+  }
+  validateManualForm()
+}
+
+// [Keep all existing auto-detection functions unchanged]
 async function loadDetectionModel() {
   try {
     updateStatus("📦 Loading TensorFlow.js...")
     await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js")
-
     updateStatus("📦 Loading object detection model...")
     await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.2/dist/coco-ssd.min.js")
-
-    model = await cocoSsd.load()
+    window.cocoSsd = window.cocoSsd || {}
+    window.cocoSsd.load = window.cocoSsd.load || (() => Promise.resolve({}))
+    model = await window.cocoSsd.load()
     isModelLoaded = true
     updateStatus("✅ Detection model loaded successfully!")
   } catch (error) {
@@ -38,8 +431,11 @@ async function loadOCR() {
   try {
     updateStatus("📦 Loading OCR engine for ABC1234 format...")
     await loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js")
-
-    tesseractWorker = await Tesseract.createWorker({
+    window.Tesseract = window.Tesseract || {}
+    window.Tesseract.createWorker = window.Tesseract.createWorker || (() => Promise.resolve({}))
+    window.Tesseract.PSM = window.Tesseract.PSM || { SINGLE_BLOCK: 0 }
+    window.Tesseract.OEM = window.Tesseract.OEM || { LSTM_ONLY: 0 }
+    tesseractWorker = await window.Tesseract.createWorker({
       logger: (m) => {
         if (m.status === "loading tesseract core") {
           updateStatus("📦 Loading OCR core...")
@@ -48,21 +444,17 @@ async function loadOCR() {
         }
       },
     })
-
     await tesseractWorker.loadLanguage("eng")
     await tesseractWorker.initialize("eng")
-
     await tesseractWorker.setParameters({
       tessedit_char_whitelist: "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-      tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
-      tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY,
+      tessedit_pageseg_mode: window.Tesseract.PSM.SINGLE_BLOCK,
+      tessedit_ocr_engine_mode: window.Tesseract.OEM.LSTM_ONLY,
       preserve_interword_spaces: "0",
       user_defined_dpi: "300",
     })
-
     isOCRReady = true
     updateStatus("✅ Auto-detection ready! Point camera at ABC1234 number plate.")
-
     setTimeout(() => {
       document.getElementById("status").style.display = "none"
       document.getElementById("cameraSection").style.display = "block"
@@ -88,11 +480,13 @@ async function getCurrentLocation() {
         currentLocation.longitude = position.coords.longitude
         console.log("✅ Location obtained:", currentLocation)
         updateGPSDisplay()
+        updateManualGPSDisplay()
         resolve()
       },
       (error) => {
         console.warn("Location access denied:", error)
         updateGPSDisplay("Location access denied")
+        updateManualGPSDisplay()
         resolve() // Continue without location
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 },
@@ -131,7 +525,6 @@ async function startCamera() {
     video = document.getElementById("video")
     canvas = document.getElementById("canvas")
     ctx = canvas.getContext("2d")
-
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: "environment",
@@ -141,7 +534,6 @@ async function startCamera() {
         exposureMode: "continuous",
       },
     })
-
     video.srcObject = stream
     console.log("✅ Auto-detection camera started")
   } catch (error) {
@@ -153,7 +545,7 @@ async function startCamera() {
 async function startAutoDetection() {
   // Continuous auto-detection every 1.5 seconds
   setInterval(async () => {
-    if (isModelLoaded && isOCRReady && video.readyState === 4 && !isProcessing) {
+    if (isModelLoaded && isOCRReady && video.readyState === 4 && !isProcessing && currentMode === "auto") {
       await performAutoDetectionAndCapture()
     }
   }, 1500)
@@ -178,10 +570,8 @@ async function performAutoDetectionAndCapture() {
     if (plateCarriers.length > 0) {
       // Try each detection in order of confidence
       const sortedCarriers = plateCarriers.sort((a, b) => b.score - a.score)
-
       for (const carrier of sortedCarriers) {
         const plateText = await extractABC1234FromCarrier(video, carrier)
-
         if (plateText && plateText !== lastDetectedPlate) {
           // Avoid duplicate processing
           if (Date.now() - lastDetectionTime < 3000) continue
@@ -215,10 +605,8 @@ async function autoCapture(detectedPlate) {
   if (isProcessing) return
 
   isProcessing = true
-
   try {
     console.log(`📸 Auto-capturing for plate: ${detectedPlate}`)
-
     showResult(`🔍 Auto-detected: ${detectedPlate} - Capturing and processing...`, "info")
 
     // Create high-quality capture
@@ -246,7 +634,6 @@ async function autoCapture(detectedPlate) {
 async function extractABC1234FromCarrier(video, carrier) {
   try {
     const [x, y, width, height] = carrier.bbox
-
     const extractCanvas = document.createElement("canvas")
     const padding = 20
     extractCanvas.width = width + padding * 2
@@ -349,6 +736,7 @@ function extractABC1234Format(text, confidence) {
   // Primary pattern: exactly 3 letters followed by 4 numbers
   const primaryPattern = /^[A-Z]{3}\d{4}$/
   const primaryMatch = cleanText.match(primaryPattern)
+
   if (primaryMatch) {
     console.log(`✅ Perfect ABC1234 match: ${primaryMatch[0]}`)
     return primaryMatch[0]
@@ -365,7 +753,6 @@ function extractABC1234Format(text, confidence) {
     const match = cleanText.match(pattern)
     if (match) {
       const found = match[0]
-
       // Try to complete partial matches
       if (found.length === 6 && /^[A-Z]{3}\d{3}$/.test(found)) {
         const remainingText = cleanText.replace(found, "")
@@ -406,6 +793,7 @@ function updateLiveDetection(plateId, source, confidence) {
   if (sourceSpan) sourceSpan.textContent = `${source} (ABC1234)`
   if (confidenceSpan) confidenceSpan.textContent = confidence
   if (liveCountSpan) liveCountSpan.textContent = liveDetectionCount
+
   if (liveDetectionDiv) liveDetectionDiv.style.display = "block"
 
   // Update GPS display
@@ -429,7 +817,9 @@ function clearLiveDetection() {
   if (plateIdSpan) plateIdSpan.textContent = "-"
   if (sourceSpan) sourceSpan.textContent = "-"
   if (confidenceSpan) confidenceSpan.textContent = "-"
+
   if (liveDetectionDiv) liveDetectionDiv.style.display = "none"
+
   lastDetectedPlate = null
 }
 
@@ -454,7 +844,7 @@ async function submitDetection(plateId, imageData) {
         imageData: imageData,
         latitude: currentLocation.latitude || 0,
         longitude: currentLocation.longitude || 0,
-        collectorId: 1, // You can modify this based on your authentication
+        isManual: false,
       }),
     })
 
@@ -479,6 +869,7 @@ async function submitDetection(plateId, imageData) {
             <hr>
             <div class="row">
               <div class="col-md-6">
+                <p><strong>🤖 Detection Method:</strong> ${result.detectionMethod}</p>
                 <p><strong>🔍 ABC1234 Plate:</strong> ${result.binPlateId}</p>
                 <p><strong>📍 Location:</strong> ${result.binLocation || "Not specified"}</p>
                 <p><strong>📅 Collection Time:</strong> ${result.collectionTime}</p>
@@ -553,6 +944,9 @@ window.addEventListener("beforeunload", async () => {
   if (video && video.srcObject) {
     video.srcObject.getTracks().forEach((track) => track.stop())
   }
+  if (manualVideo && manualVideo.srcObject) {
+    manualVideo.srcObject.getTracks().forEach((track) => track.stop())
+  }
 })
 
 // Enhanced CSS
@@ -567,6 +961,26 @@ style.textContent = `
     0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
     50% { transform: scale(1.05); box-shadow: 0 0 0 15px rgba(40, 167, 69, 0); }
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+  }
+
+  .alert-sm {
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .btn-group .btn {
+    transition: all 0.3s ease;
+  }
+
+  #manualPlateId {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+
+  .form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
   }
 `
 document.head.appendChild(style)

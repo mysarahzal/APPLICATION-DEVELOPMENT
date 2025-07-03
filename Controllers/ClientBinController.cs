@@ -135,7 +135,6 @@ namespace AspnetCoreMvcFull.Controllers
       try
       {
         var client = await _dbContext.Clients.Include(c => c.Bins).FirstOrDefaultAsync(c => c.ClientID == id);
-
         if (client == null)
           return NotFound();
 
@@ -155,6 +154,16 @@ namespace AspnetCoreMvcFull.Controllers
       }
 
       return RedirectToAction(nameof(Index));
+    }
+
+    // Add this private method to the ClientBinController class
+    private bool IsValidBinPlateFormat(string plateId)
+    {
+      if (string.IsNullOrEmpty(plateId) || plateId.Length != 7)
+        return false;
+
+      var regex = new System.Text.RegularExpressions.Regex(@"^[A-Z]{3}\d{4}$");
+      return regex.IsMatch(plateId.ToUpper());
     }
 
     // POST: Create Bin
@@ -182,6 +191,25 @@ namespace AspnetCoreMvcFull.Controllers
         ModelState.AddModelError("Bin.FillLevel", "Fill level must be between 0 and 100");
 
       // Add this validation after the existing validations in CreateBin method
+      if (!string.IsNullOrWhiteSpace(model.Bin.BinPlateId))
+      {
+        model.Bin.BinPlateId = model.Bin.BinPlateId.ToUpper(); // Auto-convert to uppercase
+
+        if (!IsValidBinPlateFormat(model.Bin.BinPlateId))
+        {
+          ModelState.AddModelError("Bin.BinPlateId", "Bin Plate ID must follow format ABC1234 (3 uppercase letters followed by 4 numbers). Examples: ABC1234, XYZ5678");
+        }
+
+        // Check for duplicate plate ID
+        var existingBin = await _dbContext.Bins
+            .FirstOrDefaultAsync(b => b.BinPlateId.ToUpper() == model.Bin.BinPlateId.ToUpper());
+
+        if (existingBin != null)
+        {
+          ModelState.AddModelError("Bin.BinPlateId", $"Bin Plate ID '{model.Bin.BinPlateId}' already exists. Please use a different ID.");
+        }
+      }
+
       if (!model.Bin.Latitude.HasValue || !model.Bin.Longitude.HasValue)
         ModelState.AddModelError("", "Please select a location from the map suggestions to get coordinates");
 
@@ -227,7 +255,6 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // POST: Edit Bin
-    // POST: Edit Bin
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditBin(ManageClientsBinsViewModel model)
@@ -257,6 +284,26 @@ namespace AspnetCoreMvcFull.Controllers
       {
         TempData["ErrorMessage"] = "Bin not found.";
         return RedirectToAction(nameof(Index));
+      }
+
+      // Also update the EditBin method with similar validation
+      if (!string.IsNullOrWhiteSpace(model.Bin.BinPlateId))
+      {
+        model.Bin.BinPlateId = model.Bin.BinPlateId.ToUpper(); // Auto-convert to uppercase
+
+        if (!IsValidBinPlateFormat(model.Bin.BinPlateId))
+        {
+          ModelState.AddModelError("Bin.BinPlateId", "Bin Plate ID must follow format ABC1234 (3 uppercase letters followed by 4 numbers). Examples: ABC1234, XYZ5678");
+        }
+
+        // Check for duplicate plate ID, excluding the current bin being edited
+        var duplicateBin = await _dbContext.Bins
+            .FirstOrDefaultAsync(b => b.BinPlateId.ToUpper() == model.Bin.BinPlateId.ToUpper() && b.Id != model.Bin.Id);
+
+        if (duplicateBin != null)
+        {
+          ModelState.AddModelError("Bin.BinPlateId", $"Bin Plate ID '{model.Bin.BinPlateId}' already exists. Please use a different ID.");
+        }
       }
 
       // Check if the selected client exists
@@ -305,48 +352,6 @@ namespace AspnetCoreMvcFull.Controllers
 
       return RedirectToAction(nameof(Index));
     }
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public async Task<IActionResult> EditBin(ManageClientsBinsViewModel model)
-    //{
-    //  ModelState.Clear();
-    //  TryValidateModel(model.Bin, nameof(model.Bin));
-
-    //  if (ModelState.IsValid)
-    //  {
-    //    try
-    //    {
-    //      _dbContext.Update(model.Bin);
-    //      await _dbContext.SaveChangesAsync();
-    //      TempData["SuccessMessage"] = "Bin updated successfully!";
-    //      return RedirectToAction(nameof(Index));
-    //    }
-    //    catch (DbUpdateConcurrencyException)
-    //    {
-    //      if (!await _dbContext.Bins.AnyAsync(b => b.Id == model.Bin.Id))
-    //        return NotFound();
-    //      else
-    //        throw;
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //      ModelState.AddModelError("", "An error occurred while updating the bin: " + ex.Message);
-    //    }
-    //  }
-
-    //  var clients = await _dbContext.Clients.Include(c => c.Bins).ToListAsync();
-    //  var bins = await _dbContext.Bins.Include(b => b.Client).ToListAsync();
-
-    //  var vm = new ManageClientsBinsViewModel
-    //  {
-    //    Clients = clients,
-    //    Bins = bins,
-    //    Client = new Client(),
-    //    Bin = model.Bin
-    //  };
-
-    //  return View("Index", vm);
-    //}
 
     // POST: Delete Bin Confirmed
     [HttpPost, ActionName("DeleteBinConfirmed")]
@@ -382,7 +387,6 @@ namespace AspnetCoreMvcFull.Controllers
       return Json(client);
     }
 
-    // GET: Get Bin for editing (AJAX endpoint)
     // GET: Get Bin for editing (AJAX endpoint)
     [HttpGet]
     public async Task<IActionResult> GetBin(string id) // Change from Guid to string
@@ -428,47 +432,9 @@ namespace AspnetCoreMvcFull.Controllers
         return StatusCode(500, new { error = "Internal server error", message = ex.Message });
       }
     }
-    //[HttpGet]
-    //public async Task<IActionResult> GetBin(Guid id)
-    //{
-    //  try
-    //  {
-    //    // Log the incoming ID
-    //    Console.WriteLine($"Fetching bin with ID: {id}");
-
-    //    var bin = await _dbContext.Bins
-    //        .Include(b => b.Client)
-    //        .FirstOrDefaultAsync(b => b.Id == id);
-
-    //    if (bin == null)
-    //    {
-    //      Console.WriteLine("Bin not found.");
-    //      return NotFound();
-    //    }
-
-    //    // Optional: Remove circular references or problematic fields
-    //    return Json(new
-    //    {
-    //      bin.Id,
-    //      bin.BinPlateId,
-    //      bin.Location,
-    //      bin.FillLevel,
-    //      bin.Zone,
-    //      bin.ClientID,
-    //      ClientName = bin.Client?.ClientName
-    //    });
-    //  }
-    //  catch (Exception ex)
-    //  {
-    //    // Log full exception
-    //    Console.WriteLine($"Error fetching bin: {ex.Message}");
-    //    Console.WriteLine(ex.StackTrace);
-
-    //    return StatusCode(500, new { error = "Internal server error", message = ex.Message });
-    //  }
-    //}
   }
 }
+
 
 
 
