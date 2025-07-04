@@ -8,9 +8,13 @@
 
   <ItemGroup>
     <Compile Remove="ViewModels\NewFolder\**" />
+    <Compile Remove="Views\CollectionPoint\**" />
     <Content Remove="ViewModels\NewFolder\**" />
+    <Content Remove="Views\CollectionPoint\**" />
     <EmbeddedResource Remove="ViewModels\NewFolder\**" />
+    <EmbeddedResource Remove="Views\CollectionPoint\**" />
     <None Remove="ViewModels\NewFolder\**" />
+    <None Remove="Views\CollectionPoint\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,10 +29,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Views\CollectionPoint\" />
   </ItemGroup>
 
 </Project>
