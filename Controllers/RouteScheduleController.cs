@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AspnetCoreMvcFull.Controllers
 {
-  [Authorize(Roles = "Admin,Driver")]
+  [Authorize(Roles = "Admin,Driver,Collector")]
   public class RouteScheduleController : Controller
   {
     private readonly KUTIPDbContext _context;

@@ -1,4 +1,5 @@
 using AspnetCoreMvcFull.Data;
+using AspnetCoreMvcFull.Services; // Add this using statement
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -28,6 +29,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // Add Authorization
 builder.Services.AddAuthorization();
 
+// Add the background service for automatic missed pickup detection
+builder.Services.AddHostedService<MissedPickupDetectionService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -45,7 +49,6 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
 
 // Add Authentication and Authorization middleware (ORDER MATTERS!)

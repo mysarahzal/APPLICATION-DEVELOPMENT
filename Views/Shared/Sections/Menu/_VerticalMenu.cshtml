@@ -1,123 +1,3 @@
-@* @{ *@
-@* 	TempData.Keep(); *@
-
-@* 	// Safe null handling for current page *@
-@* 	string currentPage = ViewContext.HttpContext.Request.Path.Value ?? ""; *@
-@* } *@
-
-@* <!-- Dashboard --> *@
-@* <li class='menu-item @(currentPage.StartsWith("/Dashboards") ? "active" : "")'> *@
-@* 	<a asp-controller="Dashboards" asp-action="Index" class="menu-link"> *@
-@* 		<i class="menu-icon tf-icons bx bx-home-circle"></i> *@
-@* 		<div data-i18n="Analytics">Dashboard</div> *@
-@* 	</a> *@
-@* </li> *@
-
-@* @if (User.IsInRole("Admin")) *@
-@* { *@
-@* 	<!-- Admin-only menu items --> *@
-@* 	<li class='menu-item @(currentPage.StartsWith("/User") ? "active" : "")'> *@
-@* 		<a asp-controller="User" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-user"></i> *@
-@* 			<div>User Management</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<li class='menu-item @(currentPage.StartsWith("/Route") && !currentPage.StartsWith("/RouteBin") ? "active" : "")'> *@
-@* 		<a asp-controller="Route" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-map"></i> *@
-@* 			<div>Route Management</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<li class='menu-item @(currentPage.StartsWith("/RouteBin") ? "active" : "")'> *@
-@* 		<a asp-controller="RouteBin" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-map-pin"></i> *@
-@* 			<div>RouteBin Management</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<li class='menu-item @(currentPage.StartsWith("/Schedule") ? "active" : "")'> *@
-@* 		<a asp-controller="Schedule" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-calendar"></i> *@
-@* 			<div>Schedule</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<li class='menu-item @(currentPage.StartsWith("/MissedPickup") ? "active" : "")'> *@
-@* 		<a asp-controller="MissedPickup" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-error"></i> *@
-@* 			<div>Missed Pickup</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<li class='menu-item @(currentPage.StartsWith("/ClientBin") ? "active" : "")'> *@
-@* 		<a asp-controller="ClientBin" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-trash"></i> *@
-@* 			<div>Manage Client Bins</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<li class='menu-item @(currentPage.StartsWith("/Truck") ? "active" : "")'> *@
-@* 		<a asp-controller="Truck" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-car"></i> *@
-@* 			<div>Truck Management</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<li class='menu-item @(currentPage.StartsWith("/Collection") ? "active" : "")'> *@
-@* 		<a asp-controller="Collection" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-collection"></i> *@
-@* 			<div>Collection Records</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<!-- Admin can view submitted reports --> *@
-@* 	<li class='menu-item @(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmittedReports") ? "active" : "")'> *@
-@* 		<a asp-controller="BinReport" asp-action="SubmittedReports" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-file"></i> *@
-@* 			<div>View Submitted Reports</div> *@
-@* 		</a> *@
-@* 	</li> *@
-@* } *@
-
-@* @if (User.IsInRole("Driver")) *@
-@* { *@
-@* 	<!-- Driver-only menu items --> *@
-@* 	<li class='menu-item @(currentPage.StartsWith("/RouteSchedule") ? "active" : "")'> *@
-@* 		<a asp-controller="RouteSchedule" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-map"></i> *@
-@* 			<div>My Routes</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<li class='menu-item @(currentPage.StartsWith("/Collection") ? "active" : "")'> *@
-@* 		<a asp-controller="Collection" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-collection"></i> *@
-@* 			<div>Collection Records</div> *@
-@* 		</a> *@
-@* 	</li> *@
-@* } *@
-
-@* @if (User.IsInRole("Collector")) *@
-@* { *@
-@* 	<!-- Collector-only menu items --> *@
-@* 	<li class='menu-item @(currentPage.StartsWith("/Scan") ? "active" : "")'> *@
-@* 		<a asp-controller="Scan" asp-action="Index" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-scan"></i> *@
-@* 			<div>Bin Scanner</div> *@
-@* 		</a> *@
-@* 	</li> *@
-
-@* 	<li class='menu-item @(currentPage.StartsWith("/BinReport") && currentPage.Contains("SubmitBinReport") ? "active" : "")'> *@
-@* 		<a asp-controller="BinReport" asp-action="SubmitBinReport" class="menu-link"> *@
-@* 			<i class="menu-icon tf-icons bx bx-file-plus"></i> *@
-@* 			<div>Submit Bin Report</div> *@
-@* 		</a> *@
-@* 	</li> *@
-@* } *@
-
-
 @{
 	TempData.Keep();
 
@@ -140,16 +20,18 @@
 	<!-- Vertical Menu Items -->
 	<ul class="menu-inner py-1">
 		<!-- Dashboard -->
-		<li class='menu-item @(currentPage.StartsWith("/Dashboards") ? "active" : "")'>
-			<a asp-controller="Dashboards" asp-action="Index" class="menu-link">
-				<i class="menu-icon tf-icons bx bx-home-circle"></i>
-				<div data-i18n="Analytics">Dashboard</div>
-			</a>
-		</li>
+		
 
 		@if (User.IsInRole("Admin"))
 		{
 			<!-- Admin-only menu items -->
+			<li class='menu-item @(currentPage.StartsWith("/Dashboards") ? "active" : "")'>
+				<a asp-controller="Dashboards" asp-action="Index" class="menu-link">
+					<i class="menu-icon tf-icons bx bx-home-circle"></i>
+					<div data-i18n="Analytics">Dashboard</div>
+				</a>
+			</li>
+
 			<li class='menu-item @(currentPage.StartsWith("/User") ? "active" : "")'>
 				<a asp-controller="User" asp-action="Index" class="menu-link">
 					<i class="menu-icon tf-icons bx bx-user"></i>
@@ -211,12 +93,12 @@
 		@if (User.IsInRole("Driver"))
 		{
             <!-- Driver-only menu items -->
-            <li class='menu-item @(currentPage.StartsWith("/MySchedule") ? "active" : "")'>
-                <a asp-controller="Schedule" asp-action="MySchedule" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-map"></i>
-                    <div>My Schedule</div>
-                </a>
-            </li>
+            @* <li class='menu-item @(currentPage.StartsWith("/MySchedule") ? "active" : "")'> *@
+            @*     <a asp-controller="Schedule" asp-action="MySchedule" class="menu-link"> *@
+            @*         <i class="menu-icon tf-icons bx bx-map"></i> *@
+            @*         <div>My Schedule</div> *@
+            @*     </a> *@
+            @* </li> *@
 
 
 			<!-- Driver-only menu items -->
@@ -233,6 +115,13 @@
 		@if (User.IsInRole("Collector"))
 		{
 			<!-- Collector-only menu items -->
+			<li class='menu-item @(currentPage.StartsWith("/RouteSchedule") ? "active" : "")'>
+				<a asp-controller="RouteSchedule" asp-action="Index" class="menu-link">
+					<i class="menu-icon tf-icons bx bx-map"></i>
+					<div>My Routes</div>
+				</a>
+			</li>
+
 			<li class='menu-item @(currentPage.StartsWith("/Scan") ? "active" : "")'>
 				<a asp-controller="Scan" asp-action="Index" class="menu-link">
 					<i class="menu-icon tf-icons bx bx-scan"></i>

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace AspnetCoreMvcFull.Controllers;
 
-[Authorize(Roles = "Admin,Driver")]
+[Authorize(Roles = "Admin")]
 public class DashboardsController : Controller
 {
   private readonly KUTIPDbContext _context;
