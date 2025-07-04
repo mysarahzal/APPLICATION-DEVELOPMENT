@@ -1,362 +1,608 @@
 @model AspnetCoreMvcFull.Models.Schedule
 
 @{
-	ViewData["Title"] = "Create Schedule";
+    ViewData["Title"] = "Create Schedule";
 }
 
 <div class="container-fluid">
-	<div class="row justify-content-center">
-		<div class="col-md-10">
-			<div class="card">
-				<div class="card-header">
-					<h4 class="card-title mb-0">
-						<i class="fas fa-calendar-plus"></i> Create New Schedule
-					</h4>
-				</div>
-				<div class="card-body">
-					@if (ViewBag.ErrorMessage != null)
-					{
-						<div class="alert alert-danger">
-							@ViewBag.ErrorMessage
-						</div>
-					}
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title mb-0">
+                        <i class="fas fa-calendar-plus"></i> Create New Schedule
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.ErrorMessage != null)
+                    {
+                        <div class="alert alert-danger">
+                            @ViewBag.ErrorMessage
+                        </div>
+                    }
 
-					<form asp-action="Create" method="post" id="scheduleCreateForm">
-						<div asp-validation-summary="All" class="alert alert-danger"></div>
+                    <form asp-action="Create" method="post" id="scheduleCreateForm">
+                        <div asp-validation-summary="All" class="alert alert-danger"></div>
 
-						<div class="row">
-							<div class="col-md-6">
-								<!-- Route Dropdown -->
-								<div class="form-group mb-3">
-									<label asp-for="RouteId" class="form-label">
-										<i class="fas fa-route"></i> Select Route
-									</label>
-									<select asp-for="RouteId" class="form-select" required id="routeSelect">
-										<option value="">-- Select Route --</option>
-										@if (ViewBag.Routes != null)
-										{
-											<optgroup label="✅ Available Routes">
-												@foreach (var route in ViewBag.Routes)
-												{
-													<option value="@route.Id.ToString()">
-														@route.Name
-														@if (!string.IsNullOrEmpty(route.Description))
-														{
-															<span>- @route.Description</span>
-														}
-														(@route.ExpectedDurationMinutes min, @route.RouteBins.Count bins)
-													</option>
-												}
-											</optgroup>
-										}
-										@if (ViewBag.ScheduledRoutes != null && ((List<AspnetCoreMvcFull.Models.RoutePlan>)ViewBag.ScheduledRoutes).Any())
-										{
-											<optgroup label="⚠️ Already Scheduled Routes">
-												@foreach (var route in ViewBag.ScheduledRoutes)
-												{
-													<option value="@route.Id.ToString()" class="text-warning">
-														@route.Name - ⚠️ ALREADY SCHEDULED
-														(@route.ExpectedDurationMinutes min, @route.RouteBins.Count bins)
-													</option>
-												}
-											</optgroup>
-										}
-									</select>
-									<div class="form-text">
-										<i class="fas fa-info-circle"></i> Select a route to automatically calculate end time based on bin locations.
-									</div>
-									<span asp-validation-for="RouteId" class="text-danger"></span>
-								</div>
-							</div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Route Dropdown -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="RouteId" class="form-label">
+                                        <i class="fas fa-route"></i> Select Route
+                                    </label>
+                                    <select asp-for="RouteId" class="form-select" required id="routeSelect">
+                                        <option value="">-- Select Route --</option>
+                                        @if (ViewBag.Routes != null)
+                                        {
+                                            <optgroup label="✅ Available Routes">
+                                                @foreach (var route in ViewBag.Routes)
+                                                {
+                                                    <option value="@route.Id.ToString()">
+                                                        @route.Name
+                                                        @if (!string.IsNullOrEmpty(route.Description))
+                                                        {
+                                                            <span>- @route.Description</span>
+                                                        }
+                                                        (@route.ExpectedDurationMinutes min, @route.RouteBins.Count bins)
+                                                    </option>
+                                                }
+                                            </optgroup>
+                                        }
+                                        @if (ViewBag.ScheduledRoutes != null && ((List<AspnetCoreMvcFull.Models.RoutePlan>)ViewBag.ScheduledRoutes).Any())
+                                        {
+                                            <optgroup label="⚠️ Already Scheduled Routes">
+                                                @foreach (var route in ViewBag.ScheduledRoutes)
+                                                {
+                                                    <option value="@route.Id.ToString()" class="text-warning">
+                                                        @route.Name - ⚠️ ALREADY SCHEDULED
+                                                        (@route.ExpectedDurationMinutes min, @route.RouteBins.Count bins)
+                                                    </option>
+                                                }
+                                            </optgroup>
+                                        }
+                                    </select>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> Select a route to automatically calculate end time based on bin locations.
+                                    </div>
+                                    <span asp-validation-for="RouteId" class="text-danger"></span>
+                                </div>
+                            </div>
 
-							<div class="col-md-6">
-								<!-- Collector Dropdown -->
-								<div class="form-group mb-3">
-									<label asp-for="CollectorId" class="form-label">
-										<i class="fas fa-user"></i> Select Collector
-									</label>
-									<select asp-for="CollectorId" class="form-select" required id="collectorSelect">
-										<option value="">-- Select Collector --</option>
-										@if (ViewBag.Collectors != null)
-										{
-											@foreach (var collector in ViewBag.Collectors)
-											{
-												<option value="@collector.Id">
-													@collector.FirstName @collector.LastName (@collector.Email)
-												</option>
-											}
-										}
-									</select>
-									<span asp-validation-for="CollectorId" class="text-danger"></span>
-								</div>
-							</div>
-						</div>
+                            <div class="col-md-6">
+                                <!-- Collector Dropdown -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="CollectorId" class="form-label">
+                                        <i class="fas fa-user"></i> Select Collector
+                                    </label>
+                                    <select asp-for="CollectorId" class="form-select" required id="collectorSelect">
+                                        <option value="">-- Select Collector --</option>
+                                        @if (ViewBag.Collectors != null)
+                                        {
+                                            @foreach (var collector in ViewBag.Collectors)
+                                            {
+                                                <option value="@collector.Id">
+                                                    @collector.FirstName @collector.LastName (@collector.Email)
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="CollectorId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
 
-						<div class="row">
-							<div class="col-md-6">
-								<!-- Truck Dropdown -->
-								<div class="form-group mb-3">
-									<label asp-for="TruckId" class="form-label">
-										<i class="fas fa-truck"></i> Select Truck
-									</label>
-									<select asp-for="TruckId" class="form-select" required id="truckSelect">
-										<option value="">-- Select Truck --</option>
-										@if (ViewBag.AvailableTrucks != null)
-										{
-											@foreach (var truck in ViewBag.AvailableTrucks)
-											{
-												<option value="@truck.Id" data-driver="@truck.Driver?.FirstName @truck.Driver?.LastName">
-													@truck.LicensePlate (@truck.Model)
-													@if (truck.Driver != null)
-													{
-														<span>- Driver: @truck.Driver.FirstName @truck.Driver.LastName</span>
-													}
-												</option>
-											}
-										}
-									</select>
-									<span asp-validation-for="TruckId" class="text-danger"></span>
-								</div>
-							</div>
-						</div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Truck Dropdown -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="TruckId" class="form-label">
+                                        <i class="fas fa-truck"></i> Select Truck
+                                    </label>
+                                    <select asp-for="TruckId" class="form-select" required id="truckSelect">
+                                        <option value="">-- Select Truck --</option>
+                                        @if (ViewBag.AvailableTrucks != null)
+                                        {
+                                            @foreach (var truck in ViewBag.AvailableTrucks)
+                                            {
+                                                <option value="@truck.Id" data-driver="@truck.Driver?.FirstName @truck.Driver?.LastName">
+                                                    @truck.LicensePlate (@truck.Model)
+                                                    @if (truck.Driver != null)
+                                                    {
+                                                        <span>- Driver: @truck.Driver.FirstName @truck.Driver.LastName</span>
+                                                    }
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="TruckId" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
 
-						<div class="row">
-							<div class="col-md-6">
-								<!-- Start Time -->
-								<div class="form-group mb-3">
-									<label asp-for="ScheduleStartTime" class="form-label">
-										<i class="fas fa-clock"></i> Start Time
-									</label>
-									<input asp-for="ScheduleStartTime" class="form-control" type="datetime-local" required />
-									<span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
-									<div class="form-text">
-										<i class="fas fa-info-circle"></i> End time will be automatically set to 2 hours after start time.
-									</div>
-								</div>
-							</div>
-							<div class="col-md-6">
-								<!-- End Time -->
-								<div class="form-group mb-3">
-									<label asp-for="ScheduleEndTime" class="form-label">
-										<i class="fas fa-clock"></i> End Time
-									</label>
-									<input asp-for="ScheduleEndTime" class="form-control" type="datetime-local" required />
-									<span asp-validation-for="ScheduleEndTime" class="text-danger"></span>
-									<div class="form-text">
-										<i class="fas fa-clock"></i> Automatically calculated as start time + 2 hours.
-									</div>
-								</div>
-							</div>
-						</div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Start Time -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="ScheduleStartTime" class="form-label">
+                                        <i class="fas fa-clock"></i> Start Time
+                                    </label>
+                                    <input asp-for="ScheduleStartTime" class="form-control" type="datetime-local" required />
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> End time will be calculated automatically when you select a route.
+                                    </div>
+                                    <span asp-validation-for="ScheduleStartTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- End Time -->
+                                <div class="form-group mb-3">
+                                    <label asp-for="ScheduleEndTime" class="form-label">
+                                        <i class="fas fa-clock"></i> End Time
+                                        <small class="text-muted">(Auto-calculated)</small>
+                                    </label>
+                                    <input asp-for="ScheduleEndTime" class="form-control" type="datetime-local" required />
+                                    <div class="form-text">
+                                        <i class="fas fa-magic"></i> Automatically calculated based on route distance and bin locations.
+                                    </div>
+                                    <span asp-validation-for="ScheduleEndTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
 
-						<!-- Status and Notes -->
-						<div class="row">
-							<div class="col-md-6">
-								<div class="form-group mb-3">
-									<label asp-for="Status" class="form-label">
-										<i class="fas fa-flag"></i> Status
-									</label>
-									<select asp-for="Status" class="form-select" required>
-										<option value="Scheduled" selected>Scheduled</option>
-										<option value="In Progress">In Progress</option>
-										<option value="Completed">Completed</option>
-										<option value="Cancelled">Cancelled</option>
-									</select>
-									<span asp-validation-for="Status" class="text-danger"></span>
-								</div>
-							</div>
-							<div class="col-md-6">
-								<div class="form-group mb-3">
-									<label asp-for="AdminNotes" class="form-label">
-										<i class="fas fa-sticky-note"></i> Admin Notes
-									</label>
-									<textarea asp-for="AdminNotes" class="form-control" rows="3" placeholder="Required..."></textarea>
-									<span asp-validation-for="AdminNotes" class="text-danger"></span>
-								</div>
-							</div>
-						</div>
+                        <!-- Status and Notes -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="Status" class="form-label">
+                                        <i class="fas fa-flag"></i> Status
+                                    </label>
+                                    <select asp-for="Status" class="form-select" required>
+                                        <option value="Scheduled" selected>Scheduled</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                    <span asp-validation-for="Status" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label asp-for="AdminNotes" class="form-label">
+                                        <i class="fas fa-sticky-note"></i> Admin Notes
+                                    </label>
+                                    <textarea asp-for="AdminNotes" class="form-control" rows="3" placeholder="Optional notes..."></textarea>
+                                    <span asp-validation-for="AdminNotes" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
 
-						<!-- Route Bins Display -->
-						<div id="routeBinsSection" class="mb-4" style="display: none;">
-							<div class="card bg-light">
-								<div class="card-header">
-									<h6 class="mb-0">
-										<i class="fas fa-trash-alt"></i> Bins in Selected Route
-										<span id="binsCount" class="badge bg-info ms-2"></span>
-									</h6>
-								</div>
-								<div class="card-body">
-									<div id="routeBinsList" class="table-responsive">
-										<!-- Bins will be loaded here via AJAX -->
-									</div>
-								</div>
-							</div>
-						</div>
+                        <!-- Route Bins Display -->
+                        <div id="routeBinsSection" class="mb-4" style="display: none;">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-trash-alt"></i> Bins in Selected Route
+                                        <span id="binsCount" class="badge bg-info ms-2"></span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="routeBinsList" class="table-responsive">
+                                        <!-- Bins will be loaded here via AJAX -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-						<!-- Submit Buttons -->
-						<div class="form-group d-flex gap-2">
-							<button type="submit" class="btn btn-primary" id="submitBtn">
-								<i class="fas fa-save"></i> Create Schedule
-							</button>
-							<a asp-action="Index" class="btn btn-secondary">
-								<i class="fas fa-arrow-left"></i> Back to List
-							</a>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
+                        <!-- Submit Buttons -->
+                        <div class="form-group d-flex gap-2">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-save"></i> Create Schedule
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
-	@{
-		await Html.RenderPartialAsync("_ValidationScriptsPartial");
-	}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <!-- Google Maps JavaScript API -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=geometry"></script>
 
-	<script>
-		$(document).ready(function() {
-			// Handle route selection change
-			$('#routeSelect').change(function() {
-				var routeId = $(this).val();
+    <script>
+        $(document).ready(function() {
+            let map, directionsService, distanceMatrixService;
 
-				if (routeId) {
-					loadRouteBins(routeId);
-					// Calculate end time when route is selected
-					calculateSimpleEndTime();
-				} else {
-					$('#routeBinsSection').hide();
-					$('#ScheduleEndTime').val('');
-				}
-			});
+            // Initialize Google Maps services when API loads
+            function initializeGoogleMaps() {
+                if (typeof google !== 'undefined' && google.maps) {
+                    directionsService = new google.maps.DirectionsService();
+                    distanceMatrixService = new google.maps.DistanceMatrixService();
+                    console.log('Google Maps services initialized');
+                } else {
+                    // Retry after 1 second if Google Maps isn't loaded yet
+                    setTimeout(initializeGoogleMaps, 1000);
+                }
+            }
 
-			// Simple end time calculation when start time changes
-			$('#ScheduleStartTime').on('change input', function() {
-				calculateSimpleEndTime();
-			});
+            // Start initialization
+            initializeGoogleMaps();
 
-			function calculateSimpleEndTime() {
-				var startTime = $('#ScheduleStartTime').val();
+            // Function to calculate route time using Google Maps API
+            function calculateRouteTimeWithMaps(routeBins, callback) {
+                if (!distanceMatrixService) {
+                    console.error('Google Maps API not loaded');
+                    callback(null, 'Google Maps API not available');
+                    return;
+                }
 
-				if (startTime) {
-					var start = new Date(startTime);
-					var end = new Date(start.getTime() + (2 * 60 * 60 * 1000)); // Add 2 hours
+                const binsWithCoordinates = routeBins.filter(bin => bin.latitude && bin.longitude);
 
-					// Format for datetime-local input (YYYY-MM-DDTHH:MM)
-					var year = end.getFullYear();
-					var month = String(end.getMonth() + 1).padStart(2, '0');
-					var day = String(end.getDate()).padStart(2, '0');
-					var hours = String(end.getHours()).padStart(2, '0');
-					var minutes = String(end.getMinutes()).padStart(2, '0');
+                if (binsWithCoordinates.length === 0) {
+                    callback(null, 'No bins with GPS coordinates found');
+                    return;
+                }
 
-					var endTimeString = `${year}-${month}-${day}T${hours}:${minutes}`;
-					$('#ScheduleEndTime').val(endTimeString);
+                if (binsWithCoordinates.length === 1) {
+                    // Single bin - just service time + buffer
+                    const serviceTime = 3; // minutes per bin
+                    const bufferTime = 15; // buffer time
+                    const totalTime = serviceTime + bufferTime;
 
-					console.log('Start time:', startTime);
-					console.log('End time set to:', endTimeString);
-				}
-			}
+                    callback({
+                        totalTimeMinutes: totalTime,
+                        travelTimeMinutes: 0,
+                        serviceTimeMinutes: serviceTime,
+                        bufferTimeMinutes: bufferTime,
+                        totalDistance: 0
+                    });
+                    return;
+                }
 
-			// Load bins for selected route
-			function loadRouteBins(routeId) {
-				$('#routeBinsSection').show();
-				$('#routeBinsList').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading bins...</div>');
+                // Create waypoints for Google Maps
+                const waypoints = binsWithCoordinates.map(bin => ({
+                    lat: parseFloat(bin.latitude),
+                    lng: parseFloat(bin.longitude)
+                }));
 
-				$.get('@Url.Action("GetRouteBins", "Schedule")', { routeId: routeId })
-				.done(function(data) {
-					if (data.error) {
-						$('#routeBinsList').html('<div class="alert alert-danger">Error: ' + data.error + '</div>');
-						return;
-					}
+                console.log(`Calculating route for ${waypoints.length} waypoints using Google Maps`);
 
-					if (data.length === 0) {
-						$('#routeBinsList').html('<div class="alert alert-info">No bins found in this route.</div>');
-						$('#binsCount').text('0 bins');
-						return;
-					}
+                // Use Distance Matrix API for multiple points
+                const origins = waypoints.slice(0, -1); // All points except last
+                const destinations = waypoints.slice(1); // All points except first
 
-					var tableHtml = `
-						<table class="table table-sm table-striped">
-							<thead>
-								<tr>
-									<th>Order</th>
-									<th>Bin ID</th>
-									<th>Location</th>
-									<th>Zone</th>
-									<th>Fill Level</th>
-								</tr>
-							</thead>
-							<tbody>
-					`;
+                distanceMatrixService.getDistanceMatrix({
+                    origins: origins,
+                    destinations: destinations,
+                    travelMode: google.maps.TravelMode.DRIVING,
+                    unitSystem: google.maps.UnitSystem.METRIC,
+                    avoidHighways: false,
+                    avoidTolls: false
+                }, function(response, status) {
+                    if (status === 'OK') {
+                        let totalTravelTime = 0; // in seconds
+                        let totalDistance = 0; // in meters
+                        let validSegments = 0;
 
-					data.forEach(function(bin) {
-						var fillLevelClass = bin.fillLevel > 80 ? 'bg-danger' :
-										   bin.fillLevel > 60 ? 'bg-warning' : 'bg-success';
+                        // Sum up all segments
+                        for (let i = 0; i < response.rows.length; i++) {
+                            const element = response.rows[i].elements[i];
+                            if (element.status === 'OK') {
+                                totalTravelTime += element.duration.value; // seconds
+                                totalDistance += element.distance.value; // meters
+                                validSegments++;
+                            }
+                        }
 
-						tableHtml += `
-							<tr>
-								<td><span class="badge bg-primary">${bin.orderInRoute}</span></td>
-								<td><strong>${bin.binPlateId}</strong></td>
-								<td>${bin.location}</td>
-								<td><span class="badge bg-info">${bin.zone}</span></td>
-								<td>
-									<div class="progress" style="width: 60px; height: 20px;">
-										<div class="progress-bar ${fillLevelClass}" style="width: ${bin.fillLevel}%"></div>
-									</div>
-									<small>${bin.fillLevel}%</small>
-								</td>
-							</tr>
-						`;
-					});
+                        if (validSegments === 0) {
+                            callback(null, 'No valid routes found between bins');
+                            return;
+                        }
 
-					tableHtml += '</tbody></table>';
+                        // Convert to appropriate units
+                        const travelTimeMinutes = totalTravelTime / 60;
+                        const distanceKm = totalDistance / 1000;
 
-					$('#routeBinsList').html(tableHtml);
-					$('#binsCount').text(data.length + ' bins');
-				})
-				.fail(function() {
-					$('#routeBinsList').html('<div class="alert alert-danger">Error loading bins</div>');
-				});
-			}
+                        // Add service time and buffer
+                        const serviceTimePerBin = 3; // minutes
+                        const bufferTime = 15; // minutes
+                        const serviceTimeMinutes = routeBins.length * serviceTimePerBin;
+                        const totalTimeMinutes = Math.ceil(travelTimeMinutes + serviceTimeMinutes + bufferTime);
 
-			// Form submission handler
-			$('#scheduleCreateForm').submit(function(e) {
-				var routeId = $('#routeSelect').val();
-				var collectorId = $('#collectorSelect').val();
-				var truckId = $('#truckSelect').val();
-				var startTime = $('#ScheduleStartTime').val();
-				var endTime = $('#ScheduleEndTime').val();
+                        console.log(`Google Maps route calculation:
+                            - Total distance: ${distanceKm.toFixed(2)} km
+                            - Travel time: ${travelTimeMinutes.toFixed(1)} minutes
+                            - Service time: ${serviceTimeMinutes} minutes
+                            - Buffer time: ${bufferTime} minutes
+                            - Total time: ${totalTimeMinutes} minutes`);
 
-				// Basic validation
-				if (!routeId) {
-					alert('Please select a route');
-					e.preventDefault();
-					return false;
-				}
+                        callback({
+                            totalTimeMinutes: totalTimeMinutes,
+                            travelTimeMinutes: travelTimeMinutes,
+                            serviceTimeMinutes: serviceTimeMinutes,
+                            bufferTimeMinutes: bufferTime,
+                            totalDistance: distanceKm,
+                            validSegments: validSegments,
+                            totalSegments: origins.length
+                        });
+                    } else {
+                        console.error('Google Maps API error:', status);
+                        callback(null, `Google Maps API error: ${status}`);
+                    }
+                });
+            }
 
-				if (!collectorId) {
-					alert('Please select a collector');
-					e.preventDefault();
-					return false;
-				}
+            // Function to update end time with Google Maps data
+            function calculateAndUpdateEndTime(routeBins) {
+                const startTimeInput = $('#ScheduleStartTime');
+                const endTimeInput = $('#ScheduleEndTime');
 
-				if (!truckId) {
-					alert('Please select a truck');
-					e.preventDefault();
-					return false;
-				}
+                if (!startTimeInput.val() || !routeBins || routeBins.length === 0) {
+                    return;
+                }
 
-				if (!startTime || !endTime) {
-					alert('Please fill in both start and end times');
-					e.preventDefault();
-					return false;
-				}
+                // Show loading indicator
+                showTimeCalculationLoading();
 
-				// Disable submit button to prevent double submission
-				$(this).find('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+                calculateRouteTimeWithMaps(routeBins, function(result, error) {
+                    if (error) {
+                        console.error('Error calculating route time:', error);
+                        showTimeCalculationError(error);
+                        return;
+                    }
 
-				return true;
-			});
-		});
-	</script>
+                    // Calculate end time
+                    const startTime = new Date(startTimeInput.val());
+                    if (!isNaN(startTime.getTime())) {
+                        const endTime = new Date(startTime.getTime() + (result.totalTimeMinutes * 60000));
+
+                        // Format for datetime-local input
+                        const endTimeString = endTime.toISOString().slice(0, 16);
+                        endTimeInput.val(endTimeString);
+
+                        // Show calculation details
+                        showTimeCalculationInfo(result);
+                    }
+                });
+            }
+
+            // Function to show loading state
+            function showTimeCalculationLoading() {
+                const loadingHtml = `
+                    <div class="alert alert-info mt-2" id="timeCalculationInfo">
+                        <h6><i class="fas fa-spinner fa-spin"></i> Calculating Route Time</h6>
+                        <p class="mb-0">
+                            <small class="text-muted">
+                                <i class="fas fa-map"></i> Using Google Maps to calculate accurate travel time...
+                            </small>
+                        </p>
+                    </div>
+                `;
+
+                $('#timeCalculationInfo').remove();
+                $('#ScheduleEndTime').closest('.form-group').after(loadingHtml);
+            }
+
+            // Function to show calculation error
+            function showTimeCalculationError(error) {
+                const errorHtml = `
+                    <div class="alert alert-warning mt-2" id="timeCalculationInfo">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Route Calculation Issue</h6>
+                        <p class="mb-2">
+                            <small>${error}</small>
+                        </p>
+                        <p class="mb-0">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i> Please set the end time manually or check bin GPS coordinates.
+                            </small>
+                        </p>
+                    </div>
+                `;
+
+                $('#timeCalculationInfo').remove();
+                $('#ScheduleEndTime').closest('.form-group').after(errorHtml);
+            }
+
+            // Function to show time calculation information
+            function showTimeCalculationInfo(result) {
+                const infoHtml = `
+                    <div class="alert alert-success mt-2" id="timeCalculationInfo">
+                        <h6><i class="fas fa-map-marked-alt"></i> Google Maps Route Calculation</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small>
+                                    <strong>Route Distance:</strong> ${result.totalDistance.toFixed(2)} km<br>
+                                    <strong>Travel Time:</strong> ${result.travelTimeMinutes.toFixed(1)} minutes<br>
+                                    <strong>Service Time:</strong> ${result.serviceTimeMinutes} minutes
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small>
+                                    <strong>Buffer Time:</strong> ${result.bufferTimeMinutes} minutes<br>
+                                    <strong>Total Duration:</strong> ${result.totalTimeMinutes} minutes<br>
+                                    <strong>Route Segments:</strong> ${result.validSegments || 'N/A'}/${result.totalSegments || 'N/A'}
+                                </small>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-google"></i> Calculated using Google Maps with real-time traffic data. You can adjust manually if needed.
+                        </small>
+                    </div>
+                `;
+
+                $('#timeCalculationInfo').remove();
+                $('#ScheduleEndTime').closest('.form-group').after(infoHtml);
+            }
+
+            // Handle route selection change
+            $('#routeSelect').change(function() {
+                var routeId = $(this).val();
+
+                if (routeId) {
+                    loadRouteBins(routeId);
+                } else {
+                    $('#routeBinsSection').hide();
+                    $('#timeCalculationInfo').remove();
+                    $('#ScheduleEndTime').val('');
+                }
+            });
+
+            // Load bins for selected route
+            function loadRouteBins(routeId) {
+                $('#routeBinsSection').show();
+                $('#routeBinsList').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading bins...</div>');
+
+                $.get('@Url.Action("GetRouteBins", "Schedule")', { routeId: routeId })
+                .done(function(data) {
+                    console.log('Route bins loaded:', data);
+
+                    if (data.error) {
+                        $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + data.error + '</div>');
+                        return;
+                    }
+
+                    if (data.length === 0) {
+                        $('#routeBinsList').html('<div class="alert alert-info">No bins found in this route.</div>');
+                        $('#binsCount').text('0 bins');
+                        return;
+                    }
+
+                    var tableHtml = `
+                        <table class="table table-sm table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Order</th>
+                                    <th>Bin ID</th>
+                                    <th>Location</th>
+                                    <th>Zone</th>
+                                    <th>Fill Level</th>
+                                    <th>Client</th>
+                                    <th>Coordinates</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    data.forEach(function(bin) {
+                        var coordinates = '';
+                        if (bin.latitude && bin.longitude) {
+                            coordinates = `<small class="text-success">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${parseFloat(bin.latitude).toFixed(4)}, ${parseFloat(bin.longitude).toFixed(4)}
+                            </small>`;
+                        } else {
+                            coordinates = '<small class="text-warning"><i class="fas fa-exclamation-triangle"></i> No GPS</small>';
+                        }
+
+                        var fillLevelClass = bin.fillLevel > 80 ? 'bg-danger' :
+                                           bin.fillLevel > 60 ? 'bg-warning' : 'bg-success';
+
+                        tableHtml += `
+                            <tr>
+                                <td><span class="badge bg-primary">${bin.orderInRoute}</span></td>
+                                <td><strong>${bin.binPlateId}</strong></td>
+                                <td>${bin.location}</td>
+                                <td><span class="badge bg-info">${bin.zone}</span></td>
+                                <td>
+                                    <div class="progress" style="width: 60px; height: 20px;">
+                                        <div class="progress-bar ${fillLevelClass}" style="width: ${bin.fillLevel}%"></div>
+                                    </div>
+                                    <small>${bin.fillLevel}%</small>
+                                </td>
+                                <td>${bin.clientName}</td>
+                                <td>${coordinates}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tableHtml += '</tbody></table>';
+
+                    $('#routeBinsList').html(tableHtml);
+                    $('#binsCount').text(data.length + ' bins');
+
+                    var binsWithGPS = data.filter(b => b.latitude && b.longitude).length;
+                    if (binsWithGPS < data.length) {
+                        $('#routeBinsList').append(
+                            `<div class="alert alert-warning mt-2">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Warning:</strong> ${data.length - binsWithGPS} bins are missing GPS coordinates.
+                                Google Maps calculation will only include bins with valid coordinates.
+                            </div>`
+                        );
+                    }
+
+                    // Calculate and update end time using Google Maps
+                    calculateAndUpdateEndTime(data);
+                })
+                .fail(function(xhr, status, error) {
+                    console.error('Error loading route bins:', error);
+                    $('#routeBinsList').html('<div class="alert alert-danger">Error loading bins: ' + error + '</div>');
+                });
+            }
+
+            // Add event listener for start time changes to recalculate end time
+            $('#ScheduleStartTime').change(function() {
+                const routeId = $('#routeSelect').val();
+                if (routeId) {
+                    // Get current route bins and recalculate
+                    $.get('@Url.Action("GetRouteBins", "Schedule")', { routeId: routeId })
+                    .done(function(data) {
+                        if (!data.error && data.length > 0) {
+                            calculateAndUpdateEndTime(data);
+                        }
+                    });
+                }
+            });
+
+            // Form submission handler
+            $('#scheduleCreateForm').submit(function(e) {
+                console.log('Form submission started');
+
+                var routeId = $('#routeSelect').val();
+                var collectorId = $('#collectorSelect').val();
+                var truckId = $('#truckSelect').val();
+                var startTime = $('#ScheduleStartTime').val();
+                var endTime = $('#ScheduleEndTime').val();
+
+                // Basic validation
+                if (!routeId) {
+                    alert('Please select a route');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!collectorId) {
+                    alert('Please select a collector');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!truckId) {
+                    alert('Please select a truck');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!startTime || !endTime) {
+                    alert('Please fill in both start and end times');
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable submit button to prevent double submission
+                $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+
+                console.log('Form validation passed, submitting...');
+                return true;
+            });
+        });
+    </script>
 }

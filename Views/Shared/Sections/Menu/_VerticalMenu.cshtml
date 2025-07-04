@@ -92,15 +92,6 @@
 
 		@if (User.IsInRole("Driver"))
 		{
-            <!-- Driver-only menu items -->
-            @* <li class='menu-item @(currentPage.StartsWith("/MySchedule") ? "active" : "")'> *@
-            @*     <a asp-controller="Schedule" asp-action="MySchedule" class="menu-link"> *@
-            @*         <i class="menu-icon tf-icons bx bx-map"></i> *@
-            @*         <div>My Schedule</div> *@
-            @*     </a> *@
-            @* </li> *@
-
-
 			<!-- Driver-only menu items -->
 			<li class='menu-item @(currentPage.StartsWith("/RouteSchedule") ? "active" : "")'>
 				<a asp-controller="RouteSchedule" asp-action="Index" class="menu-link">
