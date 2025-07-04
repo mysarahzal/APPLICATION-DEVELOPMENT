@@ -37,7 +37,7 @@ namespace AspnetCoreMvcFull.Models
     public DateTime? ActualEndTime { get; set; }
 
     [StringLength(50)]
-    public string Status { get; set; } = "Scheduled"; // Scheduled, In Progress, Completed, Cancelled, Missed
+    public string Status { get; set; } = "Scheduled"; // Manual status for completed/cancelled
 
     [Display(Name = "Admin Notes")]
     public string AdminNotes { get; set; }
@@ -56,6 +56,54 @@ namespace AspnetCoreMvcFull.Models
     [Column(TypeName = "decimal(11,8)")]
     [Display(Name = "Route Center Longitude")]
     public decimal? RouteCenterLongitude { get; set; }
+
+    // Computed property for automatic status based on time
+    [NotMapped]
+    public string AutomaticStatus
+    {
+      get
+      {
+        var now = DateTime.Now;
+
+        // If manually set to Completed or Cancelled, keep that status
+        if (Status == "Completed" || Status == "Cancelled")
+        {
+          return Status;
+        }
+
+        // Auto-calculate based on time
+        if (now < ScheduleStartTime)
+        {
+          return "Scheduled";
+        }
+        else if (now >= ScheduleStartTime && now <= ScheduleEndTime)
+        {
+          return "In Progress";
+        }
+        else // now > ScheduleEndTime
+        {
+          return "Missed";
+        }
+      }
+    }
+
+    // Helper method to get status badge class
+    [NotMapped]
+    public string StatusBadgeClass
+    {
+      get
+      {
+        return AutomaticStatus switch
+        {
+          "Completed" => "bg-success",
+          "In Progress" => "bg-warning",
+          "Cancelled" => "bg-danger",
+          "Missed" => "bg-danger",
+          "Scheduled" => "bg-primary",
+          _ => "bg-secondary"
+        };
+      }
+    }
 
     // Navigation Properties
     [ForeignKey("CollectorId")]

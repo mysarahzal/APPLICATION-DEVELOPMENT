@@ -1,5 +1,4 @@
 @model IEnumerable<AspnetCoreMvcFull.Models.Schedule>
-
 @{
     ViewData["Title"] = "Manage Pickup Schedules";
 }
@@ -7,166 +6,215 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="card-title mb-0">
-                        <i class="fas fa-calendar-alt"></i> Manage Pickup Schedules
+                        <i class="fas fa-calendar-alt me-2"></i> Manage Pickup Schedules
                     </h4>
-                    <a asp-action="Create" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Create New
+                    <a asp-action="Create" class="btn btn-light">
+                        <i class="fas fa-plus me-1"></i> Create New
                     </a>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     @if (TempData["Success"] != null)
                     {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle"></i> @TempData["Success"]
+                        <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+                            <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     }
                     @if (Model.Any())
                     {
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover">
+                            <table class="table table-hover mb-0">
                                 <thead class="table-dark">
                                     <tr>
-                                        <th>ID</th>
-                                        <th>ROUTE</th>
-                                        <th>COLLECTOR</th>
-                                        <th>TRUCK</th>
-                                        <th>START TIME</th>
-                                        <th>END TIME</th>
-                                        <th>ROUTE CENTER</th>
-                                        <th>COLLECTION POINTS</th>
-                                        <th>STATUS</th>
-                                        <th style="min-width: 180px;">ACTIONS</th>
+                                        <th class="px-3 py-3">
+                                            <i class="fas fa-hashtag me-1"></i>ID
+                                        </th>
+                                        <th class="px-3 py-3">
+                                            <i class="fas fa-route me-1"></i>ROUTE
+                                        </th>
+                                        <th class="px-3 py-3">
+                                            <i class="fas fa-user me-1"></i>COLLECTOR
+                                        </th>
+                                        <th class="px-3 py-3">
+                                            <i class="fas fa-truck me-1"></i>TRUCK & DRIVER
+                                        </th>
+                                        <th class="px-3 py-3">
+                                            <i class="fas fa-clock me-1"></i>SCHEDULE TIME
+                                        </th>
+                                        <th class="px-3 py-3">
+                                            <i class="fas fa-map-marker-alt me-1"></i>COLLECTION POINTS
+                                        </th>
+                                        <th class="px-3 py-3">
+                                            <i class="fas fa-info-circle me-1"></i>STATUS
+                                        </th>
+                                        <th class="px-3 py-3 text-center" style="width: 140px;">
+                                            <i class="fas fa-cogs me-1"></i>ACTIONS
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var schedule in Model)
                                     {
-                                        <tr>
-                                            <td>
-                                                <span class="badge bg-secondary">#@schedule.Id</span>
+                                        <tr class="align-middle">
+                                            <td class="px-3 py-3">
+                                                <span class="badge bg-secondary fs-6">#@schedule.Id</span>
                                             </td>
-                                            <td>
-                                                <strong>@schedule.Route?.Name</strong>
-                                                @if (!string.IsNullOrEmpty(schedule.Route?.Description))
-                                                {
-                                                    <br>
-                                                    <small class="text-muted">@schedule.Route.Description</small>
-                                                }
+                                            <td class="px-3 py-3">
+                                                <div>
+                                                    <strong class="text-primary">@schedule.Route?.Name</strong>
+                                                    @if (!string.IsNullOrEmpty(schedule.Route?.Description))
+                                                    {
+                                                        <br>
+                                                        <small class="text-muted">@schedule.Route.Description</small>
+                                                    }
+                                                    @if (schedule.Route?.ExpectedDurationMinutes > 0)
+                                                    {
+                                                        <br>
+                                                        <small class="badge bg-info">@schedule.Route.ExpectedDurationMinutes min</small>
+                                                    }
+                                                </div>
                                             </td>
-                                            <td>
+                                            <td class="px-3 py-3">
                                                 <div class="d-flex align-items-center">
-                                                    <i class="fas fa-user me-2"></i>
+                                                    <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                        <i class="fas fa-user text-white"></i>
+                                                    </div>
                                                     <div>
                                                         <strong>@schedule.Collector?.FirstName @schedule.Collector?.LastName</strong>
                                                         <br><small class="text-muted">@schedule.Collector?.Role</small>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td class="px-3 py-3">
                                                 <div class="d-flex align-items-center">
-                                                    <i class="fas fa-truck me-2"></i>
+                                                    <div class="avatar-sm bg-success rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                        <i class="fas fa-truck text-white"></i>
+                                                    </div>
                                                     <div>
                                                         <strong>@schedule.Truck?.LicensePlate</strong>
                                                         <br><small class="text-muted">@schedule.Truck?.Model</small>
+                                                        @if (schedule.Truck?.Driver != null)
+                                                        {
+                                                            <br>
+                                                
+                                                            <small class="text-info">
+                                                                <i class="fas fa-user-tie me-1"></i>@schedule.Truck.Driver.FirstName @schedule.Truck.Driver.LastName
+                                                            </small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <br>
+                                                
+                                                            <small class="text-warning">
+                                                                <i class="fas fa-exclamation-triangle me-1"></i>No driver assigned
+                                                            </small>
+                                                        }
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <i class="fas fa-clock me-1"></i>
-                                                @schedule.ScheduleStartTime.ToString("dd/MM/yyyy")
-                                                <br>
-                                                <small class="text-muted">@schedule.ScheduleStartTime.ToString("HH:mm")</small>
-                                            </td>
-                                            <td>
-                                                <i class="fas fa-clock me-1"></i>
-                                                @schedule.ScheduleEndTime.ToString("dd/MM/yyyy")
-                                                <br>
-                                                <small class="text-muted">@schedule.ScheduleEndTime.ToString("HH:mm")</small>
-                                            </td>
-                                            <td>
-                                                @if (schedule.RouteCenterLatitude.HasValue && schedule.RouteCenterLongitude.HasValue)
-                                                {
-                                                    <div class="text-center">
-                                                        <i class="fas fa-map-marker-alt text-primary"></i>
-                                                        <br>
-                                                        <small class="text-muted">
-                                                            Lat: @schedule.RouteCenterLatitude.Value.ToString("F4")
-                                                            <br>
-                                                            Lng: @schedule.RouteCenterLongitude.Value.ToString("F4")
-                                                        </small>
-                                                        <br>
-                                                        <a href="https://www.google.com/maps?q=@schedule.RouteCenterLatitude.Value,@schedule.RouteCenterLongitude.Value"
-                                                           target="_blank" class="btn btn-sm btn-outline-info mt-1">
-                                                            <i class="fas fa-external-link-alt"></i>
-                                                        </a>
+                                            <td class="px-3 py-3">
+                                                <div class="text-center">
+                                                    <div class="fw-bold text-dark">
+                                                        @schedule.ScheduleStartTime.ToString("MMM dd, yyyy")
                                                     </div>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-warning">
-                                                        <i class="fas fa-exclamation-triangle"></i>
-                                                        <br>
-                                                        <small>No coordinates</small>
-                                                    </span>
-                                                }
+                                                    <div class="text-primary">
+                                                        <i class="fas fa-play me-1"></i>@schedule.ScheduleStartTime.ToString("HH:mm")
+                                                        <span class="mx-1">-</span>
+                                                        <i class="fas fa-stop me-1"></i>@schedule.ScheduleEndTime.ToString("HH:mm")
+                                                    </div>
+                                                    <small class="text-muted">@schedule.DayOfWeek</small>
+                                                </div>
                                             </td>
-                                            <td>
+                                            <td class="px-3 py-3">
                                                 <div class="text-center">
                                                     @if (schedule.CollectionPoints != null && schedule.CollectionPoints.Any())
                                                     {
                                                         var totalPoints = schedule.CollectionPoints.Count();
                                                         var collectedPoints = schedule.CollectionPoints.Count(cp => cp.IsCollected);
                                                         var pointsWithCoords = schedule.CollectionPoints.Count(cp => cp.Latitude.HasValue && cp.Longitude.HasValue);
+                                                        var completionPercentage = totalPoints > 0 ? Math.Round((double)collectedPoints / totalPoints * 100, 0) : 0;
 
-                                                        <span class="badge bg-info">@totalPoints Points</span>
+                                                        <div class="mb-2">
+                                                            <span class="badge bg-primary fs-6">@totalPoints Points</span>
+                                                        </div>
+                                                        <div class="progress mb-2" style="height: 8px;">
+                                                            <div class="progress-bar bg-success" role="progressbar"
+                                                                 style="width: @completionPercentage%"
+                                                                 aria-valuenow="@completionPercentage" aria-valuemin="0" aria-valuemax="100">
+                                                            </div>
+                                                        </div>
+                                                        <small class="text-success fw-bold">@collectedPoints/@totalPoints Collected</small>
                                                         <br>
-                                                        <small class="text-success">@collectedPoints Collected</small>
-                                                        <br>
-                                                        <small class="text-primary">@pointsWithCoords with GPS</small>
+                                                        <small class="text-info">@pointsWithCoords GPS enabled</small>
                                                         @if (pointsWithCoords > 0)
                                                         {
                                                             <br>
                                                             <button type="button" class="btn btn-sm btn-outline-primary mt-1"
                                                                     data-bs-toggle="modal" data-bs-target="#coordinatesModal-@schedule.Id">
-                                                                <i class="fas fa-map"></i> View
+                                                                <i class="fas fa-map me-1"></i> View Map
                                                             </button>
                                                         }
                                                     }
                                                     else
                                                     {
-                                                        <span class="text-muted">No points</span>
+                                                        <span class="text-muted">
+                                                            <i class="fas fa-exclamation-circle"></i>
+                                                            <br>No points
+                                                        </span>
                                                     }
                                                 </div>
                                             </td>
-                                            <td>
-                                                <span class="badge @(schedule.Status == "Completed" ? "bg-success" :
-                                                                                                                           schedule.Status == "In Progress" ? "bg-warning" :
-                                                                                                                           schedule.Status == "Cancelled" ? "bg-danger" : "bg-primary")">
-                                            @schedule.Status
-                                        </span>
-                                    </td>
-                                    <td style="min-width: 180px;">
-                                        <div class="d-grid gap-1">
-                                            <a asp-action="Details" asp-route-id="@schedule.Id"
-                                               class="btn btn-sm btn-info" style="white-space: nowrap;">
-                                                <i class="fas fa-eye"></i> Details
-                                            </a>
-                                            <a asp-action="Edit" asp-route-id="@schedule.Id"
-                                               class="btn btn-sm btn-warning" style="white-space: nowrap;">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </a>
-                                            <a asp-action="Delete" asp-route-id="@schedule.Id"
-                                               class="btn btn-sm btn-danger" style="white-space: nowrap;">
-                                                <i class="fas fa-trash"></i> Delete
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                                                }
+                                            <td class="px-3 py-3">
+                                                <div class="text-center">
+                                                    <span class="badge @schedule.StatusBadgeClass fs-6 px-3 py-2">
+                                                        @schedule.AutomaticStatus
+                                                    </span>
+                                                    @if (schedule.AutomaticStatus == "Missed")
+                                                    {
+                                                        <br>
+                                                        <small class="text-danger mt-1">
+                                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                                            Auto-detected
+                                                        </small>
+                                                    }
+                                                    else if (schedule.AutomaticStatus == "In Progress")
+                                                    {
+                                                        <br>
+                                                        <small class="text-warning mt-1">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            Live status
+                                                        </small>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-3" style="width: 140px;">
+                                                <div class="d-grid gap-1">
+                                                    <a asp-action="Details" asp-route-id="@schedule.Id"
+                                                       class="btn btn-sm btn-info">
+                                                        <i class="fas fa-eye me-1"></i> Details
+                                                    </a>
+                                                    <a asp-action="Edit" asp-route-id="@schedule.Id"
+                                                       class="btn btn-sm btn-warning">
+                                                        <i class="fas fa-edit me-1"></i> Edit
+                                                    </a>
+                                                    @if (schedule.AutomaticStatus != "Completed")
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-success"
+                                                                onclick="updateScheduleStatus(@schedule.Id, 'Completed')">
+                                                            <i class="fas fa-check me-1"></i> Complete
+                                                        </button>
+                                                    }
+                                                    <a asp-action="Delete" asp-route-id="@schedule.Id"
+                                                       class="btn btn-sm btn-danger">
+                                                        <i class="fas fa-trash me-1"></i> Delete
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
                                 </tbody>
                             </table>
                         </div>
@@ -179,17 +227,17 @@
                                 <div class="modal fade" id="coordinatesModal-@schedule.Id" tabindex="-1">
                                     <div class="modal-dialog modal-lg">
                                         <div class="modal-content">
-                                            <div class="modal-header">
+                                            <div class="modal-header bg-primary text-white">
                                                 <h5 class="modal-title">
-                                                    <i class="fas fa-map-marker-alt"></i>
+                                                    <i class="fas fa-map-marker-alt me-2"></i>
                                                     Collection Points - Schedule #@schedule.Id (@schedule.Route?.Name)
                                                 </h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
                                                 <div class="table-responsive">
-                                                    <table class="table table-sm">
-                                                        <thead>
+                                                    <table class="table table-sm table-hover">
+                                                        <thead class="table-light">
                                                             <tr>
                                                                 <th>Order</th>
                                                                 <th>Bin ID</th>
@@ -251,7 +299,7 @@
                                                     <div class="text-center mt-3">
                                                         <a href="https://www.google.com/maps/dir/@(string.Join("/", schedule.CollectionPoints.Where(cp => cp.Latitude.HasValue && cp.Longitude.HasValue).OrderBy(cp => cp.OrderInSchedule).Select(cp => $"{cp.Latitude.Value},{cp.Longitude.Value}")))"
                                                            target="_blank" class="btn btn-primary">
-                                                            <i class="fas fa-route"></i> View Full Route on Google Maps
+                                                            <i class="fas fa-route me-1"></i> View Full Route on Google Maps
                                                         </a>
                                                     </div>
                                                 }
@@ -262,37 +310,43 @@
                             }
                         }
 
-                        <!-- Summary Statistics -->
-                        <div class="row mt-4">
-                            <div class="col-md-3">
-                                <div class="card bg-primary text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@Model.Count()</h5>
-                                        <small>Total Schedules</small>
+                        <!-- Enhanced Summary Statistics -->
+                        <div class="bg-light p-4">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <div class="card bg-primary text-white border-0 shadow-sm">
+                                        <div class="card-body text-center py-3">
+                                            <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                                            <h4 class="mb-1">@Model.Count()</h4>
+                                            <small>Total Schedules</small>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-success text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@Model.Count(s => s.Status == "Completed")</h5>
-                                        <small>Completed</small>
+                                <div class="col-md-3">
+                                    <div class="card bg-success text-white border-0 shadow-sm">
+                                        <div class="card-body text-center py-3">
+                                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                            <h4 class="mb-1">@Model.Count(s => s.AutomaticStatus == "Completed")</h4>
+                                            <small>Completed</small>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-warning text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@Model.Count(s => s.Status == "In Progress")</h5>
-                                        <small>In Progress</small>
+                                <div class="col-md-3">
+                                    <div class="card bg-warning text-white border-0 shadow-sm">
+                                        <div class="card-body text-center py-3">
+                                            <i class="fas fa-clock fa-2x mb-2"></i>
+                                            <h4 class="mb-1">@Model.Count(s => s.AutomaticStatus == "In Progress")</h4>
+                                            <small>In Progress</small>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="card bg-info text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@Model.Count(s => s.Status == "Scheduled")</h5>
-                                        <small>Scheduled</small>
+                                <div class="col-md-3">
+                                    <div class="card bg-danger text-white border-0 shadow-sm">
+                                        <div class="card-body text-center py-3">
+                                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                                            <h4 class="mb-1">@Model.Count(s => s.AutomaticStatus == "Missed")</h4>
+                                            <small>Missed</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -301,11 +355,11 @@
                     else
                     {
                         <div class="text-center py-5">
-                            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                            <h5 class="text-muted">No schedules found</h5>
-                            <p class="text-muted">Create your first pickup schedule to get started.</p>
-                            <a asp-action="Create" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Create New Schedule
+                            <i class="fas fa-calendar-times fa-4x text-muted mb-4"></i>
+                            <h4 class="text-muted mb-3">No schedules found</h4>
+                            <p class="text-muted mb-4">Create your first pickup schedule to get started.</p>
+                            <a asp-action="Create" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus me-2"></i> Create New Schedule
                             </a>
                         </div>
                     }
@@ -321,5 +375,81 @@
         setTimeout(function() {
             $('.alert-success').fadeOut('slow');
         }, 5000);
+
+        // Function to update schedule status via AJAX
+        function updateScheduleStatus(scheduleId, newStatus) {
+            if (confirm(`Are you sure you want to mark this schedule as ${newStatus}?`)) {
+                $.ajax({
+                    url: '@Url.Action("UpdateStatus", "Schedule")',
+                    type: 'POST',
+                    data: {
+                        scheduleId: scheduleId,
+                        newStatus: newStatus,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Show success message
+                            showAlert('success', response.message);
+                            // Reload the page to show updated status
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1500);
+                        } else {
+                            showAlert('danger', response.message);
+                        }
+                    },
+                    error: function() {
+                        showAlert('danger', 'An error occurred while updating the schedule status.');
+                    }
+                });
+            }
+        }
+
+        // Function to show alert messages
+        function showAlert(type, message) {
+            var alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show m-3" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('.card-body').prepend(alertHtml);
+        }
+
+        // Auto-refresh page every 5 minutes to update statuses
+        setInterval(function() {
+            location.reload();
+        }, 300000); // 5 minutes
     </script>
+
+    <style>
+        .avatar-sm {
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+        }
+
+        .table th {
+            font-weight: 600;
+            font-size: 0.875rem;
+            letter-spacing: 0.5px;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .progress {
+            background-color: #e9ecef;
+        }
+
+        .card {
+            border: none;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+        }
+    </style>
 }

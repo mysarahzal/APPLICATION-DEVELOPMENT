@@ -21,12 +21,107 @@ namespace AspnetCoreMvcFull.Controllers
       _context = context;
     }
 
+    // Method to automatically update schedule statuses based on time
+    private async Task UpdateScheduleStatuses()
+    {
+      try
+      {
+        var now = DateTime.Now;
+
+        // Get schedules that need status updates (not manually completed or cancelled)
+        var schedulesToUpdate = await _context.Schedules
+            .Where(s => s.Status != "Completed" && s.Status != "Cancelled")
+            .ToListAsync();
+
+        bool hasChanges = false;
+
+        foreach (var schedule in schedulesToUpdate)
+        {
+          string newStatus = null;
+
+          if (now < schedule.ScheduleStartTime && schedule.Status != "Scheduled")
+          {
+            newStatus = "Scheduled";
+          }
+          else if (now >= schedule.ScheduleStartTime && now <= schedule.ScheduleEndTime && schedule.Status != "In Progress")
+          {
+            newStatus = "In Progress";
+            // Set actual start time if not already set
+            if (!schedule.ActualStartTime.HasValue)
+            {
+              schedule.ActualStartTime = now;
+            }
+          }
+          else if (now > schedule.ScheduleEndTime && schedule.Status != "Missed")
+          {
+            newStatus = "Missed";
+            // Set actual start time if not already set (in case it was never started)
+            if (!schedule.ActualStartTime.HasValue)
+            {
+              schedule.ActualStartTime = schedule.ScheduleStartTime;
+            }
+
+            // Create missed pickup record automatically
+            var existingMissedPickup = await _context.MissedPickups
+                .FirstOrDefaultAsync(m => m.ScheduleId == schedule.Id);
+
+            if (existingMissedPickup == null)
+            {
+              // Get collection point statistics
+              var totalPoints = schedule.CollectionPoints?.Count() ?? 0;
+              var collectedPoints = schedule.CollectionPoints?.Count(cp => cp.IsCollected) ?? 0;
+              var uncollectedPoints = totalPoints - collectedPoints;
+
+              var hoursOverdue = (now - schedule.ScheduleEndTime).TotalHours;
+
+              var missedPickup = new MissedPickup
+              {
+                ScheduleId = schedule.Id,
+                DetectedAt = now,
+                Status = "Pending",
+                Reason = totalPoints > 0
+                  ? $"Schedule automatically marked as missed - {uncollectedPoints}/{totalPoints} points uncollected, {hoursOverdue:F1} hours overdue"
+                  : $"Schedule automatically marked as missed - {hoursOverdue:F1} hours past scheduled end time",
+                CreatedAt = now
+              };
+
+              _context.MissedPickups.Add(missedPickup);
+
+              // We'll save this with the schedule updates
+              Console.WriteLine($"Created missed pickup record for Schedule {schedule.Id}");
+            }
+          }
+
+          if (newStatus != null)
+          {
+            schedule.Status = newStatus;
+            schedule.UpdatedAt = now;
+            hasChanges = true;
+            Console.WriteLine($"Updated Schedule {schedule.Id} status to {newStatus}");
+          }
+        }
+
+        if (hasChanges)
+        {
+          await _context.SaveChangesAsync();
+          Console.WriteLine($"Updated {schedulesToUpdate.Count(s => s.Status != s.Status)} schedule statuses");
+        }
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error updating schedule statuses: {ex.Message}");
+      }
+    }
+
     // GET: Schedule/MySchedule - For drivers to view their schedules
     [Authorize(Roles = "Driver")]
     public async Task<IActionResult> MySchedule()
     {
       try
       {
+        // Update statuses before loading
+        await UpdateScheduleStatuses();
+
         // Try multiple ways to get current user ID
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
                      User.FindFirst("sub")?.Value ??
@@ -148,6 +243,91 @@ namespace AspnetCoreMvcFull.Controllers
       }
     }
 
+    // GET: Schedule
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Index()
+    {
+      // Update statuses before loading
+      await UpdateScheduleStatuses();
+
+      var schedules = await _context.Schedules
+          .Include(s => s.Collector)
+          .Include(s => s.Truck)
+          .ThenInclude(t => t.Driver)
+          .Include(s => s.Route)
+          .Include(s => s.CollectionPoints)
+          .ThenInclude(cp => cp.Bin)
+          .OrderByDescending(s => s.CreatedAt)
+          .ToListAsync();
+      return View(schedules);
+    }
+
+    // POST: Schedule/UpdateStatus - For drivers to update schedule status manually
+    [HttpPost]
+    [Authorize(Roles = "Driver,Admin")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateStatus(int scheduleId, string newStatus)
+    {
+      try
+      {
+        // Get current user ID
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out int currentUserId))
+        {
+          return Json(new { success = false, message = "Unable to identify current user." });
+        }
+
+        var schedule = await _context.Schedules
+            .FirstOrDefaultAsync(s => s.Id == scheduleId);
+
+        if (schedule == null)
+        {
+          return Json(new { success = false, message = "Schedule not found." });
+        }
+
+        // Check permissions - drivers can only update their own schedules
+        if (User.IsInRole("Driver") && schedule.CollectorId != currentUserId)
+        {
+          return Json(new { success = false, message = "Access denied." });
+        }
+
+        // Update status and actual times
+        schedule.Status = newStatus;
+        schedule.UpdatedAt = DateTime.Now;
+
+        if (newStatus == "In Progress" && !schedule.ActualStartTime.HasValue)
+        {
+          schedule.ActualStartTime = DateTime.Now;
+        }
+        else if (newStatus == "Completed")
+        {
+          if (!schedule.ActualStartTime.HasValue)
+          {
+            schedule.ActualStartTime = schedule.ScheduleStartTime;
+          }
+          if (!schedule.ActualEndTime.HasValue)
+          {
+            schedule.ActualEndTime = DateTime.Now;
+          }
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Json(new
+        {
+          success = true,
+          message = $"Schedule status updated to {newStatus}",
+          actualStartTime = schedule.ActualStartTime?.ToString("dd/MM/yyyy HH:mm"),
+          actualEndTime = schedule.ActualEndTime?.ToString("dd/MM/yyyy HH:mm")
+        });
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error updating schedule status: {ex.Message}");
+        return Json(new { success = false, message = "An error occurred while updating the schedule." });
+      }
+    }
+
     // GET: Schedule/MyScheduleDetails/5 - For drivers to view specific schedule details
     [Authorize(Roles = "Driver")]
     public async Task<IActionResult> MyScheduleDetails(int? id)
@@ -160,6 +340,9 @@ namespace AspnetCoreMvcFull.Controllers
 
       try
       {
+        // Update statuses before loading
+        await UpdateScheduleStatuses();
+
         // Get current user ID
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdClaim, out int currentUserId))
@@ -193,79 +376,6 @@ namespace AspnetCoreMvcFull.Controllers
       }
     }
 
-    // POST: Schedule/UpdateStatus - For drivers to update schedule status
-    [HttpPost]
-    [Authorize(Roles = "Driver")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateStatus(int scheduleId, string newStatus)
-    {
-      try
-      {
-        // Get current user ID
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(userIdClaim, out int currentUserId))
-        {
-          return Json(new { success = false, message = "Unable to identify current user." });
-        }
-
-        var schedule = await _context.Schedules
-            .FirstOrDefaultAsync(s => s.Id == scheduleId && s.CollectorId == currentUserId);
-
-        if (schedule == null)
-        {
-          return Json(new { success = false, message = "Schedule not found or access denied." });
-        }
-
-        // Update status and actual times
-        schedule.Status = newStatus;
-        schedule.UpdatedAt = DateTime.Now;
-
-        if (newStatus == "In Progress" && !schedule.ActualStartTime.HasValue)
-        {
-          schedule.ActualStartTime = DateTime.Now;
-        }
-        else if (newStatus == "Completed" && !schedule.ActualEndTime.HasValue)
-        {
-          schedule.ActualEndTime = DateTime.Now;
-          if (!schedule.ActualStartTime.HasValue)
-          {
-            schedule.ActualStartTime = schedule.ScheduleStartTime;
-          }
-        }
-
-        await _context.SaveChangesAsync();
-
-        return Json(new
-        {
-          success = true,
-          message = $"Schedule status updated to {newStatus}",
-          actualStartTime = schedule.ActualStartTime?.ToString("dd/MM/yyyy HH:mm"),
-          actualEndTime = schedule.ActualEndTime?.ToString("dd/MM/yyyy HH:mm")
-        });
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error updating schedule status: {ex.Message}");
-        return Json(new { success = false, message = "An error occurred while updating the schedule." });
-      }
-    }
-
-    // GET: Schedule
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Index()
-    {
-      var schedules = await _context.Schedules
-          .Include(s => s.Collector)
-          .Include(s => s.Truck)
-          .ThenInclude(t => t.Driver)
-          .Include(s => s.Route)
-          .Include(s => s.CollectionPoints)
-          .ThenInclude(cp => cp.Bin)
-          .OrderByDescending(s => s.CreatedAt)
-          .ToListAsync();
-      return View(schedules);
-    }
-
     // GET: Schedule/Details/5
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Details(int? id)
@@ -274,6 +384,9 @@ namespace AspnetCoreMvcFull.Controllers
       {
         return NotFound();
       }
+
+      // Update statuses before loading
+      await UpdateScheduleStatuses();
 
       var schedule = await _context.Schedules
           .Include(s => s.Collector)
@@ -478,7 +591,24 @@ namespace AspnetCoreMvcFull.Controllers
             schedule.ActualEndTime = null;
             schedule.DayOfWeek = schedule.ScheduleStartTime.DayOfWeek.ToString();
 
+            // Set initial status based on time
+            var now = DateTime.Now;
+            if (now < schedule.ScheduleStartTime)
+            {
+              schedule.Status = "Scheduled";
+            }
+            else if (now >= schedule.ScheduleStartTime && now <= schedule.ScheduleEndTime)
+            {
+              schedule.Status = "In Progress";
+              schedule.ActualStartTime = now;
+            }
+            else
+            {
+              schedule.Status = "Missed";
+            }
+
             Console.WriteLine($"DayOfWeek set to: {schedule.DayOfWeek}");
+            Console.WriteLine($"Initial status set to: {schedule.Status}");
 
             // Get bins from the selected route with their coordinates
             var routeBins = await _context.RouteBins
@@ -535,7 +665,7 @@ namespace AspnetCoreMvcFull.Controllers
               Console.WriteLine("Collection points saved successfully");
             }
 
-            TempData["Success"] = $"Schedule created successfully! Collector: {collector?.FirstName} {collector?.LastName}, Truck: {truck?.LicensePlate} ({truck?.Model}), Route with {collectionPoints.Count} collection points.";
+            TempData["Success"] = $"Schedule created successfully! Collector: {collector?.FirstName} {collector?.LastName}, Truck: {truck?.LicensePlate} ({truck?.Model}), Route with {collectionPoints.Count} collection points. Status: {schedule.Status}";
             Console.WriteLine("=== SCHEDULE CREATION SUCCESSFUL ===");
             return RedirectToAction(nameof(Index));
           }
@@ -638,12 +768,34 @@ namespace AspnetCoreMvcFull.Controllers
           existingSchedule.RouteId = schedule.RouteId;
           existingSchedule.ScheduleStartTime = schedule.ScheduleStartTime;
           existingSchedule.ScheduleEndTime = schedule.ScheduleEndTime;
-          existingSchedule.Status = schedule.Status;
           existingSchedule.AdminNotes = schedule.AdminNotes;
           existingSchedule.ActualStartTime = schedule.ActualStartTime;
           existingSchedule.ActualEndTime = schedule.ActualEndTime;
           existingSchedule.UpdatedAt = DateTime.Now;
           existingSchedule.DayOfWeek = schedule.ScheduleStartTime.DayOfWeek.ToString();
+
+          // Update status based on manual input or automatic calculation
+          if (schedule.Status == "Completed" || schedule.Status == "Cancelled")
+          {
+            existingSchedule.Status = schedule.Status;
+          }
+          else
+          {
+            // Auto-calculate status based on time
+            var now = DateTime.Now;
+            if (now < existingSchedule.ScheduleStartTime)
+            {
+              existingSchedule.Status = "Scheduled";
+            }
+            else if (now >= existingSchedule.ScheduleStartTime && now <= existingSchedule.ScheduleEndTime)
+            {
+              existingSchedule.Status = "In Progress";
+            }
+            else
+            {
+              existingSchedule.Status = "Missed";
+            }
+          }
 
           // If route changed, update collection points and coordinates
           if (routeChanged)

@@ -25,4 +25,3 @@ namespace AspnetCoreMvcFull.Models
     public DateTime CreatedAt { get; set; }
   }
 }
-
