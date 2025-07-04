@@ -507,16 +507,7 @@ namespace AspnetCoreMvcFull.Controllers
             Console.WriteLine("Adding schedule to context...");
             _context.Add(schedule);
             await _context.SaveChangesAsync();
-
-            // Update truck status to "Assigned"
-            if (truck != null)
-            {
-              truck.Status = "Assigned";
-              truck.UpdatedAt = DateTime.Now;
-              _context.Update(truck);
-              await _context.SaveChangesAsync();
-              Console.WriteLine($"Truck {truck.LicensePlate} status updated to Assigned");
-            }
+            Console.WriteLine($"Schedule saved with ID: {schedule.Id}");
 
             // Create collection points for each bin in the route
             var collectionPoints = new List<CollectionPoint>();
@@ -706,15 +697,6 @@ namespace AspnetCoreMvcFull.Controllers
           }
 
           await _context.SaveChangesAsync();
-
-          // Update truck status based on current schedules
-          await UpdateTruckStatusBasedOnSchedules(schedule.TruckId);
-          if (routeChanged && existingSchedule.TruckId != schedule.TruckId)
-          {
-            // Also update the old truck's status if truck was changed
-            await UpdateTruckStatusBasedOnSchedules(existingSchedule.TruckId);
-          }
-
           TempData["Success"] = "Schedule updated successfully!";
           return RedirectToAction(nameof(Index));
         }
@@ -779,57 +761,14 @@ namespace AspnetCoreMvcFull.Controllers
 
       if (schedule != null)
       {
-        var truckId = schedule.TruckId;
-
         // Remove collection points first
         _context.CollectionPoints.RemoveRange(schedule.CollectionPoints);
         _context.Schedules.Remove(schedule);
         await _context.SaveChangesAsync();
-
-        // Update truck status after schedule deletion
-        await UpdateTruckStatusBasedOnSchedules(truckId);
-
         TempData["Success"] = "Schedule deleted successfully!";
       }
 
       return RedirectToAction(nameof(Index));
-    }
-
-    // Add method to update truck status based on active schedules
-    private async Task UpdateTruckStatusBasedOnSchedules(int truckId)
-    {
-      try
-      {
-        var truck = await _context.Trucks.FindAsync(truckId);
-        if (truck == null) return;
-
-        // Check if truck has any active schedules
-        var hasActiveSchedules = await _context.Schedules
-            .AnyAsync(s => s.TruckId == truckId &&
-                     s.Status != "Completed" &&
-                     s.Status != "Cancelled");
-
-        // If no active schedules and truck is currently assigned, make it available
-        if (!hasActiveSchedules && truck.Status == "Assigned")
-        {
-          truck.Status = "Available";
-          truck.UpdatedAt = DateTime.Now;
-          _context.Update(truck);
-          await _context.SaveChangesAsync();
-        }
-        // If has active schedules and truck is available, make it assigned
-        else if (hasActiveSchedules && truck.Status == "Available")
-        {
-          truck.Status = "Assigned";
-          truck.UpdatedAt = DateTime.Now;
-          _context.Update(truck);
-          await _context.SaveChangesAsync();
-        }
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error updating truck status: {ex.Message}");
-      }
     }
 
     private bool ScheduleExists(int id)
