@@ -219,32 +219,11 @@ html2canvas = window.html2canvas // Assuming html2canvas is available globally
               <strong>${route.truckName}</strong><br>
               <small class="text-muted">${route.routeName} (${route.collectionPoints.length} points)</small>
             </div>
-            <div class="route-toggle">
-              <input type="checkbox" checked data-route-index="${index}" class="form-check-input">
-            </div>
           `
             routeLegend.appendChild(legendItem)
           }
         }
       })
-
-      // Handle route toggle
-      if (routeLegend) {
-        routeLegend.addEventListener("change", (e) => {
-          if (e.target.type === "checkbox") {
-            const routeIndex = Number.parseInt(e.target.dataset.routeIndex)
-            const routeControl = routeControls[routeIndex]
-
-            if (routeControl) {
-              if (e.target.checked) {
-                routeControl.control.addTo(map)
-              } else {
-                map.removeControl(routeControl.control)
-              }
-            }
-          }
-        })
-      }
 
       // Fit map to show all routes
       if (allRoutesData.length > 0) {
