@@ -40,10 +40,10 @@
             position: relative;
         }
     </style>
+
     <div class="row">
         <div class="col-12">
             <h2 class="mb-4">@ViewData["Title"]</h2>
-
             <!-- Success/Error Messages -->
             @if (TempData["SuccessMessage"] != null)
             {
@@ -52,7 +52,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             }
-
             @if (TempData["ErrorMessage"] != null)
             {
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -60,7 +59,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             }
-
             <!-- Validation Summary -->
             <div asp-validation-summary="All" class="alert alert-danger" role="alert" style="display: @(ViewData.ModelState.IsValid ? "none" : "block")"></div>
         </div>
@@ -154,7 +152,6 @@
                                                         <button type="button" class="btn btn-primary me-2" onclick="editClient(@client.ClientID)">
                                                             <i class="fas fa-edit me-1"></i>Edit
                                                         </button>
-
                                                         <!-- Delete Button -->
                                                         <button type="button" class="btn btn-danger" onclick="deleteClient(@client.ClientID, '@client.ClientName')">
                                                             <i class="fas fa-trash me-1"></i>Delete
@@ -194,7 +191,13 @@
                             <form asp-action="CreateBin" method="post" id="createBinForm">
                                 <div class="mb-3">
                                     <label asp-for="Bin.BinPlateId" class="form-label"></label>
-                                    <input asp-for="Bin.BinPlateId" class="form-control" placeholder="Enter bin plate ID" />
+                                    <input asp-for="Bin.BinPlateId"
+                                           class="form-control"
+                                           placeholder="Enter bin plate ID (ABC1234)"
+                                           pattern="[A-Z]{3}[0-9]{4}"
+                                           title="Format: ABC1234 (3 uppercase letters followed by 4 numbers)"
+                                           maxlength="7"
+                                           style="text-transform: uppercase;" />
                                     <span asp-validation-for="Bin.BinPlateId" class="text-danger"></span>
                                 </div>
                                 <div class="mb-3">
@@ -232,6 +235,7 @@
                         </div>
                     </div>
                 </div>
+
                 <!-- Bin List -->
                 <div class="col-lg-8">
                     <div class="card">
@@ -276,7 +280,6 @@
                                                         <button type="button" class="btn btn-primary me-2" onclick="editBin('@bin.Id.ToString()')">
                                                             <i class="fas fa-edit me-1"></i>Edit
                                                         </button>
-
                                                         <!-- Delete Button -->
                                                         <button type="button" class="btn btn-danger" onclick="deleteBin('@bin.Id', '@bin.BinPlateId')">
                                                             <i class="fas fa-trash me-1"></i>Delete
@@ -335,6 +338,7 @@
         </div>
     </div>
 </div>
+
 <!-- Edit Bin Modal -->
 <div class="modal fade" id="editBinModal" tabindex="-1">
     <div class="modal-dialog">
@@ -348,7 +352,15 @@
                     <input type="hidden" id="editBinId" name="Bin.Id" />
                     <div class="mb-3">
                         <label for="editBinPlateId" class="form-label">Bin Plate ID</label>
-                        <input type="text" class="form-control" id="editBinPlateId" name="Bin.BinPlateId" required />
+                        <input type="text"
+                               class="form-control"
+                               id="editBinPlateId"
+                               name="Bin.BinPlateId"
+                               pattern="[A-Z]{3}[0-9]{4}"
+                               title="Format: ABC1234 (3 uppercase letters followed by 4 numbers)"
+                               maxlength="7"
+                               style="text-transform: uppercase;"
+                               required />
                     </div>
                     <div class="mb-3">
                         <label for="editBinLocation" class="form-label">Location</label>
@@ -392,7 +404,6 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-
     <script>
         // Client management functions
         function editClient(clientId) {
@@ -403,7 +414,6 @@
                     document.getElementById('editClientName').value = data.clientName;
                     document.getElementById('editClientLocation').value = data.location;
                     document.getElementById('editClientNumOfBins').value = data.numOfBins;
-
                     var modal = new bootstrap.Modal(document.getElementById('editClientModal'));
                     modal.show();
                 })
@@ -418,20 +428,17 @@
                 var form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '/ClientBin/DeleteClientConfirmed';
-
                 var input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'id';
                 input.value = clientId;
                 form.appendChild(input);
-
                 var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
                 var tokenInput = document.createElement('input');
                 tokenInput.type = 'hidden';
                 tokenInput.name = '__RequestVerificationToken';
                 tokenInput.value = token;
                 form.appendChild(tokenInput);
-
                 document.body.appendChild(form);
                 form.submit();
             }
@@ -441,7 +448,6 @@
         function editBin(binId) {
         // Add some debugging
         console.log('Editing bin with ID:', binId);
-
         fetch(`/ClientBin/GetBin?id=${encodeURIComponent(binId)}`)
             .then(response => {
                 if (!response.ok) {
@@ -451,14 +457,12 @@
             })
             .then(data => {
                 console.log('Received bin data:', data);
-
                 document.getElementById('editBinId').value = data.id;
                 document.getElementById('editBinPlateId').value = data.binPlateId;
                 document.getElementById('editBinLocation').value = data.location;
                 document.getElementById('editBinFillLevel').value = data.fillLevel;
                 document.getElementById('editBinZone').value = data.zone;
                 document.getElementById('editBinClientID').value = data.clientID;
-
             // Set coordinates if available
             if (data.latitude) {
                 document.getElementById('editBinLatitude').value = data.latitude;
@@ -466,11 +470,9 @@
             if (data.longitude) {
                 document.getElementById('editBinLongitude').value = data.longitude;
             }
-
                 var bootstrap = window.bootstrap; // Declare the bootstrap variable
                 var modal = new bootstrap.Modal(document.getElementById('editBinModal'));
                 modal.show();
-
             // Reinitialize location search for edit modal
             setTimeout(() => {
                 setupLocationSearch('editBinLocation', 'editLocationSuggestions', 'editBinLatitude', 'editBinLongitude');
@@ -487,20 +489,17 @@
                 var form = document.createElement('form');
                 form.method = 'POST';
                 form.action = '/ClientBin/DeleteBinConfirmed';
-
                 var input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'id';
                 input.value = binId;
                 form.appendChild(input);
-
                 var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
                 var tokenInput = document.createElement('input');
                 tokenInput.type = 'hidden';
                 tokenInput.name = '__RequestVerificationToken';
                 tokenInput.value = token;
                 form.appendChild(tokenInput);
-
                 document.body.appendChild(form);
                 form.submit();
             }
@@ -522,13 +521,11 @@
         function setupLocationSearch(inputId, suggestionsId, latId, lonId) {
             const locationInput = document.getElementById(inputId);
             const suggestionsDiv = document.getElementById(suggestionsId);
-
             if (!locationInput || !suggestionsDiv) return;
 
             locationInput.addEventListener('input', function() {
                 clearTimeout(inputId === 'binLocationInput' ? searchTimeout : editSearchTimeout);
                 const query = this.value.trim();
-
                 if (query.length < 3) {
                     suggestionsDiv.style.display = 'none';
                     return;
@@ -541,7 +538,6 @@
                         const results = await response.json();
 
                         suggestionsDiv.innerHTML = '';
-
                         if (results.length === 0) {
                             const noResults = document.createElement('div');
                             noResults.className = 'location-suggestion-item';
@@ -557,34 +553,27 @@
                                     <strong>${result.display_name.split(',')[0]}</strong><br>
                                     <small style="color: #666;">${result.display_name}</small>
                                 `;
-
                                 div.addEventListener('click', () => {
                                     locationInput.value = result.display_name;
                                     document.getElementById(latId).value = parseFloat(result.lat).toFixed(8);
                                     document.getElementById(lonId).value = parseFloat(result.lon).toFixed(8);
                                     suggestionsDiv.style.display = 'none';
                                     console.log('Coordinates saved:', result.lat, result.lon);
-
                                     // Show success feedback
                                     const feedback = document.createElement('div');
                                     feedback.style.cssText = 'color: green; font-size: 12px; margin-top: 5px;';
                                     feedback.textContent = `✓ Coordinates saved: ${parseFloat(result.lat).toFixed(6)}, ${parseFloat(result.lon).toFixed(6)}`;
-
                                     // Remove any existing feedback
                                     const existingFeedback = locationInput.parentNode.querySelector('.coordinate-feedback');
                                     if (existingFeedback) existingFeedback.remove();
-
                                     feedback.className = 'coordinate-feedback';
                                     locationInput.parentNode.appendChild(feedback);
-
                                     // Remove feedback after 3 seconds
                                     setTimeout(() => feedback.remove(), 3000);
                                 });
-
                                 suggestionsDiv.appendChild(div);
                             });
                         }
-
                         suggestionsDiv.style.display = 'block';
                     } catch (error) {
                         console.error('Location search error:', error);
@@ -612,12 +601,102 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Setup for create form
             setupLocationSearch('binLocationInput', 'locationSuggestions', 'binLatitude', 'binLongitude');
-
             // Setup for edit form (will be initialized when modal opens)
             setTimeout(() => {
                 setupLocationSearch('editBinLocation', 'editLocationSuggestions', 'editBinLatitude', 'editBinLongitude');
             }, 1000);
         });
     </script>
+    <script>
+        // Add this function after the existing JavaScript functions
+        function validateBinPlateId(plateId) {
+            const regex = /^[A-Z]{3}\d{4}$/;
+            return regex.test(plateId.toUpperCase());
+        }
+
+        function formatBinPlateId(input) {
+            // Auto-format to uppercase and limit length
+            let value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+            // Limit to 7 characters
+            if (value.length > 7) {
+                value = value.substring(0, 7);
+            }
+
+            input.value = value;
+
+            // Real-time validation feedback
+            const isValid = validateBinPlateId(value);
+            const feedbackElement = input.parentNode.querySelector('.plate-id-feedback');
+
+            // Remove existing feedback
+            if (feedbackElement) {
+                feedbackElement.remove();
+            }
+
+            if (value.length > 0) {
+                const feedback = document.createElement('div');
+                feedback.className = 'plate-id-feedback';
+                feedback.style.cssText = 'font-size: 12px; margin-top: 5px;';
+
+                if (isValid) {
+                    feedback.style.color = 'green';
+                    feedback.innerHTML = '✓ Valid format: ' + value;
+                } else if (value.length === 7) {
+                    feedback.style.color = 'red';
+                    feedback.innerHTML = '✗ Invalid format. Use ABC1234 (3 letters + 4 numbers)';
+                } else {
+                    feedback.style.color = 'orange';
+                    feedback.innerHTML = `Format: ABC1234 (${value.length}/7 characters)`;
+                }
+
+                input.parentNode.appendChild(feedback);
+            }
+        }
+
+        // Update the form initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup for create form
+            setupLocationSearch('binLocationInput', 'locationSuggestions', 'binLatitude', 'binLongitude');
+
+            // Add plate ID validation to create form
+            const createPlateInput = document.querySelector('#createBinForm input[name="Bin.BinPlateId"]');
+            if (createPlateInput) {
+                createPlateInput.addEventListener('input', function() {
+                    formatBinPlateId(this);
+                });
+
+                createPlateInput.addEventListener('blur', function() {
+                    if (this.value && !validateBinPlateId(this.value)) {
+                        this.setCustomValidity('Bin Plate ID must follow format ABC1234');
+                    } else {
+                        this.setCustomValidity('');
+                    }
+                });
+            }
+
+            // Setup for edit form (will be initialized when modal opens)
+            setTimeout(() => {
+                setupLocationSearch('editBinLocation', 'editLocationSuggestions', 'editBinLatitude', 'editBinLongitude');
+
+                // Add plate ID validation to edit form
+                const editPlateInput = document.getElementById('editBinPlateId');
+                if (editPlateInput) {
+                    editPlateInput.addEventListener('input', function() {
+                        formatBinPlateId(this);
+                    });
+
+                    editPlateInput.addEventListener('blur', function() {
+                        if (this.value && !validateBinPlateId(this.value)) {
+                            this.setCustomValidity('Bin Plate ID must follow format ABC1234');
+                        } else {
+                            this.setCustomValidity('');
+                        }
+                    });
+                }
+            }, 1000);
+        });
+    </script>
 }
+
 
