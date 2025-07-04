@@ -146,7 +146,7 @@ public class DashboardsController : Controller
         .Include(s => s.Truck)
         .Include(s => s.Route)
         .Include(s => s.CollectionPoints).ThenInclude(cp => cp.Bin)
-        .Where(s => s.Status == "Scheduled" || s.Status == "In-Progress")
+        .Where(s => s.Status == "Scheduled" || s.Status == "In Progress")
         .ToListAsync();
 
     string[] routeColors = { "#2ecc71", "#e74c3c", "#3498db", "#f39c12", "#9b59b6",
@@ -193,7 +193,7 @@ public class DashboardsController : Controller
         .Include(s => s.Truck)
         .Include(s => s.Route)
         .Include(s => s.CollectionPoints).ThenInclude(cp => cp.Bin)
-        .Where(s => s.Status == "Scheduled" || s.Status == "In-Progress")
+        .Where(s => s.Status == "Scheduled" || s.Status == "In Progress")
         .ToListAsync();
 
     string[] routeColors = { "#2ecc71", "#e74c3c", "#3498db", "#f39c12", "#9b59b6",
