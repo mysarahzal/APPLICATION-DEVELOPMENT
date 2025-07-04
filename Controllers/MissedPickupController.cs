@@ -35,7 +35,6 @@ namespace AspnetCoreMvcFull.Controllers
     }
 
     // GET: MissedPickup/Resolve/5
-    [HttpGet]
     public async Task<IActionResult> Resolve(int? id)
     {
       if (id == null) return NotFound();
@@ -45,8 +44,6 @@ namespace AspnetCoreMvcFull.Controllers
               .ThenInclude(s => s.Route)
           .Include(m => m.Schedule)
               .ThenInclude(s => s.Collector)
-          .Include(m => m.Schedule)
-              .ThenInclude(s => s.CollectionPoints)
           .FirstOrDefaultAsync(m => m.Id == id);
 
       if (missedPickup == null) return NotFound();
@@ -57,76 +54,54 @@ namespace AspnetCoreMvcFull.Controllers
     // POST: MissedPickup/Resolve
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ResolvePost(int id, string reason, string resolution)
+    public async Task<IActionResult> Resolve(MissedPickup model)
     {
-      try
+      if (!ModelState.IsValid)
       {
-        var missedPickup = await _context.MissedPickups
+        // Reload the schedule data for the view
+        model = await _context.MissedPickups
             .Include(m => m.Schedule)
                 .ThenInclude(s => s.Route)
             .Include(m => m.Schedule)
                 .ThenInclude(s => s.Collector)
-            .Include(m => m.Schedule)
-                .ThenInclude(s => s.CollectionPoints)
-            .FirstOrDefaultAsync(m => m.Id == id);
-
-        if (missedPickup == null)
-        {
-          TempData["ErrorMessage"] = "Missed pickup not found.";
-          return RedirectToAction(nameof(Index));
-        }
-
-        // Validate required fields
-        if (string.IsNullOrWhiteSpace(resolution))
-        {
-          TempData["ErrorMessage"] = "Resolution action is required.";
-          return View("Resolve", missedPickup);
-        }
-
-        // Update the missed pickup
-        missedPickup.Reason = !string.IsNullOrWhiteSpace(reason) ? reason : missedPickup.Reason;
-        missedPickup.Resolution = resolution;
-        missedPickup.Status = "Resolved";
-        missedPickup.ResolvedAt = DateTime.Now;
-        missedPickup.ResolvedBy = User.Identity?.Name ?? "Admin";
-
-        // Update the related schedule status
-        if (missedPickup.Schedule != null)
-        {
-          missedPickup.Schedule.Status = "Completed";
-          missedPickup.Schedule.UpdatedAt = DateTime.Now;
-
-          // Set actual end time if not already set
-          if (!missedPickup.Schedule.ActualEndTime.HasValue)
-          {
-            missedPickup.Schedule.ActualEndTime = DateTime.Now;
-          }
-        }
-
-        // Acknowledge related alert if it exists
-        var alert = await _context.Alerts
-            .FirstOrDefaultAsync(a => a.Type == "missed_pickup" && a.SourceId == id);
-        if (alert != null)
-        {
-          alert.Status = "Acknowledged";
-          alert.AcknowledgeAt = DateTime.Now;
-          alert.AcknowledgedBy = User.Identity?.Name ?? "Admin";
-        }
-
-        await _context.SaveChangesAsync();
-
-        // Return the resolved view
-        return View("Resolve", missedPickup);
+            .FirstOrDefaultAsync(m => m.Id == model.Id);
+        return View(model);
       }
-      catch (Exception ex)
+
+      var missedPickup = await _context.MissedPickups
+          .Include(m => m.Schedule)
+          .FirstOrDefaultAsync(m => m.Id == model.Id);
+
+      if (missedPickup == null) return NotFound();
+
+      // Update the missed pickup
+      missedPickup.Reason = model.Reason;
+      missedPickup.Resolution = model.Resolution;
+      missedPickup.Status = "Resolved";
+      missedPickup.ResolvedAt = DateTime.Now;
+      missedPickup.ResolvedBy = User.Identity.Name; // Admin who resolved it
+
+      // Update the related schedule status based on resolution
+      if (missedPickup.Schedule != null)
       {
-        Console.WriteLine($"Error resolving missed pickup: {ex.Message}");
-        TempData["ErrorMessage"] = $"Error resolving missed pickup: {ex.Message}";
-        return RedirectToAction(nameof(Index));
+        // Mark schedule as completed when resolved
+        missedPickup.Schedule.Status = "Completed";
+        missedPickup.Schedule.UpdatedAt = DateTime.Now;
+
+        // Set actual end time if not already set
+        if (!missedPickup.Schedule.ActualEndTime.HasValue)
+        {
+          missedPickup.Schedule.ActualEndTime = DateTime.Now;
+        }
       }
+
+      await _context.SaveChangesAsync();
+
+      TempData["SuccessMessage"] = "Missed pickup has been resolved successfully and schedule status updated.";
+      return RedirectToAction(nameof(Index));
     }
 
-    // Enhanced detection that works with automatic status updates
+    // Manual detection method (kept as backup)
     public async Task<IActionResult> Detect()
     {
       try
@@ -138,77 +113,131 @@ namespace AspnetCoreMvcFull.Controllers
         Console.WriteLine($"=== MANUAL MISSED PICKUP DETECTION STARTED ===");
         Console.WriteLine($"Current time: {currentTime}");
 
-        // Get schedules that are marked as "Missed" but don't have missed pickup records yet
-        var missedSchedulesWithoutRecords = await _context.Schedules
+        // Get schedules that should have been completed but haven't been marked as such
+        // Since ScheduleEndTime is DateTime, we compare directly
+        var potentialMissedSchedules = await _context.Schedules
             .Include(s => s.CollectionPoints)
+                .ThenInclude(cp => cp.CollectionRecords)
             .Include(s => s.Route)
             .Include(s => s.Collector)
-            .Where(s => s.Status == "Missed")
-            .Where(s => !_context.MissedPickups.Any(m => m.ScheduleId == s.Id))
+            .Where(s => s.ScheduleEndTime <= currentTime &&
+                       s.Status != "Completed" &&
+                       s.Status != "Cancelled" &&
+                       s.Status != "Missed")
             .ToListAsync();
 
-        Console.WriteLine($"Found {missedSchedulesWithoutRecords.Count} missed schedules without records");
+        Console.WriteLine($"Found {potentialMissedSchedules.Count} potential missed schedules");
 
-        foreach (var schedule in missedSchedulesWithoutRecords)
+        foreach (var schedule in potentialMissedSchedules)
         {
-          var totalPoints = schedule.CollectionPoints?.Count() ?? 0;
-          var collectedPoints = schedule.CollectionPoints?.Count(cp => cp.IsCollected) ?? 0;
-          var uncollectedPoints = totalPoints - collectedPoints;
+          Console.WriteLine($"Checking Schedule #{schedule.Id} - End time: {schedule.ScheduleEndTime}, Status: {schedule.Status}");
 
-          var hoursOverdue = schedule.ScheduleEndTime < currentTime
-            ? (currentTime - schedule.ScheduleEndTime).TotalHours
-            : 0;
+          // Check if this schedule already has a missed pickup record
+          var existingMissedPickup = await _context.MissedPickups
+              .FirstOrDefaultAsync(m => m.ScheduleId == schedule.Id);
 
-          // Create missed pickup record
-          var missedPickup = new MissedPickup
+          if (existingMissedPickup != null)
           {
-            ScheduleId = schedule.Id,
-            DetectedAt = currentTime,
-            Status = "Pending",
-            Reason = totalPoints > 0
-              ? $"Manual detection - {uncollectedPoints}/{totalPoints} points uncollected, {hoursOverdue:F1} hours overdue"
-              : $"Manual detection - Schedule marked as missed, {hoursOverdue:F1} hours past scheduled end time",
-            CreatedAt = currentTime
-          };
+            Console.WriteLine($"Schedule #{schedule.Id} already has missed pickup record");
+            continue; // Skip if already detected
+          }
 
-          _context.MissedPickups.Add(missedPickup);
-          await _context.SaveChangesAsync(); // Save to get the ID
+          // Check if any collection points in this schedule are uncollected
+          var uncollectedPoints = schedule.CollectionPoints
+              .Where(cp => !cp.IsCollected && !cp.CollectionRecords.Any())
+              .ToList();
 
-          // Create an alert
-          var alert = new Alert
+          var totalPoints = schedule.CollectionPoints.Count();
+          var collectedPoints = schedule.CollectionPoints.Count(cp => cp.IsCollected);
+
+          Console.WriteLine($"Schedule #{schedule.Id}: {collectedPoints}/{totalPoints} points collected, {uncollectedPoints.Count} uncollected");
+
+          if (uncollectedPoints.Any())
           {
-            Type = "missed_pickup",
-            SourceId = missedPickup.Id,
-            Message = $"Missed pickup detected for Route {schedule.Route?.Name ?? "Unknown"} - {uncollectedPoints}/{totalPoints} points uncollected",
-            TriggeredAt = currentTime,
-            Severity = uncollectedPoints > 5 ? "High" : "Medium",
-            Status = "Unread",
-            CreatedAt = currentTime
-          };
+            // UPDATE SCHEDULE STATUS TO "MISSED"
+            schedule.Status = "Missed";
+            schedule.UpdatedAt = currentTime;
 
-          _context.Alerts.Add(alert);
-          detectedCount++;
+            // Set actual end time to the scheduled end time since it wasn't completed
+            if (!schedule.ActualEndTime.HasValue)
+            {
+              schedule.ActualEndTime = schedule.ScheduleEndTime;
+            }
 
-          Console.WriteLine($"Created missed pickup record for Schedule #{schedule.Id}");
-        }
+            Console.WriteLine($"Marking Schedule #{schedule.Id} as MISSED");
 
-        // Also check for schedules that should be completed but aren't
-        var potentialCompletedSchedules = await _context.Schedules
-            .Include(s => s.CollectionPoints)
-            .Where(s => s.Status == "In Progress" || s.Status == "Scheduled")
-            .Where(s => s.CollectionPoints.All(cp => cp.IsCollected))
-            .ToListAsync();
+            // Create missed pickup record
+            var missedPickup = new MissedPickup
+            {
+              ScheduleId = schedule.Id,
+              DetectedAt = currentTime,
+              Status = "Pending",
+              Reason = $"MANUAL CHECK: {uncollectedPoints.Count} uncollected point(s) out of {totalPoints} total points after scheduled end time ({schedule.ScheduleEndTime:g}). Route: {schedule.Route?.Name ?? "Unknown"}",
+              CreatedAt = currentTime
+            };
 
-        foreach (var schedule in potentialCompletedSchedules)
-        {
-          schedule.Status = "Completed";
-          schedule.UpdatedAt = currentTime;
-          schedule.ActualEndTime = schedule.CollectionPoints
-              .Where(cp => cp.CollectedAt.HasValue)
-              .Max(cp => cp.CollectedAt);
+            _context.MissedPickups.Add(missedPickup);
+            detectedCount++;
+            updatedScheduleCount++;
 
-          updatedScheduleCount++;
-          Console.WriteLine($"Marking Schedule #{schedule.Id} as COMPLETED (all points collected)");
+            Console.WriteLine($"Created missed pickup record for Schedule #{schedule.Id}");
+          }
+          else if (schedule.CollectionPoints.All(cp => cp.IsCollected))
+          {
+            // All points collected, mark schedule as completed
+            schedule.Status = "Completed";
+            schedule.UpdatedAt = currentTime;
+
+            // Get the latest collection time
+            var collectedTimes = schedule.CollectionPoints
+                .Where(cp => cp.CollectedAt.HasValue)
+                .Select(cp => cp.CollectedAt.Value);
+
+            if (collectedTimes.Any())
+            {
+              schedule.ActualEndTime = collectedTimes.Max();
+            }
+            else
+            {
+              schedule.ActualEndTime = currentTime;
+            }
+
+            updatedScheduleCount++;
+            Console.WriteLine($"Marking Schedule #{schedule.Id} as COMPLETED (all points collected)");
+          }
+          else
+          {
+            // Some points collected but not all - this might be in progress
+            // Check if it's significantly past the end time
+            var hoursOverdue = (currentTime - schedule.ScheduleEndTime).TotalHours;
+
+            if (hoursOverdue > 2) // More than 2 hours overdue
+            {
+              schedule.Status = "Missed";
+              schedule.UpdatedAt = currentTime;
+
+              if (!schedule.ActualEndTime.HasValue)
+              {
+                schedule.ActualEndTime = schedule.ScheduleEndTime;
+              }
+
+              // Create missed pickup record for partial completion
+              var missedPickup = new MissedPickup
+              {
+                ScheduleId = schedule.Id,
+                DetectedAt = currentTime,
+                Status = "Pending",
+                Reason = $"MANUAL CHECK: Schedule overdue by {hoursOverdue:F1} hours. {collectedPoints}/{totalPoints} points collected, {uncollectedPoints.Count} remaining uncollected. Route: {schedule.Route?.Name ?? "Unknown"}",
+                CreatedAt = currentTime
+              };
+
+              _context.MissedPickups.Add(missedPickup);
+              detectedCount++;
+              updatedScheduleCount++;
+
+              Console.WriteLine($"Marking Schedule #{schedule.Id} as MISSED (partially completed but overdue)");
+            }
+          }
         }
 
         await _context.SaveChangesAsync();
@@ -219,22 +248,22 @@ namespace AspnetCoreMvcFull.Controllers
 
         if (detectedCount > 0)
         {
-          TempData["SuccessMessage"] = $"Detection completed. Found {detectedCount} new missed pickup(s) and updated {updatedScheduleCount} schedule(s).";
+          TempData["SuccessMessage"] = $"Manual detection completed. Found {detectedCount} new missed pickup(s) and updated {updatedScheduleCount} schedule(s).";
         }
         else if (updatedScheduleCount > 0)
         {
-          TempData["InfoMessage"] = $"Detection completed. No new missed pickups found, but {updatedScheduleCount} schedule(s) were updated to completed status.";
+          TempData["InfoMessage"] = $"Manual detection completed. No new missed pickups found, but {updatedScheduleCount} schedule(s) were updated to completed status.";
         }
         else
         {
-          TempData["InfoMessage"] = "Detection completed. No new missed pickups found and all schedules are up to date.";
+          TempData["InfoMessage"] = "Manual detection completed. No new missed pickups found and all schedules are up to date.";
         }
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error during detection: {ex.Message}");
+        Console.WriteLine($"Error during manual detection: {ex.Message}");
         Console.WriteLine($"Stack trace: {ex.StackTrace}");
-        TempData["ErrorMessage"] = $"Error during detection: {ex.Message}";
+        TempData["ErrorMessage"] = $"Error during manual detection: {ex.Message}";
       }
 
       return RedirectToAction(nameof(Index));
@@ -262,39 +291,36 @@ namespace AspnetCoreMvcFull.Controllers
       return View(missedPickup);
     }
 
-    // GET: MissedPickup/Dashboard - Summary view
-    public async Task<IActionResult> Dashboard()
+    // GET: Get notification count for navbar badge
+    [HttpGet]
+    public async Task<IActionResult> GetNotificationCount()
     {
-      var today = DateTime.Today;
-      var thisWeek = today.AddDays(-(int)today.DayOfWeek);
-      var thisMonth = new DateTime(today.Year, today.Month, 1);
+      var pendingCount = await _context.MissedPickups
+          .CountAsync(m => m.Status == "Pending");
 
-      var stats = new
-      {
-        TotalMissed = await _context.MissedPickups.CountAsync(),
-        PendingMissed = await _context.MissedPickups.CountAsync(m => m.Status == "Pending"),
-        ResolvedMissed = await _context.MissedPickups.CountAsync(m => m.Status == "Resolved"),
-        TodayMissed = await _context.MissedPickups.CountAsync(m => m.DetectedAt.Date == today),
-        WeekMissed = await _context.MissedPickups.CountAsync(m => m.DetectedAt >= thisWeek),
-        MonthMissed = await _context.MissedPickups.CountAsync(m => m.DetectedAt >= thisMonth),
-        ResolutionRate = await _context.MissedPickups.AnyAsync()
-          ? Math.Round((double)await _context.MissedPickups.CountAsync(m => m.Status == "Resolved") /
-                      await _context.MissedPickups.CountAsync() * 100, 1)
-          : 0
-      };
+      return Json(new { count = pendingCount });
+    }
 
-      ViewBag.Stats = stats;
-
+    // GET: Get recent notifications for dropdown
+    [HttpGet]
+    public async Task<IActionResult> GetRecentNotifications()
+    {
       var recentMissedPickups = await _context.MissedPickups
           .Include(m => m.Schedule)
               .ThenInclude(s => s.Route)
-          .Include(m => m.Schedule)
-              .ThenInclude(s => s.Collector)
+          .Where(m => m.Status == "Pending")
           .OrderByDescending(m => m.DetectedAt)
-          .Take(10)
+          .Take(5)
+          .Select(m => new
+          {
+            id = m.Id,
+            message = $"Route {m.Schedule.Route.Name} - {m.DetectedAt:MMM dd, HH:mm}",
+            detectedAt = m.DetectedAt.ToString("MMM dd, yyyy HH:mm"),
+            routeName = m.Schedule.Route.Name
+          })
           .ToListAsync();
 
-      return View(recentMissedPickups);
+      return Json(recentMissedPickups);
     }
   }
 }

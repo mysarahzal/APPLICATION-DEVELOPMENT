@@ -1,73 +1,162 @@
 @model IEnumerable<AspnetCoreMvcFull.Models.MissedPickup>
+
 @{
-    ViewData["Title"] = "Missed Pickups";
-    // Layout = "~/Views/Shared/_ContentNavbarLayout.cshtml";
+    ViewData["Title"] = "Missed Pickups Management";
+
+    // Calculate statistics
+    var totalMissed = Model.Count();
+    var pendingCount = Model.Count(m => m.Status == "Pending");
+    var resolvedCount = Model.Count(m => m.Status == "Resolved");
+    var autoDetectedCount = Model.Count(m => m.Reason != null && m.Reason.StartsWith("AUTO-DETECTED"));
+    var manualCount = totalMissed - autoDetectedCount;
+    var resolutionRate = totalMissed > 0 ? Math.Round((double)resolvedCount / totalMissed * 100, 1) : 0;
+
+    // Calculate next check time (every 2 minutes)
+    var nextCheckTime = DateTime.Now.AddMinutes(2 - (DateTime.Now.Minute % 2)).AddSeconds(-DateTime.Now.Second);
 }
 
-<div class="container-xxl flex-grow-1 container-p-y">
-    <div class="row">
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="bx bx-error-circle me-2 text-danger"></i>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
                         Missed Pickups Management
-                    </h5>
-                    <div>
-                        <a asp-action="Dashboard" class="btn btn-info me-2">
-                            <i class="bx bx-bar-chart me-1"></i>
-                            Dashboard
-                        </a>
-                        <a asp-action="Detect" class="btn btn-warning">
-                            <i class="bx bx-search me-1"></i>
-                            Manual Detection
-                        </a>
+                    </h2>
+                    <p class="text-muted mb-0">Monitor and resolve missed waste collection pickups</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-success fs-6 px-3 py-2">
+                        <i class="fas fa-robot me-1"></i>
+                        Auto-Detection Active (Every 2 minutes)
+                    </span>
+                    <a href="@Url.Action("Detect", "MissedPickup")" class="btn btn-outline-primary">
+                        <i class="fas fa-search me-1"></i>
+                        Manual Check
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info border-0 shadow-sm">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle text-info me-3 fs-4"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">Automatic Detection System</h6>
+                        <p class="mb-0">
+                            The system automatically checks for missed pickups <strong>every 2 minutes</strong>.
+                            Next automatic check: <strong>@nextCheckTime.ToString("HH:mm:ss")</strong>
+                            <span class="ms-2">
+                                <i class="fas fa-spinner fa-spin text-success"></i>
+                                <small class="text-success">Running</small>
+                            </span>
+                        </p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="card-body">
-                    @if (TempData["SuccessMessage"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bx bx-check-circle me-2"></i>@TempData["SuccessMessage"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
-                    @if (TempData["InfoMessage"] != null)
-                    {
-                        <div class="alert alert-info alert-dismissible fade show" role="alert">
-                            <i class="bx bx-info-circle me-2"></i>@TempData["InfoMessage"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
-                    @if (TempData["ErrorMessage"] != null)
-                    {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bx bx-error me-2"></i>@TempData["ErrorMessage"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-2">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">@totalMissed</h3>
+                    <p class="text-muted mb-0 small">Total Missed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">@pendingCount</h3>
+                    <p class="text-muted mb-0 small">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">@resolvedCount</h3>
+                    <p class="text-muted mb-0 small">Resolved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-info mb-2">
+                        <i class="fas fa-robot fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">@autoDetectedCount</h3>
+                    <p class="text-muted mb-0 small">Auto-Detected</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-secondary mb-2">
+                        <i class="fas fa-user fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">@manualCount</h3>
+                    <p class="text-muted mb-0 small">Manual Checks</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="fas fa-percentage fa-2x"></i>
+                    </div>
+                    <h3 class="mb-1">@resolutionRate%</h3>
+                    <p class="text-muted mb-0 small">Resolution Rate</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Missed Pickups Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        Missed Pickup Records
+                    </h5>
+                </div>
+                <div class="card-body p-0">
                     @if (Model.Any())
                     {
-                        <div class="alert alert-info mb-3">
-                            <i class="bx bx-info-circle me-2"></i>
-                            <strong>Note:</strong> Missed pickups are automatically detected when schedules pass their end time.
-                            Use "Manual Detection" to find any missed records or update completed schedules.
-                        </div>
-
                         <div class="table-responsive">
-                            <table class="table table-hover">
+                            <table class="table table-hover mb-0">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>Schedule</th>
-                                        <th>Route</th>
-                                        <th>Collector</th>
+                                        <th>Detection Method</th>
+                                        <th>Schedule Details</th>
+                                        <th>Route & Collector</th>
                                         <th>Detected At</th>
-                                        <th>Detection Type</th>
+                                        <th>Reason</th>
                                         <th>Status</th>
-                                        <th>System Reason</th>
-                                        <th style="min-width: 150px;">Actions</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -75,100 +164,93 @@
                                     {
                                         <tr>
                                             <td>
-                                                <strong>#@item.Schedule?.Id</strong>
-                                                <br>
-                                                <small class="text-muted">
-                                                    @item.Schedule?.ScheduleStartTime.ToString("MMM dd, yyyy")
-                                                </small>
-                                                <br>
-                                                <span class="badge @(item.Schedule?.AutomaticStatus == "Missed" ? "bg-danger" : "bg-secondary") badge-sm">
-                                                    @item.Schedule?.AutomaticStatus
-                                                </span>
-                                            </td>
-                                            <td>
-                                                @item.Schedule?.Route?.Name
-                                                <br>
-                                                <small class="text-muted">
-                                                    @item.Schedule?.CollectionPoints?.Count() points
-                                                </small>
-                                            </td>
-                                            <td>
-                                                @if (item.Schedule?.Collector != null)
-                                                {
-                                                    <span>@item.Schedule.Collector.FirstName @item.Schedule.Collector.LastName</span>
-                                                    <br>
-                                                    <small class="text-muted">@item.Schedule.Collector.Email</small>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">Unknown Collector</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                @item.DetectedAt.ToString("MMM dd, yyyy")
-                                                <br>
-                                                <small class="text-muted">@item.DetectedAt.ToString("HH:mm")</small>
-                                            </td>
-                                            <td>
-                                                @if (item.Reason?.Contains("automatically") == true)
+                                                @if (item.Reason != null && item.Reason.StartsWith("AUTO-DETECTED"))
                                                 {
                                                     <span class="badge bg-info">
-                                                        <i class="bx bx-time me-1"></i>Auto
+                                                        <i class="fas fa-robot me-1"></i>
+                                                        Auto-Detected
                                                     </span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge bg-warning">
-                                                        <i class="bx bx-search me-1"></i>Manual
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-user me-1"></i>
+                                                        Manual Check
                                                     </span>
                                                 }
                                             </td>
                                             <td>
-                                                @if (item.Status == "Pending")
+                                                <div>
+                                                    <strong>Schedule #@item.ScheduleId</strong>
+                                                </div>
+                                                @if (item.Schedule != null)
                                                 {
-                                                    <span class="badge bg-warning">
-                                                        <i class="bx bx-time me-1"></i>Pending
-                                                    </span>
+                                                    <small class="text-muted">
+                                                        @item.Schedule.ScheduleStartTime.ToString("dd/MM/yyyy HH:mm") -
+                                                        @item.Schedule.ScheduleEndTime.ToString("dd/MM/yyyy HH:mm")
+                                                    </small>
                                                 }
-                                                else if (item.Status == "Resolved")
+                                            </td>
+                                            <td>
+                                                @if (item.Schedule != null)
                                                 {
-                                                    <span class="badge bg-success">
-                                                        <i class="bx bx-check me-1"></i>Resolved
-                                                    </span>
-                                                    @if (item.ResolvedAt.HasValue)
-                                                    {
-                                                        <br>
-                                                        <small class="text-muted">@item.ResolvedAt.Value.ToString("MMM dd, HH:mm")</small>
+                                                    <div>
+                                                        <i class="fas fa-route me-1"></i>
+                                                        <strong>@(item.Schedule.Route?.Name ?? "Unknown Route")</strong>
+                                                    </div>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-user me-1"></i>
+                                                        @(item.Schedule.Collector?.FirstName) @(item.Schedule.Collector?.LastName)
+                                                    </small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div>@item.DetectedAt.ToString("dd/MM/yyyy")</div>
+                                                <small class="text-muted">@item.DetectedAt.ToString("HH:mm:ss")</small>
+                                            </td>
+                                            <td>
+                                                <div class="text-wrap" style="max-width: 300px;">
+                                                    @{
+                                                        var displayReason = item.Reason;
+                                                        if (!string.IsNullOrEmpty(displayReason) && displayReason.StartsWith("AUTO-DETECTED: "))
+                                                        {
+                                                            displayReason = displayReason.Substring("AUTO-DETECTED: ".Length);
+                                                        }
+                                                        else if (!string.IsNullOrEmpty(displayReason) && displayReason.StartsWith("MANUAL CHECK: "))
+                                                        {
+                                                            displayReason = displayReason.Substring("MANUAL CHECK: ".Length);
+                                                        }
                                                     }
-                                                }
-                                                else
+                                                    <small>@displayReason</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                @switch (item.Status)
                                                 {
-                                                    <span class="badge bg-secondary">@item.Status</span>
+                                                    case "Pending":
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="fas fa-clock me-1"></i>
+                                                            Pending
+                                                        </span>
+                                                        break;
+                                                    case "Resolved":
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check me-1"></i>
+                                                            Resolved
+                                                        </span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-secondary">@item.Status</span>
+                                                        break;
                                                 }
                                             </td>
                                             <td>
-                                                @if (!string.IsNullOrEmpty(item.Reason))
-                                                {
-                                                    <span title="@item.Reason">
-                                                        @(item.Reason.Length > 50 ? item.Reason.Substring(0, 50) + "..." : item.Reason)
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="text-muted">Auto-detected</span>
-                                                }
-                                            </td>
-                                            <td style="min-width: 150px;">
-                                                <div class="d-flex gap-1">
-                                                    <a asp-action="Details" asp-route-id="@item.Id"
-                                                       class="btn btn-sm btn-info" title="View Details" style="white-space: nowrap;">
-                                                        <i class="bx bx-show me-1"></i>Details
-                                                    </a>
+                                                <div class="btn-group btn-group-sm">
                                                     @if (item.Status == "Pending")
                                                     {
-                                                        <a asp-action="Resolve" asp-route-id="@item.Id"
-                                                           class="btn btn-sm btn-success" title="Resolve" style="white-space: nowrap;">
-                                                            <i class="bx bx-check me-1"></i>Resolve
+                                                        <a href="@Url.Action("Resolve", new { id = item.Id })"
+                                                           class="btn btn-success" title="Resolve">
+                                                            <i class="fas fa-check"></i> Resolve
                                                         </a>
                                                     }
                                                 </div>
@@ -178,72 +260,20 @@
                                 </tbody>
                             </table>
                         </div>
-
-                        <!-- Enhanced Summary Statistics -->
-                        <div class="row mt-4">
-                            <div class="col-md-2">
-                                <div class="card bg-danger text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@Model.Count()</h5>
-                                        <small>Total Missed</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="card bg-warning text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@Model.Count(m => m.Status == "Pending")</h5>
-                                        <small>Pending</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="card bg-success text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@Model.Count(m => m.Status == "Resolved")</h5>
-                                        <small>Resolved</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="card bg-info text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@Model.Count(m => m.Reason?.Contains("automatically") == true)</h5>
-                                        <small>Auto-Detected</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="card bg-primary text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@Model.Count(m => m.DetectedAt.Date == DateTime.Today)</h5>
-                                        <small>Today</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-2">
-                                <div class="card bg-secondary text-white">
-                                    <div class="card-body text-center">
-                                        <h5>@(Model.Any() ? Math.Round((double)Model.Count(m => m.Status == "Resolved") / Model.Count() * 100, 1) : 0)%</h5>
-                                        <small>Resolution Rate</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     }
                     else
                     {
                         <div class="text-center py-5">
-                            <i class="bx bx-check-circle display-1 text-success"></i>
-                            <h4 class="mt-3">No Missed Pickups Found</h4>
+                            <div class="mb-3">
+                                <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                            </div>
+                            <h4 class="text-muted">No Missed Pickups Found</h4>
                             <p class="text-muted">
-                                All scheduled pickups are on track. The system automatically detects missed pickups when schedules pass their end time.
-                                <br>
-                                You can also run manual detection to check for any missed records.
+                                Great! All scheduled pickups are on track. The automatic detection system is monitoring every 2 minutes.
                             </p>
-                            <a asp-action="Detect" class="btn btn-warning mt-3">
-                                <i class="bx bx-search me-1"></i>
-                                Run Manual Detection
+                            <a href="@Url.Action("Detect", "MissedPickup")" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>
+                                Run Manual Check
                             </a>
                         </div>
                     }
@@ -253,16 +283,29 @@
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        // Auto-dismiss alerts after 5 seconds
-        setTimeout(function() {
-            $('.alert').fadeOut('slow');
-        }, 5000);
+<!-- Auto-refresh script for real-time updates -->
+<script>
+    // Auto-refresh the page every 2 minutes to show latest detections
+    setTimeout(function() {
+        location.reload();
+    }, 120000); // 2 minutes in milliseconds
 
-        // Auto-refresh page every 10 minutes to show new missed pickups
-        setInterval(function() {
-            location.reload();
-        }, 600000); // 10 minutes
-    </script>
-}
+    // Update next check time countdown
+    function updateNextCheckTime() {
+        const now = new Date();
+        const nextCheck = new Date(now);
+        nextCheck.setMinutes(Math.ceil(now.getMinutes() / 2) * 2, 0, 0);
+
+        const timeUntilNext = nextCheck - now;
+        const secondsUntil = Math.floor(timeUntilNext / 1000);
+
+        if (secondsUntil > 0) {
+            const minutes = Math.floor(secondsUntil / 60);
+            const seconds = secondsUntil % 60;
+            console.log(`Next check in: ${minutes}:${seconds.toString().padStart(2, '0')}`);
+        }
+    }
+
+    // Update countdown every second
+    setInterval(updateNextCheckTime, 1000);
+</script>
